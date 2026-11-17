@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.5 · 2026-11-17 · The Windstorm**
+**Plan version 1.6 · 2026-11-17 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -556,7 +556,7 @@ If it does not, end your turn now without saying anything more.
 
 **G9.2** `pitboard` is on the agent's `PATH` through the plugin's `bin/` folder (documented; check C14). If `command -v pitboard` finds nothing, the skill says to use `~/.pitboard/bin/pitboard` (the stable launcher copy, G21.4).
 
-**G9.3 `skills/board/SKILL.md`** (invoked as `/windstorm-pit-board:board`, with `all` as its argument for history). It is the fallback when G7.9 cannot block: it runs `pitboard board $ARGUMENTS --plain` and tells Claude to show the output exactly, inside a code block, with no comment before or after. The operator's quick way is still `pb` (G7.2 step 1).
+**G9.3 `skills/board/SKILL.md`** (invoked as `/windstorm-pit-board:board`, with `all` as its argument for history). It is the fallback when G7.9 cannot block: it runs `pitboard board --plain`, or `pitboard board --all --plain` when its argument (`$ARGUMENTS`) is `all` (the command has no positional `all`, G6.2), and tells Claude to show the output exactly, inside a code block, with no comment before or after. The operator's quick way is still `pb` (G7.2 step 1).
 
 **G9.4 The Windstorm skill standard (format).** Every skill in this repository follows the Agent Skills specification (agentskills.io), the standard for every Windstorm skill:
 1. Each skill is `skills/<name>/SKILL.md`, and its frontmatter `name` equals `<name>` exactly (lower-case letters, digits and `-`).
@@ -564,7 +564,7 @@ If it does not, end your turn now without saying anything more.
 3. `SKILL.md` is under 500 lines. Longer material goes in the skill's own `references/` (documents the agent reads when needed), `scripts/` (code it runs) and `assets/` (files it uses), each linked from `SKILL.md` by a relative path.
 4. No install metadata (`metadata.github-*`) is committed; `allowed-tools`, if used, is a string.
 
-**G9.5 Format gate.** CI runs `gh skill publish --dry-run` (check C15) on every push and pull request, and a red result fails CI like a failed test. `tests/test_g9_skills.py` also checks G9.4 points 1 to 3 with the standard library alone (a strict parse of the frontmatter block: `name`, quoted `description`, line counts), so the rule holds even where `gh` is missing.
+**G9.5 Format gate.** CI runs `gh skill publish --dry-run` (check C15) wherever it runs the tests (G20.6), and a red result fails CI like a failed test. `tests/test_g9_skills.py` also checks G9.4 points 1 to 3 with the standard library alone (a strict parse of the frontmatter block: `name`, quoted `description`, line counts), so the rule holds even where `gh` is missing.
 
 **G9.6 Trigger evals** (the skill-creator method). Each skill has `evals/<name>/triggers.json`: exactly 20 queries, of which 8 to 10 must make the skill fire and the rest are near-misses that must not (for `pit-board`: fire on "I need you to log in to Stripe before I can go on", "what's waiting on me?"; must not fire on "summarise what you did today", "ask the API server lane for its status"). Each query is `{"id": "G9.6-<name>-<nn>", "query": "...", "should_fire": true|false}`; the id carries the codon (the naming rule for eval cases is set by the DNA Strand method). A run records which skill Claude Code loaded for each query; the skill passes when at least 18 of 20 are right.
 
@@ -771,7 +771,7 @@ Otherwise the lane learns of the answer at its next start (the reminder lists pa
 
 **G20.5** The page gets a smoke test: a script that loads `index.html` with the hub running and checks that `app.js` and `app.css` load and that no inline script or style exists.
 
-**G20.6 CI** runs the tests on Python 3.10 and 3.13, on Linux and macOS, on every push and pull request. This is a public repository, so CI uses GitHub-hosted runners, the same as Windstorm Pit Stop: public repositories do not use paid minutes, and self-hosted runners must never serve a public repository (anyone's pull request could run code on our machines).
+**G20.6 CI** runs the tests on Python 3.10 and 3.13, on Linux and macOS, on every pull request and every push to `main` (a push to a pull request's branch runs through the pull request, so each job runs once). This is a public repository, so CI uses GitHub-hosted runners, the same as Windstorm Pit Stop: public repositories do not use paid minutes, and self-hosted runners must never serve a public repository (anyone's pull request could run code on our machines).
 
 **G20.7** `tests/smoke_hooks.sh` feeds every recorded hook input to `pitboard hook` and checks exit code 0 and the expected output shape.
 
@@ -1061,6 +1061,8 @@ The hook records both approvals; the agent sees: `Pit Board: the operator approv
 # Pit Board
 
 You keep a list of everything you need from the operator (the person you work for), so nothing you ask gets lost in the scroll, a compaction or a restart.
+
+If `command -v pitboard` finds nothing, use `~/.pitboard/bin/pitboard` wherever this skill says `pitboard`.
 
 ## When you need the operator
 
