@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.0 · 2026-11-17 · The Windstorm**
+**Plan version 1.1 · 2026-11-17 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -738,7 +738,7 @@ Otherwise the lane learns of the answer at its next start (the reminder lists pa
 - JWTs: `eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}`.
 - Key-value secrets, including prefixed names (`DB_PASSWORD`, `AWS_SECRET_ACCESS_KEY`) and JSON (`"password": "x"`): `(?i)([A-Za-z0-9_.-]*(password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|private[_-]?key)["']?\s*[:=]\s*)["']?[^\s"',}]+["']?` → keeps group 1, masks the value: `DB_PASSWORD=[masked]`, `"password": [masked]`.
 - Bearer headers: `(?i)bearer\s+[A-Za-z0-9._~+/=-]{16,}`.
-- Long opaque strings: any run of 40 or more characters from `[A-Za-z0-9+/=_-]` that contains at least one digit, one lower-case and one upper-case letter.
+- Long opaque strings: any run of 40 or more characters from `[A-Za-z0-9+=_-]` (no `/`, so file paths and URLs are left alone) that contains at least one digit, one lower-case and one upper-case letter. (Git commit hashes have no upper-case letters and are left alone.)
 
 **G19.2** Masking is applied in `contract.py` on the way in, before validation (G1.9), so every path (command, hooks, MCP, hub answers) gets it. The rules run in the order listed above.
 
