@@ -1,0 +1,48 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -f \"$R/pitboard/launch.py\" ] || exit 0; P=python3; python3 -I -c pass </dev/null >/dev/null 2>&1 || P=python; exec \"$P\" -I \"$R/pitboard/launch.py\" hook session-start",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -f \"$R/pitboard/launch.py\" ] || exit 0; P=python3; python3 -I -c pass </dev/null >/dev/null 2>&1 || P=python; exec \"$P\" -I \"$R/pitboard/launch.py\" hook user-prompt-submit",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -f \"$R/pitboard/launch.py\" ] || exit 0; P=python3; python3 -I -c pass </dev/null >/dev/null 2>&1 || P=python; exec \"$P\" -I \"$R/pitboard/launch.py\" hook stop",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "CwdChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "R=\"${CLAUDE_PLUGIN_ROOT}\"; [ -f \"$R/pitboard/launch.py\" ] || exit 0; P=python3; python3 -I -c pass </dev/null >/dev/null 2>&1 || P=python; exec \"$P\" -I \"$R/pitboard/launch.py\" hook cwd-changed",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
