@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.3 · 2026-11-17 · The Windstorm**
+**Plan version 1.4 · 2026-11-17 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -171,6 +171,7 @@ All under `PITBOARD_HOME` (default `~/.pitboard`):
 ~/.pitboard/
   config.json                 operator settings (G2.10)
   lanes.json                  session_id -> lane key map (G3)
+  lanes.json.lock             lock for lanes.json (G3.3)
   lanes/<key>.jsonl           lane logs (G1, G2)
   lanes/<key>.lock            lane locks
   state/<key>.json            state caches
@@ -185,6 +186,7 @@ All under `PITBOARD_HOME` (default `~/.pitboard`):
   machine.token               this machine's hub token, mode 600 (G13)
   logs/pitboard.log           diagnostics, rotated at 1 MB, 3 kept
   outbox/rejected/            events the hub refused, kept for doctor (G13.2)
+  outbox/.backoff             when the next sync may run (G13.4)
   update/last-check.json      result of the last update check (G21.3)
   update/good-versions        versions that passed the self-check, one per line (G21.4)
   update/bad-versions         versions that failed, one per line (G21.10)
@@ -287,7 +289,7 @@ The fold also records, per ask: `asked_at` (the `asked` event's `ts`), `answered
 
 **G2.5 Next short ID.** Computed inside the same lock as the append (G1.12), so two writers never get the same ID.
 
-**G2.6 State cache.** After each append, still inside the lock, fold the whole log (G1.11) and write `state/<key>.json` atomically (write `state/<key>.json.tmp`, then `os.replace`). Shape:
+**G2.6 State cache.** After each append, still inside the lock, bring the cache up to date (G2.11) and write `state/<key>.json` atomically (write `state/<key>.json.tmp`, then `os.replace`). Shape:
 
 ```json
 {"v": 1, "lane": "api-server", "lane_name": "API Server", "machine": "studio-1",
@@ -312,7 +314,7 @@ The fold also records, per ask: `asked_at` (the `asked` event's `ts`), `answered
 
 | Key | Default | Meaning |
 |---|---|---|
-| `machine` | short host name, lower-cased, cleaned to G1.2 rules | This machine's name. |
+| `machine` | the short host name, cleaned: lower-cased, every run of characters other than `a-z`, `0-9`, `-` replaced by `-`, `-` trimmed from both ends, cut to 63; an empty result is `machine` | This machine's name. |
 | `operator_name` | `"you"` | How the skill and reminders refer to the operator. |
 | `display_tz` | the system's local zone | IANA name, e.g. `America/New_York`. |
 | `escalate_after_hours` | `24` | A `can-wait` ask turns red after this many hours open. |
@@ -325,6 +327,8 @@ The fold also records, per ask: `asked_at` (the `asked` event's `ts`), `answered
 | `update_check_hours` | `6` | How often the updater looks for a new release (minimum 1). |
 
 Environment variables override config: `PITBOARD_MACHINE`, `PITBOARD_TZ`, `PITBOARD_HUB_URL`, `PITBOARD_SELF_UPDATE` (`0` or `1`).
+
+**G2.11 Incremental cache, with a time budget.** Logs are never rotated (G2.9), so re-folding a whole log on every write would grow without limit inside the lock, and a hook that waits 1 s (G2.3) would drop its ask. So an append updates the cache incrementally when all of these hold: the cache's `log_bytes` equals the log's size before the append; every new event was created in this same call (fresh `event_id`s); and each new event's `(ts, event_id)` sorts after the cache's `last_applied` (a new cache field: the `[ts, event_id]` of the last event the cache applied). Then it applies only the new events to the cached asks with the G1.11 table. Otherwise (inbox events, an old timestamp, a stale or missing cache) it folds the whole log. Budget: an append to a lane whose log is 20 MB finishes in under 200 ms on the CI machines; a test builds such a log and checks it.
 
 ### G3 Lane identity
 
@@ -345,7 +349,7 @@ A lane must keep the same key across restarts, compactions and resumes, and two 
 
 **G3.5 Same name, new session, same lane.** A new session ID whose name gives an existing key joins that lane (same log, continues the short IDs). This is how a lane survives being started fresh under the same name. Two sessions running at once under the same `/rename` name share one lane on purpose; the lock (G2.3) keeps their short IDs unique.
 
-**G3.6 A session without a name first, named later.** If a session was first keyed `session-xxxxxxxx` and later gets a name whose key is free, `pitboard lane adopt` (G6) moves it: it appends nothing and rewrites nothing; it changes the map to the new key and copies the old log's lines into the new log (the old log stays as is). This is an explicit command, never automatic.
+**G3.6 Removed in plan 1.4:** `lane adopt` is gone. The lane key is internal: every view shows `lane_name`, which follows a rename (G3.4), so a lane first keyed `session-xxxxxxxx` and named later simply keeps that key. Copying or aliasing logs would add a second place an ask could live (review 2026-11-17, item 5).
 
 **G3.7 Finding the lane from the command line**, in this order:
 1. `--lane KEY` flag.
@@ -366,7 +370,7 @@ A lane must keep the same key across restarts, compactions and resumes, and two 
 - `YYYY-MM-DD HH:MM` in the display time zone.
 - `YYYY-MM-DD` = 5:00 PM that day in the display time zone.
 - Relative: `+Nm`, `+Nh`, `+Nd`.
-Anything else: exit code 6, `pitboard: deadline not understood: <text>`.
+Anything else: exit code 6, `pitboard: deadline not understood: <text>`. A local time in the hour repeated when clocks go back means its first occurrence; a local time in the hour skipped when clocks go forward is read with the offset in force before the jump (Python `zoneinfo` with `fold=0`).
 
 **G4.5 Time zone data.** Use `zoneinfo`. If the zone cannot be loaded (Windows without tz data), fall back to the system's local time and show its offset (`UTC-5`).
 
@@ -388,7 +392,7 @@ Reset after each coloured span: `\x1b[0m`.
 
 **G5.2 Rank** (for "worst" and for sorting by severity): `blinking-red` 0, `red` 1, `blue` 2, `yellow` 3, `chequered` 4, `grey` 5. Lower is worse.
 
-**G5.3 No colour.** When the env var `NO_COLOR` is set (any value) or `--plain` is passed, print no ANSI codes and no blinking; print the flag word in capitals instead of the colour (`RED`, `BLINK-RED`, `BLUE`, `YELLOW`, `DONE`, `GREY`).
+**G5.3 No colour.** When the env var `NO_COLOR` is set (any value) or `--plain` is passed, print no ANSI codes and no blinking; print the flag word in capitals instead of the colour (`RED`, `BLINK-RED`, `BLUE`, `YELLOW`, `GREY`; a chequered ask shows its status: `ANSWERED` or `DONE`).
 
 **G5.4 Sort orders**, used by the board, list and page:
 - `severity`: rank, then deadline (none last), then `asked_at` oldest first.
@@ -418,7 +422,6 @@ Reset after each coloured span: `\x1b[0m`.
 | `status [--plain]` | The status segment (G10). | |
 | `badge` | Updates the tab badge (G12). | nothing |
 | `lane` | Shows this session's lane key and name. | `api-server (API Server)` |
-| `lane adopt NEWKEY` | G3.6. | |
 | `sync [--backfill]` | G13. One pass, then exits (the timer repeats it). | `sent 4, received 1, rejected 0` |
 | `inbox` | Lists hub answers for this lane that the agent has not acted on yet (G16). | |
 | `hook EVENT` | Hook entry point (G7). Reads hook JSON on stdin. | per G7 |
@@ -436,7 +439,7 @@ Reset after each coloured span: `\x1b[0m`.
 
 **G6.5** `add` refuses `--kind hand` without at least one `--step`, and refuses `--kind question` or `decision` without `--suggested`, with exit code 6 and a one-line reason.
 
-**G6.6** Every write command finishes by: rebuilding the state cache (G2.6), writing the outbox copy if `hub_url` is set (G13.1), and running `badge` (G12) when inside tmux. Failure of the outbox copy or badge never fails the command. Commands run by a person or an agent also try one inline sync (G13.3); hooks never sync inline.
+**G6.6** Every write command finishes by: rebuilding the state cache (G2.6), writing the outbox copy if `hub_url` is set (G13.1), and running `badge` (G12) when inside tmux. Failure of the outbox copy or badge never fails the command. Commands run by a person or an agent also try one inline sync (G13.3) unless `outbox/.backoff` says to wait (G13.4); hooks never sync inline.
 
 **G6.7 `add` fills `where`** by itself: `cwd` from the current folder, `host` from the short host name, `tmux_pane` from `TMUX_PANE`, and `tmux_session` / `tmux_window` from `tmux display -p -t $TMUX_PANE '#{session_name}'` and `'#{window_name}'` (1 s limit). Values that fail the G1.3 pattern are dropped. Hooks that write `asked` do the same.
 
@@ -466,7 +469,7 @@ The `hook` names, the Claude Code events and matchers they serve, and the fixtur
 | `cwd-changed` | CwdChanged | (none) | G7.8 |
 | `user-prompt-expansion` | UserPromptExpansion | (none) | G7.9 |
 
-The guarded `*` entry exists only to close permission asks, and must not start Python on every tool call. Its command begins with `[ -e "${PITBOARD_HOME:-$HOME/.pitboard}/state/permission-open" ] || exit 0;` and then continues as the shape above. G7.5 creates that empty file when it records a permission ask and deletes it when no permission ask is open on the machine.
+The guarded `*` entry exists only to close permission asks, and must not start Python on every tool call. Its command begins with `[ -e "${PITBOARD_HOME:-$HOME/.pitboard}/state/permission-open" ] || exit 0;` and then continues as the shape above. G7.5 creates that empty file when it records a permission ask. Every write that closes a permission ask (G7.5, G7.2 step 5, G7.6 step 2) then checks the machine's state caches and deletes the file when no permission ask is open on any lane.
 
 Each handler writes at most one JSON object to stdout. Context for the model goes in `hookSpecificOutput.additionalContext` (with `hookEventName`); a line for the operator goes in top-level `systemMessage`; a block uses `decision` and `reason`. One object may carry several of these.
 
@@ -619,15 +622,15 @@ set -g window-status-current-format '#W#{?@pitboard, #{@pitboard},}'
 
 ### G13 Sync: outbox and inbox
 
-**G13.1 Outbox.** When `hub_url` is set, every event written on this machine is also written to `outbox/<ts compact>-<event_id>.json` (mode 600) right after the append.
+**G13.1 Outbox.** When `hub_url` is set, every event written on this machine is also written to `outbox/<ts compact>-<event_id>.json` (`<ts compact>` is the event's `ts` with `-`, `:` and `.` removed, e.g. `20261117T190405123Z`, so file names sort in time order) (mode 600) right after the append.
 
-**G13.2** `pitboard sync` posts up to 200 outbox events per request to `POST <hub_url>/v1/events` with header `Authorization: Bearer <machine.token>` (read from the file, never from a command-line argument). On HTTP 200 it deletes the outbox files whose IDs are in the response's `accepted` and `duplicate` lists, and moves those in `rejected` to `outbox/rejected/` with the reason added (`pitboard doctor` reports them), so a refused event never blocks the ones behind it. On any other result it keeps them all and backs off (G13.4).
+**G13.2** `pitboard sync` posts outbox events oldest first, at most 200 per request and at most 1 000 000 bytes of request body per request (an event is at most 16 384 bytes, G1.1, so one always fits), to `POST <hub_url>/v1/events` with header `Authorization: Bearer <machine.token>` (read from the file, never from a command-line argument). On HTTP 200 it deletes the outbox files whose IDs are in the response's `accepted` and `duplicate` lists, and moves those in `rejected` to `outbox/rejected/` with the reason added (`pitboard doctor` reports them), so a refused event never blocks the ones behind it. On any other result it keeps them all and backs off (G13.4).
 
 **G13.3 Timing.** `pitboard sync` (through the stable launcher copy, G21.4) runs every 60 s from a user timer (systemd user timer on Linux, launchd agent on macOS, Task Scheduler on Windows), installed by `pitboard setup --apply`. Also, each write command tries one sync with a 2 s time limit; failure is silent.
 
 **G13.4 Backoff.** After a failed sync, the next timer runs skip for 1, 2, 4, 8, then at most 15 minutes, tracked in `outbox/.backoff`.
 
-**G13.5 Inbox.** After posting, `pitboard sync` calls `GET <hub_url>/v1/inbox?after=<inbox.cursor>` and appends each returned event (always `origin: hub`) to the lane log that holds an `asked` event with the same `uid` (a lane moved by `lane adopt` keeps getting its answers); when no log on this machine holds it, to the log of the event's `lane`. Event IDs already present are skipped (INV3). Then it saves the new cursor.
+**G13.5 Inbox.** After posting, `pitboard sync` calls `GET <hub_url>/v1/inbox?after=<inbox.cursor>` and appends each returned event (always `origin: hub`) to the lane log that holds an `asked` event with the same `uid` ; when no log on this machine holds it, to the log of the event's `lane`. Event IDs already present are skipped (INV3). Then it saves the new cursor.
 
 **G13.6 Bootstrap.** `pitboard sync --backfill` puts every event of every lane log into the outbox once (the hub drops duplicates), so a machine that joins late sends its whole history.
 
@@ -666,7 +669,7 @@ CREATE TABLE viewers  (name TEXT PRIMARY KEY, token_sha256 TEXT NOT NULL, create
 | Method and path | Who | Does |
 |---|---|---|
 | `GET /v1/health` | anyone | `{"ok": true, "version": "...", "events": N}` |
-| `POST /v1/events` | machine token | Body `{"events": [...]}`, at most 200, at most 1 MB. Each event is rejected when: its envelope (G1.2) is broken; its `machine` is not the token's machine; its `origin` is `hub`; or its `uid` already has an `asked` event from a different machine. An event with a higher `v` or an unknown `type` is stored and `accepted`, and skipped only when folding (INV9, G21.11). Returns `{"accepted": [ids], "duplicate": [ids], "rejected": [{"event_id": id, "reason": text}]}`. |
+| `POST /v1/events` | machine token | Body `{"events": [...]}`, at most 200 events and at most 1 000 000 bytes; a larger body gets HTTP 413 and nothing in it is stored (G13.2 never sends one). Each event is rejected when: its envelope (G1.2) is broken; its `machine` is not the token's machine; its `origin` is `hub`; or its `uid` already has an `asked` event from a different machine. An event with a higher `v` or an unknown `type` is stored and `accepted`, and skipped only when folding (INV9, G21.11). Returns `{"accepted": [ids], "duplicate": [ids], "rejected": [{"event_id": id, "reason": text}]}`. |
 | `GET /v1/inbox?after=N` | machine token | Hub-origin events for that machine with `rowid > N`, oldest first, at most 200: `{"events": [...], "cursor": M}`. |
 | `GET /v1/asks?status=open\|all&sort=severity\|deadline\|age\|lane&machine=&lane=&kind=&q=&before=&limit=` | viewer token | Folded asks with a computed `flag` for each (G5 at request time). `limit` default 200, max 1000. Paging back in history: with `status=all&sort=age`, the hub returns the **newest** `limit` asks (those with `(asked_at, uid)` less than `before` when `before` is given), ordered oldest first; `before` has the form `<asked_at>|<uid>` taken from the first row of the previous page. `q` matches title, detail, suggested, lane name (case-insensitive substring). |
 | `GET /v1/asks/<uid>` | viewer token | One ask with all its events. |
@@ -815,7 +818,7 @@ A version that is installed but not yet in `update/good-versions` is self-checke
 
 **The stable copy.** `pitboard setup --apply` copies `bin/pitboard` to `$PITBOARD_HOME/bin/pitboard` and `pitboard/launch.py` to `$PITBOARD_HOME/pitboard/launch.py` (the same relative layout as the plugin, G6.1), and points timers, services and the status line wrapper at `$PITBOARD_HOME/bin/pitboard`, writing `PITBOARD_HOME` into each of them (timers do not inherit the shell's environment). They never name a version folder. Every `~/.pitboard/bin/pitboard` in this plan means `$PITBOARD_HOME/bin/pitboard`. Each `pitboard update` run refreshes the copy from the chosen version.
 
-**G21.5 Self-check.** `pitboard doctor --quick` runs from the new version's folder, in a temporary `PITBOARD_HOME` with a copy of one real lane log, and must: import every module; fold the copied log with the same result as the running version; run `add`, `ok`, `done`, `board`, `status` against the temporary home; finish in under 20 s. Any failure is a fail.
+**G21.5 Self-check.** `pitboard doctor --quick` runs from the new version's folder, in a temporary `PITBOARD_HOME` with a copy of the machine's largest lane log (or the built-in fixture `tests/fixtures/selfcheck.jsonl` when the machine has none), and must: import every module; fold the copied log with the same result as the running version; run `add`, `ok`, `done`, `board`, `status` against the temporary home; finish in under 20 s. Any failure is a fail.
 
 **G21.6 Hook generation.** `hooks/generation.json` holds one integer. It is raised only when `hooks/hooks.json` changes (an event, a matcher, a command shape): those are the only changes a running session cannot pick up through the launcher. A test fails when `hooks/hooks.json` changes without `generation.json` changing (same rule as Windstorm Pit Stop). A session's loaded generation is the one in `$CLAUDE_PLUGIN_ROOT/hooks/generation.json` (the folder its hooks were loaded from); the running generation is the one in the folder the launcher chose. When they differ, the session gets one line, once per generation (tracked in `update/generation-shown/<session_id>`), shown to the operator (Stop hook `systemMessage`, G7.6 step 6): `Pit Board updated its hooks. Type /reload-plugins at a break (no turn starts).` When Windstorm Pit Stop's fleet mode is installed with `reload_plugins` on, it does this by itself at a break.
 
@@ -834,7 +837,7 @@ A version that is installed but not yet in `update/good-versions` is self-checke
 - keep every config key's meaning; a renamed key is still read under its old name for at least two releases.
 A test replays the fixtures of every earlier release (`tests/fixtures/releases/<version>/`, saved at each release) against the current code.
 
-**G21.12 Opting out.** `self_update: false` (or `PITBOARD_SELF_UPDATE=0`) turns off G21.2 and G21.3, and makes the launcher use its own folder (G21.4 step 4). Pins still work. Nothing else changes.
+**G21.12 Opting out.** `self_update: false` (or `PITBOARD_SELF_UPDATE=0`) turns off G21.2 and G21.3, and makes the launcher use G21.4 step 2: the install path recorded in `installed_plugins.json`, whatever its version (so the operator's own `claude plugin update` still takes effect). Pins still work. Nothing else changes.
 
 **G21.13 Never during the operator's work.** Updating installs files only. It never restarts or types into a session, except G21.6's one-line note and, if the operator has Pit Stop's fleet mode, Pit Stop's own reload at a break.
 
@@ -921,6 +924,7 @@ Claude Code changes often. These are the facts the hooks depend on. Before writi
 | C6 | The shapes of `tool_input.questions` and of PostToolUse's `tool_response` for `AskUserQuestion`. | G7.3, G7.4 | If PostToolUse has no answers, record `answer: "answered in the question box"`. |
 | C7 | A PermissionRequest hook that returns nothing leaves the normal prompt unchanged. | G7.5 | Use Notification with `notification_type: permission_prompt` instead. |
 | C8 | The exact name of the board skill (`/windstorm-pit-board:board`) and that `$ARGUMENTS` reaches it. | G9.3, G7.9 | Whatever name the platform gives. |
+| C9 | Removed in plan 1.1: the documentation settles it (a plugin cannot set `statusLine`, G10.5). | | |
 | C10 | `TMUX_PANE` reaches hooks in a tmux session. | G12, G1.3 `where` | Leave `where.tmux_*` empty; badge only from commands the agent runs. |
 | C11 | How Claude Code decides a plugin from a marketplace has an update: a raised `version` in `plugin.json`, or any new commit. | G21.1 | If any commit counts, every merge to `main` must be a release (version raised each time). |
 | C12 | The exact commands `claude plugin marketplace update <name>` and `claude plugin update <plugin>@<marketplace>`, their exit codes, and that they work while sessions are running. | G21.3 | Pit Stop's tested calls; else only Claude Code's own auto-update at start-up (G21.2). |
@@ -939,7 +943,7 @@ Each milestone ends with a release, a `CHANGELOG.md` entry and a short note in `
 
 ### M1 One lane (0.1.0): G1, G2, G3, G4, G5, G6 (all but `sync`, `inbox`, `hub`, `mcp`, `update`), G7.0, G7.1 (steps 1 to 3), G7.2, G7.7, G7.8, G9, G10, G11, G16.4, G18.1 `--minimal`, G19, G21.1, G21.4, G21.6, G21.11, G20 for those
 The launcher (G21.4) ships in the very first release, so that every later release reaches the first installs without anyone reinstalling.
-Build order: G1 → G19 → G4 → G5 → G2 → G3 → G21.4 launcher → G6 → G11 → G10 → G18.1 `--minimal` → Part 7 checks → G7.0 → G7.1 → G7.7 → G7.2 → G16.4 → G7.8 → G9.
+Build order: G1 → G19 → G4 → G5 → G2 → G3 → G21.4 launcher → G6 → G11 → Part 7 checks → G10 → G18.1 `--minimal` → G7.0 → G7.1 → G7.7 → G7.2 → G16.4 → G7.8 → G9.
 Accepted when, in one pilot lane:
 1. All tests pass on Python 3.10 and 3.13, and the skill format gate (G9.5) is green.
 2. The agent records its asks with `pitboard add` without being reminded, for 2 days.
@@ -1013,6 +1017,7 @@ These are not in the build. Each needs a decision (and a plan change) before any
 4. **Operator's own items:** adding personal to-do items on the page (an `asked` event with `source: operator`, `by: operator`, written by the hub). The format allows it already; the page does not offer it yet.
 5. **Several operators:** each ask could name who it waits on. Out of scope until someone needs it.
 6. **Desktop app wrapper** around the page, only if the pop-out falls short in daily use.
+7. **Marketplace catalog:** confirm with Skills Boss, before M5, which repository's `marketplace.json` lists Pit Board (today Part 6 says Windstorm Pit Stop's).
 
 ---
 
