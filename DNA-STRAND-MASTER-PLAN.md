@@ -772,7 +772,7 @@ Otherwise the lane learns of the answer at its next start (the reminder lists pa
 
 **G20.7** `tests/smoke_hooks.sh` feeds every recorded hook input to `pitboard hook` and checks exit code 0 and the expected output shape.
 
-**G20.8 CI rules** (Skills Boss ruling 2026-11-17): the workflow sets `permissions: contents: read` at workflow level, uses no repository secrets (only the automatic `GITHUB_TOKEN`, read-only, which `gh skill publish --dry-run` may need), and never uses `pull_request_target`. A test reads `.github/workflows/*.yml` and fails if any rule is broken. CI also runs the G9.5 gate.
+**G20.8 CI rules** (Skills Boss ruling 2026-11-17): the workflow sets `permissions: contents: read` at workflow level, uses no repository secrets (only the automatic `GITHUB_TOKEN`, read-only, which `gh skill publish --dry-run` may need), never uses `pull_request_target`, and runs only on standard GitHub-hosted runners: every `runs-on` value (directly, or each value of the matrix entry it names) must match `^(ubuntu|macos|windows)-(latest|[0-9]+(\.[0-9]+)?)$`. Larger-runner labels (for example `ubuntu-latest-4-cores`, `macos-15-xlarge`), self-hosted labels and runner groups are refused: larger runners are billed even on public repositories, and an unpaid GitHub bill is why private repositories run on our own machines. A test reads `.github/workflows/*.yml` and fails if any of these four rules is broken. CI also runs the G9.5 gate.
 
 ### G21 Self-update: always the newest Pit Board
 
