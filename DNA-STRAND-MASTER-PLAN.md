@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.1 · 2026-11-17 · The Windstorm**
+**Plan version 1.2 · 2026-11-17 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -920,7 +920,7 @@ Each milestone ends with a release, a `CHANGELOG.md` entry and a short note in `
 
 ### M1 One lane (0.1.0): G1, G2, G3, G4, G5, G6 (all but `sync`, `inbox`, `hub`, `mcp`, `update`), G7.0, G7.1 (steps 1 to 3), G7.2, G7.7, G7.8, G9, G10, G11, G16.4, G18.1 `--minimal`, G19, G21.1, G21.4, G21.6, G21.11, G20 for those
 The launcher (G21.4) ships in the very first release, so that every later release reaches the first installs without anyone reinstalling.
-Build order: G1 → G19 → G4 → G2 → G3 → G5 → G21.4 launcher → G6 → G11 → G10 → G18.1 `--minimal` → Part 7 checks → G7.0 → G7.1 → G7.7 → G7.2 → G16.4 → G7.8 → G9.
+Build order: G1 → G19 → G4 → G5 → G2 → G3 → G21.4 launcher → G6 → G11 → G10 → G18.1 `--minimal` → Part 7 checks → G7.0 → G7.1 → G7.7 → G7.2 → G16.4 → G7.8 → G9.
 Accepted when, in one pilot lane:
 1. All tests pass on Python 3.10 and 3.13.
 2. The agent records its asks with `pitboard add` without being reminded, for 2 days.
