@@ -302,7 +302,7 @@ The fold also records, per ask: `asked_at` (the `asked` event's `ts`), `answered
             "updated_at": "...", "source": "agent", "where": {}} ]}
 ```
 
-`worst_flag` is computed at build time with [G5](#g5-flags-colour-and-order) and is a hint only; readers that show flags recompute them at read time (flags change with age).
+`asks` holds only **live** asks (status `open` or `answered`), so the cache stays small however long the log grows; views that show closed asks (`board --all`, `list --all`, `show`, `export`) fold the log. The cache also holds `max_ask` (the highest short ID number used, for G1.12), `last_applied` (G2.11) and the fold `stats`, and each ask carries the `session_id` of its `asked` event. `worst_flag` is computed at build time with [G5](#g5-flags-colour-and-order) and is a hint only; readers that show flags recompute them at read time (flags change with age).
 
 **G2.7 Stale cache.** A reader that finds `log_bytes` different from the log's size on disk rebuilds the cache (taking the lock) before using it.
 
@@ -328,7 +328,7 @@ The fold also records, per ask: `asked_at` (the `asked` event's `ts`), `answered
 
 Environment variables override config: `PITBOARD_MACHINE`, `PITBOARD_TZ`, `PITBOARD_HUB_URL`, `PITBOARD_SELF_UPDATE` (`0` or `1`).
 
-**G2.11 Incremental cache, with a time budget.** Logs are never rotated (G2.9), so re-folding a whole log on every write would grow without limit inside the lock, and a hook that waits 1 s (G2.3) would drop its ask. So an append updates the cache incrementally when all of these hold: the cache's `log_bytes` equals the log's size before the append; every new event was created in this same call (fresh `event_id`s); and each new event's `(ts, event_id)` sorts after the cache's `last_applied` (a new cache field: the `[ts, event_id]` of the last event the cache applied). Then it applies only the new events to the cached asks with the G1.11 table. Otherwise (inbox events, an old timestamp, a stale or missing cache) it folds the whole log. Budget: an append to a lane whose log is 20 MB finishes in under 200 ms on the CI machines; a test builds such a log and checks it.
+**G2.11 Incremental cache, with a time budget.** Logs are never rotated (G2.9), so re-folding a whole log on every write would grow without limit inside the lock, and a hook that waits 1 s (G2.3) would drop its ask. So an append updates the cache incrementally when all of these hold: the cache's `log_bytes` equals the log's size before the append; every new event was created in this same call (fresh `event_id`s); each new event's `(ts, event_id)` sorts after the cache's `last_applied` (the `[ts, event_id]` of the last event the cache applied); and each new event is an `asked` event or belongs to an ask the cache holds (a live ask). Then it applies only the new events to the cached asks with the G1.11 table, drops asks that became `done` or `withdrawn`, and takes the next short ID from `max_ask` without reading the log. Otherwise (inbox events, an old timestamp, a stale or missing cache) it folds the whole log. Budget: an append to a lane whose log is 20 MB finishes in under 200 ms on the CI machines; a test builds such a log and checks it.
 
 ### G3 Lane identity
 
