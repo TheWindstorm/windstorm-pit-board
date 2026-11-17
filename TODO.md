@@ -13,6 +13,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] M2 every lane, updating itself · M3 master list (view only) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
+- [x] 2026-11-17 M1: G2 store (lane locks, append-only logs, live-only state cache, incremental appends: 2 to 7 ms on a 20 MB log).
 - [x] 2026-11-17 M1: G5 flags (colour, rank, plain words, sort orders), codon tests; CI runs once per PR (push runs on main only).
 - [x] 2026-11-17 M1: G4 time (ET display, ages, deadlines), 34 codon tests (PR #3, merged).
 - [x] 2026-11-17 M1: G1 event format and G19 masking, 91 codon tests (PR #2).

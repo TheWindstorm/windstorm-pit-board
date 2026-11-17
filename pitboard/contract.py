@@ -388,7 +388,7 @@ def _new_state(ev):
         "asked_at": ev["ts"], "answered_at": None, "answer": None, "answered_by": None,
         "answered_via": None, "done_at": None, "done_note": None, "withdrawn_at": None,
         "withdrawn_reason": None, "updated_at": ev["ts"], "source": d.get("source"),
-        "where": clean_where(d.get("where")), "events": 1,
+        "where": clean_where(d.get("where")), "session_id": ev["session_id"], "events": 1,
     }
 
 
@@ -398,9 +398,51 @@ def _clear_round(st):
         st[k] = None
 
 
+def apply_event(asks, ev):
+    """Apply one valid event to `asks` (uid -> state) with the G1.11 table, in place.
+    Returns True when the event changed something, False when the table says ignore.
+    fold() uses it for a whole log; the store uses it for incremental updates (G2.11)."""
+    uid, t, d = ev["uid"], ev["type"], ev["data"]
+    st = asks.get(uid)
+    if st is None:
+        if t == "asked":
+            asks[uid] = _new_state(ev)
+            return True
+        return False
+    status = st["status"]
+    applied = False
+    if t == "updated" and status in ("open", "answered"):
+        for k in MUTABLE:
+            if k in d:
+                st[k] = list(d[k]) if k == "steps" else d[k]
+        applied = True
+    elif t == "answered":
+        if status == "open" or (status == "answered" and ev["by"] == "operator" and st["answered_by"] == "agent"):
+            st.update(status="answered", answered_at=ev["ts"], answer=d["answer"],
+                      answered_by=ev["by"], answered_via=d["via"])
+            applied = True
+    elif t == "done" and status in ("open", "answered"):
+        st.update(status="done", done_at=ev["ts"], done_note=d.get("note", ""))
+        applied = True
+    elif t == "withdrawn" and status in ("open", "answered"):
+        st.update(status="withdrawn", withdrawn_at=ev["ts"], withdrawn_reason=d["reason"])
+        applied = True
+    elif t == "reopened" and status in ("answered", "done", "withdrawn"):
+        _clear_round(st)
+        st["status"] = "open"
+        applied = True
+    if applied:
+        st["updated_at"] = ev["ts"]
+        st["lane_name"] = ev["lane_name"]
+        st["events"] += 1
+    return applied
+
+
 def fold(events):
     """G1.11. Returns (asks, stats): asks maps uid -> state dict in asked order;
-    stats counts duplicate, invalid, skipped (newer v or unknown type) and ignored events."""
+    stats counts duplicate, invalid, skipped (newer v or unknown type), ignored and
+    applied events, and gives lane_name (the name on the newest valid event),
+    last_applied ([ts, event_id] of the newest valid event) and max_ask (G1.12)."""
     stats = {"duplicate": 0, "invalid": 0, "skipped": 0, "ignored": 0, "applied": 0}
     seen, good = set(), []
     for ev in events:
@@ -422,46 +464,12 @@ def fold(events):
         seen.add(eid)
         good.append(ev)
     good.sort(key=lambda e: (e["ts"], e["event_id"]))
+    stats["lane_name"] = good[-1]["lane_name"] if good else None  # the newest valid event's name
+    stats["last_applied"] = [good[-1]["ts"], good[-1]["event_id"]] if good else None
+    stats["max_ask"] = max((ask_number(e["ask"]) for e in good if e["type"] == "asked"), default=0)
     asks = {}
     for ev in good:
-        uid, t, d = ev["uid"], ev["type"], ev["data"]
-        st = asks.get(uid)
-        if st is None:
-            if t == "asked":
-                asks[uid] = _new_state(ev)
-                stats["applied"] += 1
-            else:
-                stats["ignored"] += 1
-            continue
-        status = st["status"]
-        applied = False
-        if t == "updated" and status in ("open", "answered"):
-            for k in MUTABLE:
-                if k in d:
-                    st[k] = list(d[k]) if k == "steps" else d[k]
-            applied = True
-        elif t == "answered":
-            if status == "open" or (status == "answered" and ev["by"] == "operator" and st["answered_by"] == "agent"):
-                st.update(status="answered", answered_at=ev["ts"], answer=d["answer"],
-                          answered_by=ev["by"], answered_via=d["via"])
-                applied = True
-        elif t == "done" and status in ("open", "answered"):
-            st.update(status="done", done_at=ev["ts"], done_note=d.get("note", ""))
-            applied = True
-        elif t == "withdrawn" and status in ("open", "answered"):
-            st.update(status="withdrawn", withdrawn_at=ev["ts"], withdrawn_reason=d["reason"])
-            applied = True
-        elif t == "reopened" and status in ("answered", "done", "withdrawn"):
-            _clear_round(st)
-            st["status"] = "open"
-            applied = True
-        if applied:
-            st["updated_at"] = ev["ts"]
-            st["lane_name"] = ev["lane_name"]
-            st["events"] += 1
-            stats["applied"] += 1
-        else:
-            stats["ignored"] += 1
+        stats["applied" if apply_event(asks, ev) else "ignored"] += 1
     return asks, stats
 
 
