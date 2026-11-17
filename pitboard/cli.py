@@ -13,7 +13,7 @@ import socket
 import subprocess
 import sys
 
-from . import __version__, contract, flags, lane, launch, store, timefmt
+from . import __version__, contract, flags, lane, launch, render, store, timefmt
 
 WIDTH = 100
 
@@ -101,6 +101,18 @@ def parser():
         _common(p)
         p.add_argument("id")
         p.add_argument("--reason", required=True)
+
+    p = sub.add_parser("list", help="one line per ask")
+    _common(p)
+    p.add_argument("--all", action="store_true")
+    p.add_argument("--sort", choices=("severity", "deadline", "age", "lane"), default="severity")
+
+    p = sub.add_parser("board", help="the board: open asks, or history with --all")
+    _common(p)
+    p.add_argument("--all", action="store_true")
+    p.add_argument("--limit", type=int, default=render.HISTORY_LIMIT)
+    p.add_argument("--width", type=int)
+    p.add_argument("--plain", action="store_true")
 
     p = sub.add_parser("show", help="every field and event of one ask")
     _common(p)
@@ -371,6 +383,42 @@ def _events_of(key, uid):
     return out
 
 
+def _lane_asks(ctx, every):
+    if every:
+        return sorted(store.all_asks(ctx.key).values(), key=lambda a: contract.ask_number(a["ask"]))
+    try:
+        st = store.read_state(ctx.key, ctx.cfg)
+    except store.LaneBusy:
+        raise Fail(7, f"pitboard: lane busy: {ctx.key} (try again)")
+    return [a for a in st["asks"] if a["status"] == "open"]
+
+
+def cmd_list(args):
+    ctx = _Ctx(args)
+    asks = _lane_asks(ctx, args.all)
+    text = render.list_lines(asks, timefmt.zone(ctx.cfg["display_tz"]), width=render.width_of(),
+                             plain=render.plain_wanted(), order=args.sort, cfg=ctx.cfg)
+    out = Out(text, [a["ask"] for a in asks], asks)
+    out.raw = True  # render cut it to the terminal width already
+    return out
+
+
+def cmd_board(args):
+    ctx = _Ctx(args)
+    if args.limit < 0:
+        raise Fail(2, "pitboard: --limit must be 0 (all) or more")
+    tz = timefmt.zone(ctx.cfg["display_tz"])
+    width, plain = render.width_of(args.width), render.plain_wanted(args.plain)
+    asks = _lane_asks(ctx, args.all)
+    if args.all:
+        text = render.board_history(asks, ctx.name, tz, width=width, plain=plain, limit=args.limit, cfg=ctx.cfg)
+    else:
+        text = render.board_open(asks, ctx.name, tz, width=width, plain=plain, cfg=ctx.cfg)
+    out = Out(text, [a["ask"] for a in asks], asks)
+    out.raw = True
+    return out
+
+
 def cmd_show(args):
     ctx = _Ctx(args)
     ask_id = _ask_id(args.id)
@@ -455,7 +503,8 @@ def cmd_version(args):
 
 
 COMMANDS = {"add": cmd_add, "update": cmd_update, "answer": cmd_answer, "ok": cmd_ok, "no": cmd_no,
-            "done": cmd_done, "withdraw": cmd_withdraw, "reopen": cmd_reopen, "show": cmd_show,
+            "done": cmd_done, "withdraw": cmd_withdraw, "reopen": cmd_reopen, "list": cmd_list,
+            "board": cmd_board, "show": cmd_show,
             "lane": cmd_lane, "export": cmd_export, "version": cmd_version}
 
 
