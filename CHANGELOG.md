@@ -6,6 +6,9 @@ Clarifications found while building G9 (no behaviour changes elsewhere):
 - G9.3: the board skill runs `pitboard board --plain`, or `--all --plain` when its argument is `all`; `pitboard board all` was never a valid command (G6.2).
 - G20.6 and G9.5: CI runs on every pull request and every push to `main`, so each job runs once per change (it ran twice when every push and every pull request triggered it).
 
+## Plan 1.5 (2026-11-17)
+- G7.5: a PermissionRequest for `AskUserQuestion` writes nothing. On Claude Code 2.1.326 a question box also fires PermissionRequest and a `permission_prompt` Notification (check C7, `docs/CONTRACTS.md`; saved inputs under `tests/fixtures/hooks/`), so without this every question box would be two asks. New test `test_G7_5_question_box_is_one_ask`. C7 now also records which tools fire PermissionRequest. Skills Boss ruling 2026-11-17.
+
 ## Plan 1.4 (2026-11-17)
 Fixes from the DNA Strand lane's review of plan 1.2:
 - G21.12: `self_update: false` uses G21.4 step 2 (the recorded install path), one behaviour.

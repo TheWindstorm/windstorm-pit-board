@@ -1,0 +1,61 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000009",
+  "transcript_path": "/home/user/.claude/projects/-home-user-project/00000000-0000-4000-8000-000000000009.jsonl",
+  "cwd": "/home/user/project",
+  "scratchpad_dir": "/tmp/claude-1000/-home-user-project/00000000-0000-4000-8000-000000000009/scratchpad",
+  "prompt_id": "00000000-0000-4000-8000-000000000010",
+  "permission_mode": "auto",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "PostToolUse",
+  "tool_name": "AskUserQuestion",
+  "tool_input": {
+    "questions": [
+      {
+        "question": "Merge #651 now?",
+        "header": "Merge #651",
+        "options": [
+          {
+            "label": "Yes, merge",
+            "description": "Merge PR #651 now."
+          },
+          {
+            "label": "No, wait",
+            "description": "Leave PR #651 unmerged for now."
+          }
+        ],
+        "multiSelect": false
+      }
+    ],
+    "answers": {
+      "Merge #651 now?": "Yes, merge"
+    },
+    "annotations": {}
+  },
+  "tool_response": {
+    "questions": [
+      {
+        "question": "Merge #651 now?",
+        "header": "Merge #651",
+        "options": [
+          {
+            "label": "Yes, merge",
+            "description": "Merge PR #651 now."
+          },
+          {
+            "label": "No, wait",
+            "description": "Leave PR #651 unmerged for now."
+          }
+        ],
+        "multiSelect": false
+      }
+    ],
+    "answers": {
+      "Merge #651 now?": "Yes, merge"
+    },
+    "annotations": {}
+  },
+  "tool_use_id": "toolu_01Uv9Gzn8YzJBwftBg6Hs8GH",
+  "duration_ms": 1
+}
