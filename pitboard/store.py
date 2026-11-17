@@ -9,6 +9,7 @@ import os
 import re
 import socket
 import time
+from datetime import timedelta
 
 from . import contract, flags
 
@@ -328,6 +329,33 @@ def _write_lines(key, lines):
         os.close(fd)
 
 
+TIE_WINDOW = timedelta(seconds=1)
+ONE_MS = timedelta(milliseconds=1)
+
+
+def _no_ties(events, last_applied):
+    """G2.12: this writer's events sort after the lane's newest event and after each other,
+    so a `done` then `reopened` in one millisecond keep their order. A gap over 1 s is
+    another machine's clock and is left alone; hub events keep their ts."""
+    floor = None
+    if last_applied:
+        try:
+            floor = contract.parse_ts(last_applied[0])
+        except ValueError:
+            floor = None
+    for ev in events:
+        if not isinstance(ev, dict) or ev.get("origin") != "lane":
+            continue
+        try:
+            ts = contract.parse_ts(ev.get("ts"))
+        except ValueError:
+            continue                       # validation refuses it next
+        if floor is not None and ts <= floor and floor - ts <= TIE_WINDOW:
+            ts = floor + ONE_MS
+            ev["ts"] = contract.ts_of(ts)
+        floor = ts if floor is None or ts > floor else floor
+
+
 def append(key, build, mode="refuse", lock_timeout=LOCK_WAIT_COMMAND, cfg=None, full=False):
     """Append events to a lane log under its lock (INV1).
 
@@ -359,6 +387,7 @@ def append(key, build, mode="refuse", lock_timeout=LOCK_WAIT_COMMAND, cfg=None, 
         new = build(view)
         if isinstance(new, dict):
             new = [new]
+        _no_ties(new, stats.get("last_applied"))
         prepared = [contract.prepare(ev, mode=mode) for ev in new]
         lines = [contract.serialize(ev) for ev in prepared]
         if lines:

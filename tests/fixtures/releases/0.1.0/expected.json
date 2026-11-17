@@ -161,7 +161,7 @@
     "fixture-lane": {
       "asks": [
         {
-          "uid": "d8f565bb41dc4148b9f5e84c320822cc",
+          "uid": "cf031fedc3c549599cefc77815780962",
           "ask": "A1",
           "lane": "fixture-lane",
           "lane_name": "Fixture Lane",
@@ -175,16 +175,16 @@
           "deadline": null,
           "detail": "",
           "why": "CI green",
-          "asked_at": "2026-11-17T20:32:57.459Z",
-          "answered_at": "2026-11-17T20:32:57.522Z",
+          "asked_at": "2026-11-17T21:28:50.884Z",
+          "answered_at": "2026-11-17T21:28:50.960Z",
           "answer": "merge now (CI green)",
           "answered_by": "operator",
           "answered_via": "ok",
-          "done_at": "2026-11-17T20:32:57.534Z",
+          "done_at": "2026-11-17T21:28:50.967Z",
           "done_note": "merged",
           "withdrawn_at": null,
           "withdrawn_reason": null,
-          "updated_at": "2026-11-17T20:32:57.534Z",
+          "updated_at": "2026-11-17T21:28:50.967Z",
           "source": "agent",
           "where": {
             "cwd": "/home/user/project",
@@ -194,7 +194,7 @@
           "events": 4
         },
         {
-          "uid": "44c55987b065470ca7f84de2953d1058",
+          "uid": "7daef09f073f459b8a53147be26a8dd5",
           "ask": "A2",
           "lane": "fixture-lane",
           "lane_name": "Fixture Lane",
@@ -211,7 +211,7 @@
           "deadline": "2026-11-20T22:00:00.000Z",
           "detail": "",
           "why": "",
-          "asked_at": "2026-11-17T20:32:57.470Z",
+          "asked_at": "2026-11-17T21:28:50.908Z",
           "answered_at": null,
           "answer": null,
           "answered_by": null,
@@ -220,7 +220,7 @@
           "done_note": null,
           "withdrawn_at": null,
           "withdrawn_reason": null,
-          "updated_at": "2026-11-17T20:32:57.470Z",
+          "updated_at": "2026-11-17T21:28:50.908Z",
           "source": "agent",
           "where": {
             "cwd": "/home/user/project",
@@ -230,7 +230,7 @@
           "events": 1
         },
         {
-          "uid": "a7398046d9514f69bb28f4bd9d5094ac",
+          "uid": "13a6a87c62704392ac72de4c41546f5b",
           "ask": "A3",
           "lane": "fixture-lane",
           "lane_name": "Fixture Lane",
@@ -244,8 +244,8 @@
           "deadline": null,
           "detail": "",
           "why": "",
-          "asked_at": "2026-11-17T20:32:57.480Z",
-          "answered_at": "2026-11-17T20:32:57.540Z",
+          "asked_at": "2026-11-17T21:28:50.921Z",
+          "answered_at": "2026-11-17T21:28:50.971Z",
           "answer": "No.",
           "answered_by": "operator",
           "answered_via": "no",
@@ -253,7 +253,7 @@
           "done_note": null,
           "withdrawn_at": null,
           "withdrawn_reason": null,
-          "updated_at": "2026-11-17T20:32:57.540Z",
+          "updated_at": "2026-11-17T21:28:50.971Z",
           "source": "agent",
           "where": {
             "cwd": "/home/user/project",
@@ -263,7 +263,7 @@
           "events": 2
         },
         {
-          "uid": "381f3c4ccd8545dea30616a4cda0cea2",
+          "uid": "df60aca891534227beec99a2c71240c5",
           "ask": "A4",
           "lane": "fixture-lane",
           "lane_name": "Fixture Lane",
@@ -277,7 +277,7 @@
           "deadline": null,
           "detail": "two lines\nof detail",
           "why": "",
-          "asked_at": "2026-11-17T20:32:57.486Z",
+          "asked_at": "2026-11-17T21:28:50.929Z",
           "answered_at": null,
           "answer": null,
           "answered_by": null,
@@ -286,7 +286,7 @@
           "done_note": null,
           "withdrawn_at": null,
           "withdrawn_reason": null,
-          "updated_at": "2026-11-17T20:32:57.559Z",
+          "updated_at": "2026-11-17T21:28:50.989Z",
           "source": "agent",
           "where": {
             "cwd": "/home/user/project",
@@ -296,7 +296,7 @@
           "events": 4
         },
         {
-          "uid": "9058ba75d0ca429f9518f1cd3098d363",
+          "uid": "30da43b7bdb24f359516984108a6aede",
           "ask": "A5",
           "lane": "fixture-lane",
           "lane_name": "Fixture Lane",
@@ -310,16 +310,16 @@
           "deadline": null,
           "detail": "",
           "why": "",
-          "asked_at": "2026-11-17T20:32:57.492Z",
+          "asked_at": "2026-11-17T21:28:50.937Z",
           "answered_at": null,
           "answer": null,
           "answered_by": null,
           "answered_via": null,
           "done_at": null,
           "done_note": null,
-          "withdrawn_at": "2026-11-17T20:32:57.550Z",
+          "withdrawn_at": "2026-11-17T21:28:50.980Z",
           "withdrawn_reason": "moot",
-          "updated_at": "2026-11-17T20:32:57.550Z",
+          "updated_at": "2026-11-17T21:28:50.980Z",
           "source": "agent",
           "where": {
             "cwd": "/home/user/project",
@@ -329,7 +329,7 @@
           "events": 2
         },
         {
-          "uid": "1c96fdfc6c6f4356aa22bd2f36d58dcd",
+          "uid": "49b7f78864e94c90ad00f53012865780",
           "ask": "A6",
           "lane": "fixture-lane",
           "lane_name": "Fixture Lane",
@@ -343,7 +343,7 @@
           "deadline": null,
           "detail": "",
           "why": "",
-          "asked_at": "2026-11-17T20:32:57.497Z",
+          "asked_at": "2026-11-17T21:28:50.943Z",
           "answered_at": null,
           "answer": null,
           "answered_by": null,
@@ -352,7 +352,7 @@
           "done_note": null,
           "withdrawn_at": null,
           "withdrawn_reason": null,
-          "updated_at": "2026-11-17T20:32:57.497Z",
+          "updated_at": "2026-11-17T21:28:50.943Z",
           "source": "agent",
           "where": {
             "cwd": "/home/user/project",
@@ -366,7 +366,7 @@
     "second-lane": {
       "asks": [
         {
-          "uid": "9e5200d055e54fda8a409d9e09ce9925",
+          "uid": "55e2e598357848dd9bfd615e1383f719",
           "ask": "A1",
           "lane": "second-lane",
           "lane_name": "second-lane",
@@ -382,8 +382,8 @@
           "deadline": null,
           "detail": "",
           "why": "",
-          "asked_at": "2026-11-17T20:32:57.566Z",
-          "answered_at": "2026-11-17T20:32:57.572Z",
+          "asked_at": "2026-11-17T21:28:50.993Z",
+          "answered_at": "2026-11-17T21:28:51.000Z",
           "answer": "done it",
           "answered_by": "agent",
           "answered_via": "text",
@@ -391,7 +391,7 @@
           "done_note": null,
           "withdrawn_at": null,
           "withdrawn_reason": null,
-          "updated_at": "2026-11-17T20:32:57.572Z",
+          "updated_at": "2026-11-17T21:28:51.000Z",
           "source": "agent",
           "where": {
             "cwd": "/home/user/project",

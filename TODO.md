@@ -7,7 +7,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] 2026-11-17 M1: pilot in one lane; the operator samples it before any other lane gets it.
 
 ## Waiting on
-- [ ] 2026-11-17 Before the first release (G21.1): a tag protection ruleset (gh skill publish --dry-run warns that none exists, C15); if pilot fixes changed what gets written, delete and save tests/fixtures/releases/0.1.0 again in the release PR (it is final once tagged).
+- [ ] 2026-11-17 Before the first release (G21.1): if pilot fixes change what gets written, delete and save tests/fixtures/releases/0.1.0 again in the release PR (it is final once tagged).
 - [ ] 2026-11-17 Plan 1.5: G7.5 ignores PermissionRequest for AskUserQuestion (C7 finding, docs/CONTRACTS.md); before G7.5 is built (M2).
 
 ## Later
@@ -15,6 +15,8 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] M2 every lane, updating itself · M3 master list (view only) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
+- [x] 2026-11-17 Tag ruleset "release tags are immutable" on refs/tags/v* (no delete, update or force-push; creating a tag is allowed), id 27497878 (C15 warning).
+- [x] 2026-11-17 M1: G2.12 one writer's events never tie (same-millisecond done then reopen kept in order; found by a macOS CI run); 0.1.0 release folder saved again with it.
 - [x] 2026-11-17 M1: G10.5 status line wrapper caps Pit Board's part at 1 s (timeout/gtimeout); a slow or broken segment leaves the operator's own line alone (plan 1.7).
 - [x] 2026-11-17 M1: G21.11 compatibility test (replays tests/fixtures/releases/<version>/: old logs fold the same, old cache read, config keys keep their meaning, newer-machine events skipped cleanly); 0.1.0 folder saved.
 - [x] 2026-11-17 M1: C3 settled (session_title is only the --name or /rename name), so G3.2 step 1 is on; C15 recorded (gh skill publish --dry-run passes on CI).
