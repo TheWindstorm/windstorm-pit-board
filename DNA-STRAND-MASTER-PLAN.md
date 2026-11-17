@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.4 · 2026-11-17 · The Windstorm**
+**Plan version 1.5 · 2026-11-17 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -492,7 +492,7 @@ Each handler writes at most one JSON object to stdout. Context for the model goe
 
 **G7.4 PostToolUse** (matcher `*`; this part acts only when `tool_name` is `AskUserQuestion`). Find this session's open `question-box` asks from G7.3 (same tool use ID when available, else all open `question-box` asks of the session) and append `answered` with `via: question-box`, `by: operator`, `answer` = the chosen answers as text (check C6 for the shape).
 
-**G7.5 PermissionRequest** (documented; its input has `tool_name` and `tool_input`, no `tool_use_id`). The handler returns no decision, so the prompt shows as usual. Append `asked` with `kind: permission`, `severity: blocking`, `source: permission`, `title` = `Allow <tool name>?` plus the command or file when given (cut to 120), `detail` = `tool_input` as compact JSON (masked, cut to 2 000). `by: hook`. It is closed by whichever comes first:
+**G7.5 PermissionRequest** (documented; its input has `tool_name` and `tool_input`, no `tool_use_id`). The handler returns no decision, so the prompt shows as usual. When `tool_name` is `AskUserQuestion` it writes nothing: a question box also fires PermissionRequest (and a `permission_prompt` Notification), and G7.3 already records it (check C7 on Claude Code 2.1.326; the saved inputs `tests/fixtures/hooks/PreToolUse/AskUserQuestion.json`, `tests/fixtures/hooks/PermissionRequest/AskUserQuestion.json` and `tests/fixtures/hooks/Notification/permission_prompt.json` come from one question box). `test_G7_5_question_box_is_one_ask` feeds those three inputs, in that order, to `pitboard hook` and checks the lane holds exactly one ask, with `source: question-box`. Otherwise it appends `asked` with `kind: permission`, `severity: blocking`, `source: permission`, `title` = `Allow <tool name>?` plus the command or file when given (cut to 120), `detail` = `tool_input` as compact JSON (masked, cut to 2 000). `by: hook`. It is closed by whichever comes first:
 - a PostToolUse in this session whose `tool_name` and `tool_input` are equal to the ones recorded: `answered`, `via: permission`, `answer: "allowed"`, `by: hook`;
 - G7.2 step 5 or G7.6 step 1: `withdrawn`, reason `prompt closed`.
 
@@ -922,7 +922,7 @@ Claude Code changes often. These are the facts the hooks depend on. Before writi
 | C4 | Whether a typed `/board` (not a registered command) reaches UserPromptSubmit; whether UserPromptExpansion can block like UserPromptSubmit; whether ANSI colours in a block reason are shown. | G7.2, G7.9 | `pb` only; the board skill (G9.3); `--plain` output. |
 | C5 | One real Stop input with `last_assistant_message`, recorded as a fixture. | G8 | Read the transcript. |
 | C6 | The shapes of `tool_input.questions` and of PostToolUse's `tool_response` for `AskUserQuestion`. | G7.3, G7.4 | If PostToolUse has no answers, record `answer: "answered in the question box"`. |
-| C7 | A PermissionRequest hook that returns nothing leaves the normal prompt unchanged. | G7.5 | Use Notification with `notification_type: permission_prompt` instead. |
+| C7 | A PermissionRequest hook that returns nothing leaves the normal prompt unchanged. Also record which tools fire it (2.1.326: `AskUserQuestion` does, so G7.5 skips it). | G7.5 | Use Notification with `notification_type: permission_prompt` instead. |
 | C8 | The exact name of the board skill (`/windstorm-pit-board:board`) and that `$ARGUMENTS` reaches it. | G9.3, G7.9 | Whatever name the platform gives. |
 | C9 | Removed in plan 1.1: the documentation settles it (a plugin cannot set `statusLine`, G10.5). | | |
 | C10 | `TMUX_PANE` reaches hooks in a tmux session. | G12, G1.3 `where` | Leave `where.tmux_*` empty; badge only from commands the agent runs. |
