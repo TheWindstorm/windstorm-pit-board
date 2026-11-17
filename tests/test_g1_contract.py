@@ -128,10 +128,28 @@ def test_G1_6_done_note_optional():
     assert not c.is_valid(ev("done", {"note": "x" * 501}))
 
 
-def test_G1_7_G1_8_reason_required():
-    for t in ("withdrawn", "reopened"):
-        assert c.is_valid(ev(t, {"reason": "moot"}))
-        assert not c.is_valid(ev(t, {}))
+def test_G1_7_withdrawn_reason_required():
+    assert c.is_valid(ev("withdrawn", {"reason": "moot"}))
+    assert not c.is_valid(ev("withdrawn", {}))
+    assert not c.is_valid(ev("withdrawn", {"reason": "x" * 501}))
+
+
+def test_G1_8_reopened_reason_required():
+    assert c.is_valid(ev("reopened", {"reason": "it matters again"}))
+    assert not c.is_valid(ev("reopened", {}))
+    assert not c.is_valid(ev("reopened", {"reason": ""}))
+
+
+def test_G1_11_apply_event_matches_fold():
+    seq = [ev("asked", asked(), ts="2026-11-15T13:00:00.000Z"),
+           ev("answered", {"answer": "a", "via": "ok"}, by="operator", ts="2026-11-15T13:01:00.000Z")]
+    asks = {}
+    assert c.apply_event(asks, seq[0]) and c.apply_event(asks, seq[1])
+    assert not c.apply_event(asks, ev("asked", asked(), ts="2026-11-15T13:02:00.000Z"))
+    folded, stats = c.fold(seq)
+    assert asks == folded
+    assert stats["max_ask"] == 1 and stats["last_applied"] == [seq[1]["ts"], seq[1]["event_id"]]
+    assert folded[UID]["session_id"] == "s-1"
 
 
 # ---------------------------------------------------------------- G1.9
