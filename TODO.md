@@ -15,6 +15,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] M2 every lane, updating itself · M3 master list (view only) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
+- [x] 2026-11-17 M1: G10.5 status line wrapper caps Pit Board's part at 1 s (timeout/gtimeout); a slow or broken segment leaves the operator's own line alone (plan 1.7).
 - [x] 2026-11-17 M1: G21.11 compatibility test (replays tests/fixtures/releases/<version>/: old logs fold the same, old cache read, config keys keep their meaning, newer-machine events skipped cleanly); 0.1.0 folder saved.
 - [x] 2026-11-17 M1: C3 settled (session_title is only the --name or /rename name), so G3.2 step 1 is on; C15 recorded (gh skill publish --dry-run passes on CI).
 - [x] 2026-11-17 M1: G9 skills (pit-board = Appendix A.5 word for word, board), stdlib format test, gh skill publish --dry-run CI job (G9.5), CI rules test (G20.8).

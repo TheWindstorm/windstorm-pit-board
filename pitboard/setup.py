@@ -14,6 +14,7 @@ from . import store
 
 MARK = "# pitboard-original-command: "
 WRAPPER_NAME = "statusline.sh"
+STATUS_CAP_SECONDS = 1   # G10.5: past this, the operator's own line prints alone
 
 
 def claude_settings_path():
@@ -58,7 +59,9 @@ def original_from_wrapper(path):
 
 def wrapper_text(original, home):
     """G10.5: run the operator's status line with the same input, then Pit Board's segment,
-    joined with ' · ' when both print something."""
+    joined with ' · ' when both print something. Pit Board's part runs under a cap (timeout,
+    or gtimeout on macOS, when either exists); on an error or the cap only the operator's
+    line is printed (G10.4)."""
     launcher = os.path.join(home, "bin", "pitboard")
     lines = [
         "#!/bin/sh",
@@ -72,7 +75,10 @@ def wrapper_text(original, home):
     else:
         lines.append("own=")
     lines += [
-        f"pb=$(printf '%s' \"$in\" | PITBOARD_HOME={shlex.quote(home)} {shlex.quote(launcher)} status 2>/dev/null)",
+        "CAP=",
+        f"if command -v timeout >/dev/null 2>&1; then CAP='timeout {STATUS_CAP_SECONDS}'; "
+        f"elif command -v gtimeout >/dev/null 2>&1; then CAP='gtimeout {STATUS_CAP_SECONDS}'; fi",
+        f"pb=$(printf '%s' \"$in\" | PITBOARD_HOME={shlex.quote(home)} $CAP {shlex.quote(launcher)} status 2>/dev/null) || pb=",
         'if [ -n "$own" ] && [ -n "$pb" ]; then printf \'%s · %s\' "$own" "$pb"; else printf \'%s%s\' "$own" "$pb"; fi',
         "",
     ]
