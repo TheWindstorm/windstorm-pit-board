@@ -5,12 +5,8 @@ Exit codes (G6.3): 0 ok, 1 unexpected error, 2 bad usage, 3 lane unknown, 4 ask 
 Standard library only.
 """
 import argparse
-import csv
-import io
 import json
 import os
-import socket
-import subprocess
 import sys
 
 from . import __version__, contract, flags, lane, launch, render, store, timefmt
@@ -114,6 +110,10 @@ def parser():
     p.add_argument("--width", type=int)
     p.add_argument("--plain", action="store_true")
 
+    p = sub.add_parser("status", help="the status line segment (reads the status line JSON on stdin)")
+    _common(p)
+    p.add_argument("--plain", action="store_true")
+
     p = sub.add_parser("show", help="every field and event of one ask")
     _common(p)
     p.add_argument("id")
@@ -128,6 +128,16 @@ def parser():
 
     p = sub.add_parser("version", help="running, installed and pinned versions")
     _common(p)
+    return top
+
+
+def _status_parser():
+    """G10.3: the status line runs often, so status builds only its own parser."""
+    top = _Parser(prog="pitboard")
+    sub = top.add_subparsers(dest="command", parser_class=_Parser)
+    p = sub.add_parser("status")
+    _common(p)
+    p.add_argument("--plain", action="store_true")
     return top
 
 
@@ -157,6 +167,7 @@ def _lane_name(key):
 
 
 def _tmux(pane, fmt):
+    import subprocess
     try:
         r = subprocess.run(["tmux", "display", "-p", "-t", pane, fmt], capture_output=True, text=True,
                            timeout=1)
@@ -167,6 +178,7 @@ def _tmux(pane, fmt):
 
 def where():
     """G6.7: where the ask was made; values failing the G1.3 pattern are dropped."""
+    import socket
     w = {"host": socket.gethostname().split(".")[0]}
     try:
         w["cwd"] = os.getcwd()
@@ -419,6 +431,68 @@ def cmd_board(args):
     return out
 
 
+STATUSLINE_SEEN_SECONDS = 60
+
+
+def _status_input(stdin):
+    try:
+        if stdin is None or stdin.isatty():
+            return {}
+        obj = json.loads(stdin.read() or "{}")
+        return obj if isinstance(obj, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _note_session_name(sid, name, row):
+    """G10.6: session_name sets lane_name only, at most once a minute per session."""
+    if not name or not isinstance(name, str) or row.get("lane_name") == name:
+        return
+    seen_path = os.path.join(store.home(), "state", "statusline-seen.json")
+    seen = store.read_json(seen_path, {})
+    seen = seen if isinstance(seen, dict) else {}
+    now = contract.now_ts()
+    last = seen.get(sid)
+    if isinstance(last, str) and contract.TS.match(last):
+        if (contract.parse_ts(now) - contract.parse_ts(last)).total_seconds() < STATUSLINE_SEEN_SECONDS:
+            return
+    lane.resolve(sid, name.strip()[: contract.LANE_NAME_MAX], lock_timeout=0.05)
+    seen[sid] = now
+    os.makedirs(os.path.dirname(seen_path), exist_ok=True)
+    store.write_json_atomic(seen_path, seen)
+
+
+def cmd_status(args, stdin=None):
+    """G10: one line, no newline, nothing when nothing is open; never fails loudly (G10.4)."""
+    out = Out("")
+    out.raw, out.nonl = True, True
+    try:
+        inp = _status_input(sys.stdin if stdin is None else stdin)
+        sid = inp.get("session_id") if isinstance(inp.get("session_id"), str) else None
+        key = None
+        if sid and not args.lane:
+            row = lane.read_map().get(sid)
+            if isinstance(row, dict) and contract.LANE_KEY.match(str(row.get("lane", ""))):
+                key = row["lane"]
+                try:
+                    _note_session_name(sid, inp.get("session_name"), row)
+                except Exception:  # noqa: BLE001 - the segment still prints
+                    pass
+        if key is None:
+            try:
+                key = lane.find(args.lane)
+            except lane.NoLane:
+                return out
+        cfg = store.config()
+        st = store.read_state(key, cfg, lock_timeout=0.05)
+        out.message = render.status_segment(st, plain=render.plain_wanted(args.plain), cfg=cfg)
+        out.asks = [a for a in st["asks"] if a["status"] == "open"]
+        out.ids = [a["ask"] for a in out.asks]
+    except Exception:  # noqa: BLE001
+        out.message, out.ids, out.asks = "", [], []
+    return out
+
+
 def cmd_show(args):
     ctx = _Ctx(args)
     ask_id = _ask_id(args.id)
@@ -461,6 +535,8 @@ def cmd_export(args):
         for k in keys:
             events += [e for e in store.read_log(k)[0] if contract.is_valid(e)]
         return _raw("".join(contract.serialize(e).decode("utf-8") for e in events), data={"events": events})
+    import csv
+    import io
     asks = []
     for k in keys:
         asks += sorted(store.all_asks(k).values(), key=lambda a: contract.ask_number(a["ask"]))
@@ -504,7 +580,7 @@ def cmd_version(args):
 
 COMMANDS = {"add": cmd_add, "update": cmd_update, "answer": cmd_answer, "ok": cmd_ok, "no": cmd_no,
             "done": cmd_done, "withdraw": cmd_withdraw, "reopen": cmd_reopen, "list": cmd_list,
-            "board": cmd_board, "show": cmd_show,
+            "board": cmd_board, "status": cmd_status, "show": cmd_show,
             "lane": cmd_lane, "export": cmd_export, "version": cmd_version}
 
 
@@ -518,7 +594,9 @@ def _emit(out, as_json, code, stdout, stderr):
     if not out.message:
         return
     text = out.message if getattr(out, "raw", False) else fit(out.message)
-    (stdout if code == 0 else stderr).write(text if text.endswith("\n") else text + "\n")
+    if not getattr(out, "nonl", False) and not text.endswith("\n"):
+        text += "\n"
+    (stdout if code == 0 else stderr).write(text)
 
 
 def main(argv=None, stdout=None, stderr=None):
@@ -527,7 +605,7 @@ def main(argv=None, stdout=None, stderr=None):
     as_json = "--json" in argv
     try:
         try:
-            args = parser().parse_args(argv)
+            args = (_status_parser() if argv[:1] == ["status"] else parser()).parse_args(argv)
         except SystemExit as e:  # --help
             return int(e.code or 0)
         out = COMMANDS[args.command](args)
