@@ -8,11 +8,14 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIX = os.path.join(HERE, "fixtures", "hooks")
-NAMES = sorted(n[:-5] for n in os.listdir(FIX) if n.endswith(".json"))
+# G20.2 layout: tests/fixtures/hooks/<event>/<variant>.json; a test name "Event-variant" maps to it
+NAMES = sorted(f"{ev}-{n[:-5]}" for ev in os.listdir(FIX) if os.path.isdir(os.path.join(FIX, ev))
+               for n in os.listdir(os.path.join(FIX, ev)) if n.endswith(".json"))
 
 
 def load(name):
-    with open(os.path.join(FIX, name + ".json"), encoding="utf-8") as f:
+    ev, _, variant = name.partition("-")
+    with open(os.path.join(FIX, ev, (variant or "basic") + ".json"), encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -43,7 +46,7 @@ def test_C4_typed_slash_reaches_prompt_submit_then_expansion():
 
 
 def test_C5_stop_has_last_assistant_message():
-    s = load("Stop")
+    s = load("Stop-basic")
     assert isinstance(s["last_assistant_message"], str) and s["stop_hook_active"] is False
 
 
