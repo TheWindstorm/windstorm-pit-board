@@ -4,6 +4,7 @@ import os
 import stat
 import subprocess
 import sys
+from datetime import timedelta
 
 import pytest
 
@@ -283,3 +284,52 @@ def test_G2_11_append_on_a_20MB_log_under_200ms():
     assert st["max_ask"] == n + 3 and st["open"] == 3
     print(f"G2.11 append ms: {[round(x * 1000) for x in times]}")
     assert min(times) < 0.2, f"append took {min(times) * 1000:.0f} ms on a {size // 1048576} MB log"
+
+
+# ---------------------------------------------------------------- G2.12
+
+@pytest.fixture
+def frozen_clock(monkeypatch):
+    """Every event in the same millisecond, with event IDs that sort newest first:
+    the worst case for G1.11's (ts, event_id) order."""
+    ids = iter(f"{n:032x}" for n in range(10 ** 6, 0, -1))
+    monkeypatch.setattr(c, "now_ts", lambda: "2026-11-17T21:00:00.000Z")
+    monkeypatch.setattr(c, "new_id", lambda: next(ids))
+
+
+def test_G2_12_done_then_reopen_in_one_millisecond_keep_their_order(frozen_clock):
+    s.append("api", asked_builder())
+    s.append("api", lambda v: _close(v, "A1"))
+    _, st = s.append("api", lambda v: _close(v, "A1", "reopened"), full=True)
+    assert [a["ask"] for a in st["asks"]] == ["A1"] and st["open"] == 1
+    events, _ = s.read_log("api")
+    stamps = [e["ts"] for e in events]
+    assert stamps == ["2026-11-17T21:00:00.000Z", "2026-11-17T21:00:00.001Z", "2026-11-17T21:00:00.002Z"]
+    assert c.fold(events)[0][events[0]["uid"]]["status"] == "open"           # a reader's full fold agrees
+
+
+def test_G2_12_events_of_one_append_are_spaced(frozen_clock):
+    def two(v):
+        first = asked_builder()(v)
+        second = c.make_event("done", uid=first["uid"], ask=first["ask"], lane="api", lane_name="API",
+                              machine="studio-1", session_id="s1", by="agent", data={})
+        return [first, second]
+    s.append("api", asked_builder(title="Before?"))
+    written, _ = s.append("api", two)
+    assert [e["ts"] for e in written] == ["2026-11-17T21:00:00.001Z", "2026-11-17T21:00:00.002Z"]
+
+
+def test_G2_12_other_clocks_and_hub_events_keep_their_ts(monkeypatch):
+    s.append("api", asked_builder())
+    newest = s.read_state("api")["last_applied"][0]
+    late = c.ts_of(c.parse_ts(newest) - timedelta(seconds=5))          # another machine, 5 s behind
+    monkeypatch.setattr(c, "now_ts", lambda: late)
+    written, _ = s.append("api", asked_builder(title="Slow clock?"))
+    assert written[0]["ts"] == late
+    hub = asked_builder(title="From the page?")
+    def from_hub(v):
+        ev = hub(v)
+        ev["origin"], ev["ts"] = "hub", newest
+        return ev
+    written, _ = s.append("api", from_hub)
+    assert written[0]["ts"] == newest
