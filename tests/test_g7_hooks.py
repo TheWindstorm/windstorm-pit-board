@@ -75,7 +75,9 @@ def add(key, title="Merge #651 now?", **kw):
 
 
 def start(home, name="API Server"):
-    return hook("session-start", fixture("session-start", "startup", transcript_path=transcript(home, name)))
+    # C3: session_title holds the --name//rename name (G3.2 step 1); the transcript says the same
+    return hook("session-start", fixture("session-start", "startup", transcript_path=transcript(home, name),
+                                         session_title=name))
 
 
 def ctx_of(out):
@@ -162,7 +164,8 @@ def test_G7_1_never_overwrites_other_plugins_lines(home):
 
 @pytest.mark.parametrize("source", ["startup", "resume", "compact", "clear", "fork"])
 def test_G7_1_every_source(home, source):
-    obj = fixture("session-start", source, transcript_path=transcript(home, "API Server"), source=source)
+    obj = fixture("session-start", source, transcript_path=transcript(home, "API Server"), source=source,
+                  session_title="API Server")
     assert "api-server" in ctx_of(hook("session-start", obj))
 
 

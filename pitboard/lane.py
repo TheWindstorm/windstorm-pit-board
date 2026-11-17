@@ -8,9 +8,11 @@ import re
 
 from . import contract, store
 
-# G3.2 step 1 uses SessionStart's session_title only once check C3 (Part 7) confirms it
-# holds the /rename name. Until docs/CONTRACTS.md records that, step 2 is the first step.
-SESSION_TITLE_IS_RENAME = False
+# G3.2 step 1: check C3 (docs/CONTRACTS.md) confirmed that SessionStart's session_title
+# is only ever the /rename or --name name; a never-named session has none, headless or
+# interactive. A --name session can lack the transcript record at its first SessionStart,
+# so session_title comes first. Set False to fall back to the transcript alone.
+SESSION_TITLE_IS_RENAME = True
 
 TITLE_MARK = b'"custom-title"'
 CHUNK = 1 << 20

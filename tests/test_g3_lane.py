@@ -75,11 +75,19 @@ def test_G3_2_no_rename_no_file_bad_lines(tmp_path):
     assert L.title_from_transcript(str(bad)) is None
 
 
-def test_G3_2_session_title_only_after_C3(tmp_path, monkeypatch):
+def test_G3_2_session_title_first_C3_confirmed(tmp_path, monkeypatch):
     p = _transcript(tmp_path, [{"type": "custom-title", "customTitle": "From Rename"}])
-    assert L.lane_name("Generated title", p) == "From Rename"
-    monkeypatch.setattr(L, "SESSION_TITLE_IS_RENAME", True)
+    assert L.SESSION_TITLE_IS_RENAME is True                   # C3: session_title is the rename name
     assert L.lane_name("Confirmed title", p) == "Confirmed title"
+    # a --name session at its first SessionStart: no custom-title record in the transcript yet
+    (tmp_path / "named").mkdir()
+    empty = _transcript(tmp_path / "named", [{"type": "user"}])
+    assert L.lane_name("Windstorm Pitboard", empty) == "Windstorm Pitboard"
+    assert L.key_of(L.lane_name("Windstorm Pitboard", empty), SID) == "windstorm-pitboard"
+    # never named: no session_title (C3), so the transcript step, then the session- key
+    assert L.lane_name(None, p) == "From Rename" and L.lane_name("  ", p) == "From Rename"
+    monkeypatch.setattr(L, "SESSION_TITLE_IS_RENAME", False)
+    assert L.lane_name("Confirmed title", p) == "From Rename"
 
 
 def test_G3_3_map_shape_and_atomic_lock(tmp_home):
