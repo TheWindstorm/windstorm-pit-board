@@ -1,0 +1,10 @@
+{
+  "name": "windstorm-pit-board",
+  "version": "0.1.0",
+  "description": "Windstorm Pit Board: every ask an agent needs from you, out of the scroll. Per-lane log, status line count, `pb` board, reminder after compaction.",
+  "author": {"name": "The Windstorm"},
+  "homepage": "https://github.com/TheWindstorm/windstorm-pit-board",
+  "repository": "https://github.com/TheWindstorm/windstorm-pit-board",
+  "license": "Apache-2.0",
+  "keywords": ["asks", "operator", "status line", "multi-agent", "tmux", "hooks"]
+}

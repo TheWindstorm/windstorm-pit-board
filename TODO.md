@@ -13,6 +13,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] M2 every lane, updating itself · M3 master list (view only) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
+- [x] 2026-11-17 M1: G7 hooks for M1 (hooks.json in the G7.0 shape; session-start reminder and env line; user-prompt-submit pb board, ok/no, mentions, stale prompts; stop idle mark; cwd-changed), G16.4 busy/idle, G21.6 generation 1, plugin.json 0.1.0.
 - [x] 2026-11-17 M1: G18.1 setup --minimal (config, stable launcher copy, statusline.sh wrapper joining the operator's own line; plan first, --apply with backups).
 - [x] 2026-11-17 M1: G10 status segment (nothing when nothing waits; worst colour, blinks for blinking red; about 45 ms through bin/pitboard at load 28; session_name sets lane_name once a minute). The statusline.sh join (G10.5) comes with setup (G18).
 - [x] 2026-11-17 M1: G11 board (open view, history, list; widths counted in terminal columns, colour on the flag only).

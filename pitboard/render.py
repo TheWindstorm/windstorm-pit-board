@@ -217,3 +217,56 @@ def status_segment(state, now=None, plain=False, cfg=None):
     word = f"{flags.word(worst)} " if plain else ""
     text = f"{flags.SYMBOL[worst]} {word}{n} ask{'s' if n != 1 else ''} · oldest {timefmt.age(oldest, now_dt)}"
     return flags.paint(text, worst, plain)
+
+
+REMINDER_MAX_CHARS = 3000
+
+
+def _reminder_item(a, now_dt, tz, cfg):
+    f = _flag(a, now_dt, cfg)
+    head = f"- {a['ask']} [{flags.word(f)}, {timefmt.age(a['asked_at'], now_dt)}] "
+    if a.get("kind") == "hand":
+        text = f"YOUR HAND: {a.get('title')}."
+    else:
+        text = a.get("title") or ""
+        if a.get("suggested"):
+            text += f" Suggested: {a['suggested'].rstrip('.')}."
+    if a.get("deadline"):
+        text += f" Due {timefmt.show(a['deadline'], tz, now_dt)}."
+    return head + text
+
+
+def reminder_text(key, lane_name, machine, asks, tz, now=None, cfg=None):
+    """G7.7: the SessionStart reminder for the model. Under 3 000 characters."""
+    cfg = cfg or {}
+    now_dt = now or datetime.now(timezone.utc)
+    op = cfg.get("operator_name") or "you"
+    if op.lower() == "you":  # the reminder is read by the model: "you" would mean the agent
+        op = "the operator"
+    limit = int(cfg.get("reminder_max_items") or 20)
+    first = f'Pit Board: you are lane "{lane_name}" (key {key}) on {machine}.'
+    rules_add = f"Rules: record every new ask with `pitboard add` before you ask it, and start the chat question with its ID."
+    rules_more = (f"If {op} has answered one, run `pitboard answer <ID> --by operator --answer \"...\"`. "
+                  "If it no longer matters, `pitboard withdraw <ID> --reason \"...\"`. "
+                  "Do not ask again in chat unless it still blocks your next step.")
+    open_asks = flags.sort_asks([a for a in asks if a.get("status") == "open"], "severity", now_dt,
+                                escalate_after_hours=cfg.get("escalate_after_hours", 24),
+                                urgent_deadline_hours=cfg.get("urgent_deadline_hours", 24))
+    page = sorted((a for a in asks if a.get("status") == "answered" and a.get("answered_via") == "page"),
+                  key=lambda a: contract.ask_number(a["ask"]))
+    if not open_asks and not page:
+        return f"{first}\n{rules_add}"
+    n = len(open_asks)
+    head = f"{first} {n} ask{'s' if n != 1 else ''} wait{'s' if n == 1 else ''} on {op}:" if n else first
+    page_lines = [f'Answered on the master list, not done yet: {a["ask"]} → "{a.get("answer")}"' for a in page]
+    shown = min(limit, n)
+    while True:
+        items = [_reminder_item(a, now_dt, tz, cfg) for a in open_asks[:shown]]
+        more = [f"(+{n - shown} more: pitboard list)"] if n > shown else []
+        text = "\n".join([head] + items + more + page_lines + [rules_add, rules_more])
+        if len(text) < REMINDER_MAX_CHARS or shown == 0:
+            break
+        shown -= 1
+    if len(text) >= REMINDER_MAX_CHARS:
+        text = text[: REMINDER_MAX_CHARS - 1] + CUT
+    return text

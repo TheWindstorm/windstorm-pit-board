@@ -119,6 +119,10 @@ def parser():
     p.add_argument("--apply", action="store_true")
     p.add_argument("--minimal", action="store_true")
 
+    p = sub.add_parser("hook", help="hook entry point (reads the hook JSON on stdin)")
+    _common(p)
+    p.add_argument("event")
+
     p = sub.add_parser("show", help="every field and event of one ask")
     _common(p)
     p.add_argument("id")
@@ -207,18 +211,26 @@ def _deadline(text, cfg):
 
 
 class _Ctx:
-    def __init__(self, args):
-        self.cfg = store.config()
-        try:
-            self.key = lane.find(getattr(args, "lane", None))
-        except lane.NoLane as e:
-            raise Fail(3, str(e))
-        self.name = _lane_name(self.key)
+    """The lane a command writes to. Hooks pass key, name and session_id from their input."""
+
+    def __init__(self, args=None, key=None, name=None, session_id=None, cfg=None,
+                 lock_timeout=store.LOCK_WAIT_COMMAND):
+        self.cfg = cfg or store.config()
+        self.lock_timeout = lock_timeout
+        if key:
+            self.key = key
+        else:
+            try:
+                self.key = lane.find(getattr(args, "lane", None))
+            except lane.NoLane as e:
+                raise Fail(3, str(e))
+        self.name = name or _lane_name(self.key)
+        self.session_id = session_id if key else _session_id()
 
     def event(self, etype, target, by, data):
         return contract.make_event(etype, uid=target["uid"], ask=target["ask"], lane=self.key,
                                    lane_name=self.name, machine=self.cfg["machine"],
-                                   session_id=_session_id(), by=by, data=data)
+                                   session_id=self.session_id, by=by, data=data)
 
 
 def _target(view, ask_id, allowed, action):
@@ -236,9 +248,11 @@ def _write(ctx, build, full=False):
     """store.append with the G6.3 exit codes; retries with every ask when a target is closed."""
     try:
         try:
-            return store.append(ctx.key, build, mode="refuse", cfg=ctx.cfg, full=full)
+            return store.append(ctx.key, build, mode="refuse", cfg=ctx.cfg, full=full,
+                                lock_timeout=ctx.lock_timeout)
         except _NeedFull:
-            return store.append(ctx.key, build, mode="refuse", cfg=ctx.cfg, full=True)
+            return store.append(ctx.key, build, mode="refuse", cfg=ctx.cfg, full=True,
+                                lock_timeout=ctx.lock_timeout)
     except contract.ContractError as e:
         raise Fail(6, f"pitboard: {e}")
     except store.LaneBusy:
@@ -277,7 +291,7 @@ def cmd_add(args):
     def build(view):
         return contract.make_event("asked", uid=contract.new_id(), ask=view.next_ask_id(), lane=ctx.key,
                                    lane_name=ctx.name, machine=ctx.cfg["machine"],
-                                   session_id=_session_id(), by="agent", data=data)
+                                   session_id=ctx.session_id, by="agent", data=data)
     written, state = _write(ctx, build)
     ev = written[0]
     ask = _asks_of(state, [ev["ask"]])
@@ -327,8 +341,18 @@ def _ids(raw):
 
 def cmd_ok(args):
     ctx = _Ctx(args)
-    every = [r.lower() for r in args.ids] == ["all"]
-    ids = [] if every else _ids(args.ids)
+    picked, skipped, state = approve(ctx, args.ids)
+    parts = [f"Approved: {', '.join(picked)}." if picked else "Nothing approved."]
+    if skipped:
+        parts.append(f"Skipped (no suggested answer): {', '.join(skipped)}.")
+    return Out(" ".join(parts), picked, _asks_of(state, picked), {"skipped": skipped})
+
+
+def approve(ctx, raw_ids):
+    """The ok logic (G6.2), shared with the UserPromptSubmit hook (G7.2 step 2).
+    Returns (approved IDs, skipped IDs, state)."""
+    every = [r.lower() for r in raw_ids] == ["all"]
+    ids = [] if every else _ids(raw_ids)
     picked, skipped = [], []
 
     def build(view):
@@ -347,15 +371,18 @@ def cmd_ok(args):
             events.append(ctx.event("answered", a, "operator", {"answer": a["suggested"], "via": "ok"}))
         return events
     _, state = _write(ctx, build)
-    parts = [f"Approved: {', '.join(picked)}." if picked else "Nothing approved."]
-    if skipped:
-        parts.append(f"Skipped (no suggested answer): {', '.join(skipped)}.")
-    return Out(" ".join(parts), picked, _asks_of(state, picked), {"skipped": skipped})
+    return list(picked), list(skipped), state
 
 
 def cmd_no(args):
     ctx = _Ctx(args)
-    ids = _ids(args.ids)
+    ids, state = decline(ctx, args.ids)
+    return Out(f"Declined: {', '.join(ids)}.", ids, _asks_of(state, ids))
+
+
+def decline(ctx, raw_ids):
+    """The no logic (G6.2), shared with the UserPromptSubmit hook (G7.2 step 3)."""
+    ids = _ids(raw_ids)
 
     def build(view):
         events = []
@@ -365,7 +392,7 @@ def cmd_no(args):
             events.append(ctx.event("answered", a, "operator", {"answer": "No.", "via": "no"}))
         return events
     _, state = _write(ctx, build)
-    return Out(f"Declined: {', '.join(ids)}.", ids, _asks_of(state, ids))
+    return ids, state
 
 
 def _close(etype, word, allowed, data_of):
@@ -516,6 +543,21 @@ def cmd_setup(args):
                                                          "applied": args.apply})
 
 
+def cmd_hook(args, stdin=None):
+    """G7: one JSON object or nothing on stdout; always exit 0 (INV6)."""
+    from . import hooks
+    out = Out("")
+    out.raw, out.nonl = True, True
+    try:
+        raw = (sys.stdin if stdin is None else stdin).read()
+        obj = hooks.handle(args.event, raw)
+        if obj is not None:
+            out.message = json.dumps(obj, ensure_ascii=False)
+    except Exception:  # noqa: BLE001
+        out.message = ""
+    return out
+
+
 def cmd_show(args):
     ctx = _Ctx(args)
     ask_id = _ask_id(args.id)
@@ -603,7 +645,7 @@ def cmd_version(args):
 
 COMMANDS = {"add": cmd_add, "update": cmd_update, "answer": cmd_answer, "ok": cmd_ok, "no": cmd_no,
             "done": cmd_done, "withdraw": cmd_withdraw, "reopen": cmd_reopen, "list": cmd_list,
-            "board": cmd_board, "status": cmd_status, "setup": cmd_setup, "show": cmd_show,
+            "board": cmd_board, "status": cmd_status, "setup": cmd_setup, "hook": cmd_hook, "show": cmd_show,
             "lane": cmd_lane, "export": cmd_export, "version": cmd_version}
 
 
@@ -626,6 +668,15 @@ def main(argv=None, stdout=None, stderr=None):
     argv = sys.argv[1:] if argv is None else list(argv)
     stdout, stderr = stdout or sys.stdout, stderr or sys.stderr
     as_json = "--json" in argv
+    if argv[:1] == ["hook"]:
+        try:
+            args = parser().parse_args(argv)
+            out = cmd_hook(args)
+            if out.message:
+                stdout.write(out.message)
+        except BaseException:  # noqa: BLE001 - INV6: a hook never fails loudly
+            pass
+        return 0
     try:
         try:
             args = (_status_parser() if argv[:1] == ["status"] else parser()).parse_args(argv)
