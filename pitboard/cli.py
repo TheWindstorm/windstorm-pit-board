@@ -114,6 +114,11 @@ def parser():
     _common(p)
     p.add_argument("--plain", action="store_true")
 
+    p = sub.add_parser("setup", help="show the setup plan; --apply does it")
+    _common(p)
+    p.add_argument("--apply", action="store_true")
+    p.add_argument("--minimal", action="store_true")
+
     p = sub.add_parser("show", help="every field and event of one ask")
     _common(p)
     p.add_argument("id")
@@ -493,6 +498,24 @@ def cmd_status(args, stdin=None):
     return out
 
 
+def cmd_setup(args):
+    """G18.1: a numbered plan; nothing changes without --apply. Milestone 1 has --minimal only."""
+    from . import setup as setup_mod
+    if not args.minimal:
+        raise Fail(2, "pitboard: this release has setup --minimal only (config, stable launcher, "
+                      "status line); the full setup comes in 0.2.0")
+    try:
+        items = setup_mod.plan_minimal()
+    except (OSError, ValueError) as e:
+        raise Fail(6, f"pitboard: setup: {e}")
+    applied = None
+    if args.apply:
+        store.ensure_home()
+        applied = setup_mod.apply(items)
+    return Out(setup_mod.describe(items, applied), data={"items": [i.as_dict() for i in items],
+                                                         "applied": args.apply})
+
+
 def cmd_show(args):
     ctx = _Ctx(args)
     ask_id = _ask_id(args.id)
@@ -580,7 +603,7 @@ def cmd_version(args):
 
 COMMANDS = {"add": cmd_add, "update": cmd_update, "answer": cmd_answer, "ok": cmd_ok, "no": cmd_no,
             "done": cmd_done, "withdraw": cmd_withdraw, "reopen": cmd_reopen, "list": cmd_list,
-            "board": cmd_board, "status": cmd_status, "show": cmd_show,
+            "board": cmd_board, "status": cmd_status, "setup": cmd_setup, "show": cmd_show,
             "lane": cmd_lane, "export": cmd_export, "version": cmd_version}
 
 

@@ -1,0 +1,185 @@
+"""pitboard setup (plan G18.1): show a numbered plan; change nothing without --apply.
+
+Milestone 1 builds `--minimal`: the config file, the stable launcher copy (G21.4) and the
+status line wrapper (G10.5). Every file it changes keeps a `.bak-<timestamp>` copy.
+Standard library only.
+"""
+import json
+import os
+import shlex
+import shutil
+import time
+
+from . import store
+
+MARK = "# pitboard-original-command: "
+WRAPPER_NAME = "statusline.sh"
+
+
+def claude_settings_path():
+    return os.path.join(os.path.expanduser("~"), ".claude", "settings.json")
+
+
+def _root():
+    """The running version's folder (it holds bin/pitboard and pitboard/launch.py)."""
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _read(path):
+    try:
+        with open(path, "rb") as f:
+            return f.read()
+    except OSError:
+        return None
+
+
+def _stamp():
+    return time.strftime("%Y%m%d-%H%M%S", time.gmtime())
+
+
+def wrapper_path(home=None):
+    return os.path.join(home or store.home(), WRAPPER_NAME)
+
+
+def original_from_wrapper(path):
+    """The operator's own status line command, as recorded in our wrapper (None if none)."""
+    raw = _read(path)
+    if raw is None:
+        return None
+    for line in raw.decode("utf-8", "replace").splitlines():
+        if line.startswith(MARK):
+            try:
+                v = json.loads(line[len(MARK):])
+            except ValueError:
+                return None
+            return v if isinstance(v, str) and v else None
+    return None
+
+
+def wrapper_text(original, home):
+    """G10.5: run the operator's status line with the same input, then Pit Board's segment,
+    joined with ' · ' when both print something."""
+    launcher = os.path.join(home, "bin", "pitboard")
+    lines = [
+        "#!/bin/sh",
+        "# Written by pitboard setup (plan G10.5). Runs your own status line, then Pit Board's segment.",
+        MARK + json.dumps(original or ""),
+        "in=$(cat)",
+        "SH=sh; command -v bash >/dev/null 2>&1 && SH=bash",
+    ]
+    if original:
+        lines.append(f"own=$(printf '%s' \"$in\" | \"$SH\" -c {shlex.quote(original)} 2>/dev/null)")
+    else:
+        lines.append("own=")
+    lines += [
+        f"pb=$(printf '%s' \"$in\" | PITBOARD_HOME={shlex.quote(home)} {shlex.quote(launcher)} status 2>/dev/null)",
+        'if [ -n "$own" ] && [ -n "$pb" ]; then printf \'%s · %s\' "$own" "$pb"; else printf \'%s%s\' "$own" "$pb"; fi',
+        "",
+    ]
+    return "\n".join(lines)
+
+
+class Item:
+    def __init__(self, name, path, action, content=None, mode=0o600, json_obj=None):
+        self.name, self.path, self.action = name, path, action
+        self.content, self.mode, self.json_obj = content, mode, json_obj
+
+    def as_dict(self):
+        return {"item": self.name, "path": self.path, "action": self.action}
+
+
+def _file_item(name, path, content, mode):
+    old = _read(path)
+    if old == content:
+        action = "keep (already up to date)"
+    elif old is None:
+        action = "create"
+    else:
+        action = "replace (backup kept)"
+    return Item(name, path, action, content, mode)
+
+
+def plan_minimal(home=None, settings_path=None, root=None):
+    """The --minimal items, in order (G18.1)."""
+    home = home or store.home()
+    settings_path = settings_path or claude_settings_path()
+    root = root or _root()
+    items = []
+
+    cfg_path = os.path.join(home, "config.json")
+    if os.path.exists(cfg_path):
+        items.append(Item("config file", cfg_path, "keep (already there)"))
+    else:
+        body = (json.dumps(store.DEFAULTS, indent=2) + "\n").encode("utf-8")
+        items.append(Item("config file", cfg_path, "create with the defaults", body, 0o600))
+
+    for rel, mode in ((os.path.join("bin", "pitboard"), 0o755), (os.path.join("pitboard", "launch.py"), 0o644)):
+        src = _read(os.path.join(root, rel))
+        if src is None:
+            raise FileNotFoundError(f"the running version has no {rel}: {root}")
+        items.append(_file_item("stable launcher copy", os.path.join(home, rel), src, mode))
+
+    wpath = wrapper_path(home)
+    try:
+        with open(settings_path, encoding="utf-8") as f:
+            settings = json.load(f)
+    except FileNotFoundError:
+        settings = {}
+    if not isinstance(settings, dict):
+        raise ValueError(f"not a JSON object: {settings_path}")
+    sl = settings.get("statusLine")
+    current = sl.get("command") if isinstance(sl, dict) else None
+    if current == wpath:
+        original = original_from_wrapper(wpath)       # already wrapped: keep the recorded original
+    else:
+        original = current if isinstance(current, str) and current.strip() else None
+    items.append(_file_item("status line wrapper", wpath, wrapper_text(original, home).encode("utf-8"), 0o755))
+
+    if current == wpath:
+        items.append(Item("status line setting", settings_path, "keep (already points at the wrapper)"))
+    else:
+        new = dict(settings)
+        new_sl = dict(sl) if isinstance(sl, dict) else {}
+        new_sl.update({"type": "command", "command": wpath})
+        new["statusLine"] = new_sl
+        was = f"was {json.dumps(current)}" if current else "no status line before"
+        items.append(Item("status line setting", settings_path,
+                          f"set statusLine.command to the wrapper ({was}; backup kept)", json_obj=new))
+    return items
+
+
+def apply(items):
+    """Do the plan. Every file that exists and changes keeps a .bak-<timestamp> copy."""
+    stamp = _stamp()
+    done = []
+    for it in items:
+        if it.action.startswith("keep"):
+            continue
+        os.makedirs(os.path.dirname(it.path), exist_ok=True)
+        if os.path.exists(it.path):
+            shutil.copy2(it.path, f"{it.path}.bak-{stamp}")
+        if it.json_obj is not None:
+            content = (json.dumps(it.json_obj, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+            mode = 0o600
+        else:
+            content, mode = it.content, it.mode
+        tmp = it.path + ".tmp"
+        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
+        with os.fdopen(fd, "wb") as f:
+            f.write(content)
+        os.chmod(tmp, mode)
+        os.replace(tmp, it.path)
+        done.append(it)
+    return done
+
+
+def describe(items, applied=None):
+    lines = []
+    for n, it in enumerate(items, 1):
+        lines.append(f"{n}. {it.name}: {it.path}")
+        lines.append(f"   {it.action}")
+    if applied is None:
+        lines.append("Nothing changed. Run again with --apply to do it.")
+    else:
+        lines.append(f"Done: {len(applied)} change(s)." if applied else "Nothing to change.")
+    return "\n".join(lines)
