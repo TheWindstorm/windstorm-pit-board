@@ -251,7 +251,7 @@ def test_G6_7_tmux_lookup_has_a_1s_limit(monkeypatch):
     def fake_run(cmd, **kw):
         seen.update(kw, cmd=cmd)
         raise subprocess.TimeoutExpired(cmd, kw["timeout"])
-    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    monkeypatch.setattr(subprocess, "run", fake_run)
     assert cli._tmux("%1", "#{session_name}") is None
     assert seen["timeout"] == 1 and seen["cmd"][:5] == ["tmux", "display", "-p", "-t", "%1"]
 

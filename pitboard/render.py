@@ -200,3 +200,20 @@ def list_lines(asks, tz, now=None, width=DEFAULT_WIDTH, plain=False, order="seve
     ordered = flags.sort_asks(asks, order, now_dt, escalate_after_hours=cfg.get("escalate_after_hours", 24),
                               urgent_deadline_hours=cfg.get("urgent_deadline_hours", 24))
     return "\n".join(r.out(width, plain) for r in history_rows(ordered, tz, now_dt, cfg))
+
+
+def status_segment(state, now=None, plain=False, cfg=None):
+    """G10.2: '' when nothing is open; else '<symbol> <n> ask(s) · oldest <age>', coloured
+    with the worst flag (a blinking-red ask makes the whole segment blink)."""
+    cfg = cfg or {}
+    now_dt = now or datetime.now(timezone.utc)
+    open_asks = [a for a in (state or {}).get("asks", []) if a.get("status") == "open"]
+    if not open_asks:
+        return ""
+    worst = flags.worst(open_asks, now_dt, escalate_after_hours=cfg.get("escalate_after_hours", 24),
+                        urgent_deadline_hours=cfg.get("urgent_deadline_hours", 24))
+    n = len(open_asks)
+    oldest = min(a["asked_at"] for a in open_asks)
+    word = f"{flags.word(worst)} " if plain else ""
+    text = f"{flags.SYMBOL[worst]} {word}{n} ask{'s' if n != 1 else ''} · oldest {timefmt.age(oldest, now_dt)}"
+    return flags.paint(text, worst, plain)
