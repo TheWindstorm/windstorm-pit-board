@@ -1,0 +1,15 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000001",
+  "transcript_path": "/home/user/.claude/projects/-home-user-project/00000000-0000-4000-8000-000000000001.jsonl",
+  "cwd": "/home/user/project",
+  "prompt_id": "00000000-0000-4000-8000-000000000008",
+  "permission_mode": "default",
+  "effort": {
+    "level": "medium"
+  },
+  "hook_event_name": "Stop",
+  "stop_hook_active": false,
+  "last_assistant_message": "/home/user/windstorm-pit-board/bin/probe-bin\nprobe-bin-ok\nSID=00000000-0000-4000-8000-000000000001\nENVFILE=yes\nPANE=%0\nROOT=unset",
+  "background_tasks": [],
+  "session_crons": []
+}
