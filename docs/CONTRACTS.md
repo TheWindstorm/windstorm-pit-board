@@ -29,3 +29,8 @@ G7.5 records a PermissionRequest as an ask. Claude Code 2.1.326 also sends Permi
 ## Extra fields seen (not used by the plan)
 
 `prompt_id`, `permission_mode`, `effort`, `scratchpad_dir`, `duration_ms` (PostToolUse), `background_tasks` and `session_crons` (Stop), `reason` (SessionEnd: `clear`, `other`). Readers ignore unknown fields (G1.13 spirit); no hook depends on them.
+
+## Notes found while building
+
+- **G2.12 timestamps can run ahead of the wall clock (by design).** To keep one writer's events in order, a bumped `ts` is the lane's newest `ts` + 1 ms, so a stored `ts` can be up to about 1 s ahead of the real time. Ordering across *different* writers is still by `(ts, event_id)`; if that ever needs to be exact, the cleaner fix is a per-writer sequence field, not tighter clocks (Skills Boss, 2026-11-17: not needed now).
+- **Marketplaces are user scope only for the plugin CLI** (Claude Code 2.1.326, 2026-11-17). `claude plugin marketplace list`, `marketplace update` and `install` ignore `extraKnownMarketplaces` in a folder's `.claude/settings.local.json` and in its `.claude/settings.json`; the user files stayed byte-identical. A per-folder pilot therefore declares its marketplace in user settings (`claude plugin marketplace add`), and only the install itself is local (`-s local`).
