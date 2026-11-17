@@ -130,3 +130,20 @@ def test_G10_5_wrapper_joins_the_operator_line_and_the_segment(world, own):
     out = line()
     seg = "🔴 1 ask · oldest 0m"
     assert seg in out and (out.startswith("MINE · ") if own else out.startswith("\x1b[31m"))
+
+
+@pytest.mark.skipif(not (shutil.which("timeout") or shutil.which("gtimeout")), reason="no timeout command here")
+@pytest.mark.parametrize("fault", ["sleep 5; printf 'LATE'", "printf 'HALF'; exit 1"])
+def test_G10_5_wrapper_fails_soft_slow_or_broken_segment(world, fault):
+    home, pb = world
+    settings(home, {"statusLine": {"type": "command", "command": "printf 'MINE'"}})
+    run("setup", "--minimal", "--apply")
+    launcher = pb / "bin" / "pitboard"
+    launcher.write_text("#!/bin/sh\ncat >/dev/null\n" + fault + "\n")     # a hung or broken Pit Board
+    env = dict(os.environ, HOME=str(home))
+    import time
+    t = time.monotonic()
+    out = subprocess.run([str(pb / "statusline.sh")], input='{"session_id": "x"}', capture_output=True,
+                         text=True, env=env, timeout=30).stdout
+    assert out == "MINE"                                         # the operator's line alone
+    assert time.monotonic() - t < S.STATUS_CAP_SECONDS + 2       # the cap held (the slow one sleeps 5 s)
