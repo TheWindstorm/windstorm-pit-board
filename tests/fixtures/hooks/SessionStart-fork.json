@@ -1,0 +1,12 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000004",
+  "transcript_path": "/home/user/.claude/projects/-home-user-project/00000000-0000-4000-8000-000000000004.jsonl",
+  "cwd": "/home/user/project",
+  "hook_event_name": "SessionStart",
+  "source": "fork",
+  "session_title": "Probe Renamed",
+  "seconds_since_last_response": 178,
+  "context_tokens": 7003,
+  "prompt_cache_likely_expired": true,
+  "estimated_cache_write_usd": 0.0014
+}
