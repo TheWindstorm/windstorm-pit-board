@@ -1,6 +1,6 @@
 # Platform contracts (plan Part 7)
 
-Checked on **Claude Code 2.1.326**, Linux, 2026-11-17, with a throwaway probe plugin whose hooks logged their stdin and environment (headless `claude -p` runs inside tmux, plus one short interactive session for the question box, the permission prompt and colour). One real input per hook event is saved in [`tests/fixtures/hooks/<event>/<variant>.json`](../tests/fixtures/hooks/) (G20.2), with paths and session IDs replaced (`/home/user/project`, `00000000-0000-4000-8000-…`).
+Checked on **Claude Code 2.1.326**, Linux, 2026-11-17, with a throwaway probe plugin whose hooks logged their stdin and environment (headless `claude -p` runs inside tmux, plus one short interactive session for the question box, the permission prompt and colour). One real input per hook event is saved in [`tests/fixtures/hooks/<hook name>/<variant>.json`](../tests/fixtures/hooks/) (G20.2, folder names as in G7.0's table), with paths and session IDs replaced (`/home/user/project`, `00000000-0000-4000-8000-…`).
 
 Check these again when Claude Code's major or minor version changes (`pitboard doctor` will compare, G18).
 
@@ -24,7 +24,7 @@ Check these again when Claude Code's major or minor version changes (`pitboard d
 
 ## Plan change needed (C7)
 
-G7.5 records a PermissionRequest as an ask. Claude Code 2.1.326 also sends PermissionRequest for `AskUserQuestion`, which G7.3 already records from PreToolUse. Proposed for plan 1.5: G7.5 ignores `tool_name == "AskUserQuestion"`. Ruled by Skills Boss 2026-11-17 and written as plan 1.5 (#17): G7.5 skips `AskUserQuestion`; `test_G7_5_question_box_is_one_ask` feeds `PreToolUse/AskUserQuestion.json`, `PermissionRequest/AskUserQuestion.json` and `Notification/permission_prompt.json`.
+G7.5 records a PermissionRequest as an ask. Claude Code 2.1.326 also sends PermissionRequest for `AskUserQuestion`, which G7.3 already records from PreToolUse. Proposed for plan 1.5: G7.5 ignores `tool_name == "AskUserQuestion"`. Ruled by Skills Boss 2026-11-17 and written as plan 1.5 (#17): G7.5 skips `AskUserQuestion`; `test_G7_5_question_box_is_one_ask` feeds `pre-tool-use/AskUserQuestion.json`, `permission-request/AskUserQuestion.json` and `notification/permission_prompt.json`.
 
 ## Extra fields seen (not used by the plan)
 

@@ -8,14 +8,21 @@ import pytest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIX = os.path.join(HERE, "fixtures", "hooks")
-# G20.2 layout: tests/fixtures/hooks/<event>/<variant>.json; a test name "Event-variant" maps to it
-NAMES = sorted(f"{ev}-{n[:-5]}" for ev in os.listdir(FIX) if os.path.isdir(os.path.join(FIX, ev))
-               for n in os.listdir(os.path.join(FIX, ev)) if n.endswith(".json"))
+# G20.2 / G7.0 layout: tests/fixtures/hooks/<hook name>/<variant>.json. Folders for events
+# Pit Board has no hook for (notification, session-end) are evidence for Part 7 only.
+FOLDER = {"SessionStart": "session-start", "UserPromptSubmit": "user-prompt-submit",
+          "PreToolUse": "pre-tool-use", "PostToolUse": "post-tool-use",
+          "PermissionRequest": "permission-request", "Stop": "stop", "CwdChanged": "cwd-changed",
+          "UserPromptExpansion": "user-prompt-expansion", "Notification": "notification",
+          "SessionEnd": "session-end"}
+EVENT = {v: k for k, v in FOLDER.items()}
+NAMES = sorted(f"{EVENT[d]}-{n[:-5]}" for d in os.listdir(FIX) if os.path.isdir(os.path.join(FIX, d))
+               for n in os.listdir(os.path.join(FIX, d)) if n.endswith(".json"))
 
 
 def load(name):
     ev, _, variant = name.partition("-")
-    with open(os.path.join(FIX, ev, (variant or "basic") + ".json"), encoding="utf-8") as f:
+    with open(os.path.join(FIX, FOLDER[ev], (variant or "basic") + ".json"), encoding="utf-8") as f:
         return json.load(f)
 
 
