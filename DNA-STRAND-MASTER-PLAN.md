@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.2 · 2026-11-17 · The Windstorm**
+**Plan version 1.3 · 2026-11-17 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -549,11 +549,23 @@ If it does not, end your turn now without saying anything more.
 
 ### G9 Skill and command files
 
-**G9.1 `skills/pit-board/SKILL.md`** has frontmatter `name: pit-board` and a description that triggers on: needing the operator's decision, approval, login, payment, signature or account; "pit board", "pb", "asks", "action items", "what's waiting on me". The body is the text in [Appendix A.5](#a5-the-skill-body), word for word. The skill is a fixed file and says "the operator"; the configured `operator_name` is used only in text Pit Board generates (G7.7, G8.4).
+**G9.1 `skills/pit-board/SKILL.md`** has frontmatter `name: pit-board` and a quoted description (G9.4) that triggers on: needing the operator's decision, approval, login, payment, signature or account; "pit board", "pb", "asks", "action items", "what's waiting on me". The body is the text in [Appendix A.5](#a5-the-skill-body), word for word. The skill is a fixed file and says "the operator"; the configured `operator_name` is used only in text Pit Board generates (G7.7, G8.4).
 
 **G9.2** `pitboard` is on the agent's `PATH` through the plugin's `bin/` folder (documented; check C14). If `command -v pitboard` finds nothing, the skill says to use `~/.pitboard/bin/pitboard` (the stable launcher copy, G21.4).
 
 **G9.3 `skills/board/SKILL.md`** (invoked as `/windstorm-pit-board:board`, with `all` as its argument for history). It is the fallback when G7.9 cannot block: it runs `pitboard board $ARGUMENTS --plain` and tells Claude to show the output exactly, inside a code block, with no comment before or after. The operator's quick way is still `pb` (G7.2 step 1).
+
+**G9.4 The Windstorm skill standard (format).** Every skill in this repository follows the Agent Skills specification (agentskills.io), the standard for every Windstorm skill:
+1. Each skill is `skills/<name>/SKILL.md`, and its frontmatter `name` equals `<name>` exactly (lower-case letters, digits and `-`).
+2. The frontmatter is strict YAML. `description` is a quoted string (double quotes, with `"` and `\` escaped) of at most 1 024 characters, so a colon or other YAML character in it can never break parsing.
+3. `SKILL.md` is under 500 lines. Longer material goes in the skill's own `references/` (documents the agent reads when needed), `scripts/` (code it runs) and `assets/` (files it uses), each linked from `SKILL.md` by a relative path.
+4. No install metadata (`metadata.github-*`) is committed; `allowed-tools`, if used, is a string.
+
+**G9.5 Format gate.** CI runs `gh skill publish --dry-run` (check C15) on every push and pull request, and a red result fails CI like a failed test. `tests/test_g9_skills.py` also checks G9.4 points 1 to 3 with the standard library alone (a strict parse of the frontmatter block: `name`, quoted `description`, line counts), so the rule holds even where `gh` is missing.
+
+**G9.6 Trigger evals** (the skill-creator method). Each skill has `evals/<name>/triggers.json`: exactly 20 queries, of which 8 to 10 must make the skill fire and the rest are near-misses that must not (for `pit-board`: fire on "I need you to log in to Stripe before I can go on", "what's waiting on me?"; must not fire on "summarise what you did today", "ask the API server lane for its status"). Each query is `{"id": "G9.6-<name>-<nn>", "query": "...", "should_fire": true|false}`; the id carries the codon (the naming rule for eval cases is set by the DNA Strand method). A run records which skill Claude Code loaded for each query; the skill passes when at least 18 of 20 are right.
+
+**G9.7 With-skill vs. without-skill evals.** Each skill has `evals/<name>/tasks/`: at least 5 real tasks from the pilot (anonymised), each run once with the plugin enabled and once without, recording for each run: the asks the agent raised, whether each was recorded (`pitboard export`), whether it came back after a `/compact`, and the turns and tokens used. The skill earns its place only when the with-skill runs record at least 9 of 10 real asks and the without-skill runs are measurably worse on the same tasks. Results go in `docs/EVALS.md` by date and version.
 
 ### G10 Status line segment
 
@@ -760,6 +772,8 @@ Otherwise the lane learns of the answer at its next start (the reminder lists pa
 
 **G20.7** `tests/smoke_hooks.sh` feeds every recorded hook input to `pitboard hook` and checks exit code 0 and the expected output shape.
 
+**G20.8 CI rules** (Skills Boss ruling 2026-11-17): the workflow sets `permissions: contents: read` at workflow level, uses no repository secrets (only the automatic `GITHUB_TOKEN`, read-only, which `gh skill publish --dry-run` may need), never uses `pull_request_target`, and runs only on standard GitHub-hosted runners: every `runs-on` value (directly, or each value of the matrix entry it names) must match `^(ubuntu|macos|windows)-(latest|[0-9]+(\.[0-9]+)?)$`. Larger-runner labels (for example `ubuntu-latest-4-cores`, `macos-15-xlarge`), self-hosted labels and runner groups are refused: larger runners are billed even on public repositories, and an unpaid GitHub bill is why private repositories run on our own machines. A test reads `.github/workflows/*.yml` and fails if any of these four rules is broken. CI also runs the G9.5 gate.
+
 ### G21 Self-update: always the newest Pit Board
 
 Every installation, for every person who installs Pit Board, must find new releases by itself, install them, move every running part onto them, and step back by itself if a release is bad. Nobody should ever have to touch a machine to get an update. This gene is as important as G1: a fix nobody receives is no fix.
@@ -774,7 +788,7 @@ Every installation, for every person who installs Pit Board, must find new relea
 | Sync and update timers, status line | by the operating system / Claude Code | they call the stable launcher copy, never a version folder (G21.4) |
 | Hub and the open page | by the service manager / the browser | the hub restarts itself onto the new version (G21.7); the page reloads itself (G21.8) |
 
-**G21.1 What a release is.** A release is a commit on `main` that raises `version` in `.claude-plugin/plugin.json` (semantic versioning: `MAJOR.MINOR.PATCH`), with a matching `CHANGELOG.md` entry and a git tag `vMAJOR.MINOR.PATCH`. `main` is the release channel: a merge that does not raise the version is not shipped to anyone. A release is made only when CI is green on that exact commit. The marketplace entry (in `TheWindstorm/windstorm-pit-stop`'s `marketplace.json`) points at this repository's `main` and never pins a version (check C11 for how Claude Code decides an update exists).
+**G21.1 What a release is.** A release is a commit on `main` that raises `version` in `.claude-plugin/plugin.json` (semantic versioning: `MAJOR.MINOR.PATCH`), with a matching `CHANGELOG.md` entry and a git tag `vMAJOR.MINOR.PATCH`. `main` is the release channel: a merge that does not raise the version is not shipped to anyone. A release is made only when CI is green on that exact commit, and is published with `gh skill publish --tag vMAJOR.MINOR.PATCH`, which validates the skills again, creates the tag and a GitHub release with notes. The repository has the `agent-skills` topic, and GitHub secret scanning and push protection are on. These are repository settings, set once and checked again at each release. The marketplace entry (in `TheWindstorm/windstorm-pit-stop`'s `marketplace.json`) points at this repository's `main` and never pins a version (check C11 for how Claude Code decides an update exists).
 
 **G21.2 Switch on Claude Code's own auto-update.** Claude Code leaves auto-update off for marketplaces other than Anthropic's. `pitboard setup --apply` (and the first SessionStart after install, if `self_update` is true and the operator has not written a choice) sets `"autoUpdate": true` on the marketplace's entry under `extraKnownMarketplaces` in `~/.claude/settings.json`, keeping a backup, exactly as Windstorm Pit Stop does. An explicit `"autoUpdate": false` written by the operator is never changed; `pitboard doctor` reports it.
 
@@ -858,6 +872,10 @@ windstorm-pit-board/
   hooks/generation.json           G21.6
   skills/pit-board/SKILL.md       G9.1
   skills/board/SKILL.md           G9.3
+  skills/<name>/references/       G9.4, longer material a skill links to
+  evals/<name>/triggers.json      G9.6
+  evals/<name>/tasks/             G9.7
+  docs/EVALS.md                   G9.6, G9.7 results
   adapters/                       G17.3, empty until then
   tests/                          G20
   tests/fixtures/releases/        G21.11, one folder per released version
@@ -907,6 +925,7 @@ Claude Code changes often. These are the facts the hooks depend on. Before writi
 | C11 | How Claude Code decides a plugin from a marketplace has an update: a raised `version` in `plugin.json`, or any new commit. | G21.1 | If any commit counts, every merge to `main` must be a release (version raised each time). |
 | C12 | The exact commands `claude plugin marketplace update <name>` and `claude plugin update <plugin>@<marketplace>`, their exit codes, and that they work while sessions are running. | G21.3 | Pit Stop's tested calls; else only Claude Code's own auto-update at start-up (G21.2). |
 | C13 | `installed_plugins.json` layout, the version folder layout, and the `.orphaned_at` marker on old folders (seen; Pit Stop relies on them). | G21.4 | Highest version folder only. |
+| C15 | `gh skill publish --dry-run` (GitHub CLI 2.104 or newer, preview) exists on the CI runners, and what it needs (auth, network). | G9.5 | Install a pinned `gh` release in the workflow; if it still cannot run, the standard-library check in `tests/test_g9_skills.py` alone gates, and the gap is reported to Skills Boss. |
 | C14 | `command -v pitboard` works in an agent's Bash command while the plugin is enabled (plugin `bin/` on `PATH`). | G9.2, G6.1 | The skill and the reminder name `$PITBOARD_HOME/bin/pitboard`. |
 
 ---
@@ -922,7 +941,7 @@ Each milestone ends with a release, a `CHANGELOG.md` entry and a short note in `
 The launcher (G21.4) ships in the very first release, so that every later release reaches the first installs without anyone reinstalling.
 Build order: G1 → G19 → G4 → G5 → G2 → G3 → G21.4 launcher → G6 → G11 → G10 → G18.1 `--minimal` → Part 7 checks → G7.0 → G7.1 → G7.7 → G7.2 → G16.4 → G7.8 → G9.
 Accepted when, in one pilot lane:
-1. All tests pass on Python 3.10 and 3.13.
+1. All tests pass on Python 3.10 and 3.13, and the skill format gate (G9.5) is green.
 2. The agent records its asks with `pitboard add` without being reminded, for 2 days.
 3. After a `/compact`, the reminder appears and lists the open asks.
 4. The status segment shows the count, and nothing when none are open.
@@ -931,8 +950,8 @@ Accepted when, in one pilot lane:
 7. A second build installed beside the first (version raised) and listed in `update/good-versions` by hand (the updater that does this comes in M2) is picked up by the running session's next hook call without a restart.
 8. The operator samples it and says to keep it.
 
-### M2 Every lane, updating itself (0.2.0): G7.1 step 4, G7.3 to G7.6, G7.9, G8, G12, G18 (all of `setup`, and `doctor`), G21 (all)
-Accepted when: question boxes and permission prompts are recorded and closed by themselves; the catcher meets G8.5 over one week on the pilot lanes; tab badges show; `setup` and `doctor` work on Linux and macOS; a release published on GitHub reaches every machine within `update_check_hours` + 1 hour with nobody touching them; a deliberately broken test release is rolled back by itself on a test machine. Then it is rolled out to all lanes one machine at a time.
+### M2 Every lane, updating itself (0.2.0): G9.6, G9.7, G7.1 step 4, G7.3 to G7.6, G7.9, G8, G12, G18 (all of `setup`, and `doctor`), G21 (all)
+Accepted when: the trigger evals (G9.6) pass for every skill and the with-skill vs. without-skill evals (G9.7) are recorded; question boxes and permission prompts are recorded and closed by themselves; the catcher meets G8.5 over one week on the pilot lanes; tab badges show; `setup` and `doctor` work on Linux and macOS; a release published on GitHub reaches every machine within `update_check_hours` + 1 hour with nobody touching them; a deliberately broken test release is rolled back by itself on a test machine. Then it is rolled out to all lanes one machine at a time.
 
 ### M3 Master list, view only (0.3.0): G13 (no inbox), G14 (no `/v1/answers`), G15, G21.7, G21.8
 Accepted when: every lane's asks from every machine are on the page within 90 s of being recorded; the page pops out on top; History scrolls back to the first ask; a hub restart and a machine offline for a day lose nothing; a new release moves the hub and the open page onto it by themselves.
@@ -979,6 +998,7 @@ Measured in the pilot and written into `docs/PILOT.md` weekly:
 | GitHub-hosted CI | Public repository: free, and no stranger's pull request can run on our machines. |
 | Self-update built in from the first release | A fix that never reaches an install is no fix. Claude Code's own auto-update is off for non-Anthropic marketplaces and only runs at start-up, and sessions run for weeks; so Pit Board switches it on, checks by itself, and routes every running part through a launcher that always runs the newest good version. |
 | Roll back by machine, by itself | A bad release must not need a person at each of a dozen machines to undo it. |
+| The Windstorm skill standard (G9.4 to G9.7, G21.1) | Set by Skills Boss for every Windstorm skill on 2026-11-17: the open Agent Skills format so any harness that reads skills can use them, a CI gate so a broken description never ships (an unquoted colon broke one), and evals that prove a skill fires when it should and earns its place. |
 | `pb` as the board shortcut | Plugin commands are always prefixed (`/windstorm-pit-board:board`), too long to type many times a day over a slow connection. Two letters, intercepted before the model, cost nothing. |
 
 ---
