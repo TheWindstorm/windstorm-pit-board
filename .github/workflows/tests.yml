@@ -20,3 +20,27 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: pip install pytest
       - run: python -m pytest -q tests/
+  skills:
+    # G9.5: the skill format gate (check C15). A gh without `skill` gets the pinned release.
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_PINNED: "2.104.0"
+    steps:
+      - uses: actions/checkout@v4
+      - name: gh with the skill command
+        run: |
+          gh --version
+          if ! gh skill --help >/dev/null 2>&1; then
+            cd "$RUNNER_TEMP"
+            base="https://github.com/cli/cli/releases/download/v${GH_PINNED}"
+            curl -fsSLO "$base/gh_${GH_PINNED}_linux_amd64.tar.gz"
+            curl -fsSLO "$base/gh_${GH_PINNED}_checksums.txt"
+            grep " gh_${GH_PINNED}_linux_amd64.tar.gz\$" "gh_${GH_PINNED}_checksums.txt" | sha256sum -c -
+            tar -xzf "gh_${GH_PINNED}_linux_amd64.tar.gz"
+            echo "$RUNNER_TEMP/gh_${GH_PINNED}_linux_amd64/bin" >> "$GITHUB_PATH"
+          fi
+      - name: gh skill publish --dry-run
+        run: |
+          gh --version
+          gh skill publish --dry-run
