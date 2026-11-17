@@ -1,5 +1,11 @@
 # Changelog
 
+## Plan 1.6 (2026-11-17)
+Clarifications found while building G9 (no behaviour changes elsewhere):
+- Appendix A.5 (the skill body, used word for word by G9.1) now holds the G9.2 fallback sentence: use `~/.pitboard/bin/pitboard` when `command -v pitboard` finds nothing. Before, G9.1 and G9.2 could not both hold.
+- G9.3: the board skill runs `pitboard board --plain`, or `--all --plain` when its argument is `all`; `pitboard board all` was never a valid command (G6.2).
+- G20.6 and G9.5: CI runs on every pull request and every push to `main`, so each job runs once per change (it ran twice when every push and every pull request triggered it).
+
 ## Plan 1.4 (2026-11-17)
 Fixes from the DNA Strand lane's review of plan 1.2:
 - G21.12: `self_update: false` uses G21.4 step 2 (the recorded install path), one behaviour.
