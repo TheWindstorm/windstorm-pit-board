@@ -14,6 +14,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] M2 every lane, updating itself · M3 master list (view only) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
+- [x] 2026-11-17 M1: G3 lane identity (key form, name from /rename, lanes.json map, --lane / PITBOARD_LANE / session lookup).
 - [x] 2026-11-17 M1: G2 store (lane locks, append-only logs, live-only state cache, incremental appends: 2 to 7 ms on a 20 MB log).
 - [x] 2026-11-17 M1: Part 7 checks on Claude Code 2.1.326, results in docs/CONTRACTS.md, 17 real hook inputs in tests/fixtures/hooks/.
 - [x] 2026-11-17 M1: G5 flags (colour, rank, plain words, sort orders), codon tests; CI runs once per PR (push runs on main only).
