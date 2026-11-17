@@ -13,5 +13,6 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] M2 every lane, updating itself · M3 master list (view only) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
+- [x] 2026-11-17 M1: G4 time (ET display, ages, deadlines), 34 codon tests (PR #3).
 - [x] 2026-11-17 M1: G1 event format and G19 masking, 91 codon tests (PR #2).
 - [x] 2026-11-17 M0: the plan, README, LICENSE, NOTICE.
