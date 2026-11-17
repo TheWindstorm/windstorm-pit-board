@@ -4,6 +4,7 @@ Stored times are UTC strings made by contract.ts_of. This module turns them
 into what a person reads, and turns a person's deadline into a stored time.
 Standard library only.
 """
+import os
 import re
 import time
 from datetime import datetime, timedelta, timezone
@@ -18,16 +19,46 @@ class DeadlineError(ValueError):
     """A deadline the operator or agent typed that G4.4 does not accept."""
 
 
+LOCALTIME = "/etc/localtime"
+
+
+def _system_zone_name():
+    """The system zone's IANA name: TZ, else the /etc/localtime link (Linux, macOS), else None."""
+    tz = os.environ.get("TZ", "").lstrip(":")
+    if tz and "/" in tz and not tz.startswith("/"):
+        return tz
+    try:
+        target = os.path.realpath(LOCALTIME)
+    except OSError:
+        return None
+    marker = "zoneinfo/"
+    i = target.find(marker)
+    return target[i + len(marker):] if i >= 0 and target != LOCALTIME else None
+
+
+def _zoneinfo(name):
+    try:
+        from zoneinfo import ZoneInfo
+        return ZoneInfo(name)
+    except Exception:
+        return None
+
+
 def zone(name=None):
-    """G4.5: the display zone; a fixed system-local offset when zone data is missing."""
-    if name:
-        try:
-            from zoneinfo import ZoneInfo
-            return ZoneInfo(name)
-        except Exception:
-            pass
-    offset = -(time.altzone if time.daylight and time.localtime().tm_isdst else time.timezone)
-    return timezone(timedelta(seconds=offset))
+    """G4.5: the display zone. None = the system zone, by its IANA name when it can be found
+    (so the label is ET, not UTC-5); else a fixed system-local offset carrying the system's
+    own abbreviation."""
+    z = _zoneinfo(name) if name else None
+    if z is None:
+        sysname = _system_zone_name()
+        z = _zoneinfo(sysname) if sysname else None
+    if z is not None:
+        return z
+    dst = time.daylight and time.localtime().tm_isdst
+    offset = -(time.altzone if dst else time.timezone)
+    abbr = time.tzname[1 if dst else 0] or None
+    return timezone(timedelta(seconds=offset), abbr) if abbr and abbr[0].isalpha() else \
+        timezone(timedelta(seconds=offset))
 
 
 def label(dt):

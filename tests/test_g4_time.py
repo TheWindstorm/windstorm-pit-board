@@ -70,3 +70,28 @@ def test_G4_5_missing_zone_falls_back_to_local_offset():
     assert dt.utcoffset() is not None
     lab = t.label(datetime(2026, 1, 1, tzinfo=timezone(timedelta(hours=-5))))
     assert lab == "UTC-5"
+
+
+def test_G4_5_system_zone_by_name_from_TZ(monkeypatch):
+    monkeypatch.setenv("TZ", "America/Chicago")
+    assert t.label(NOW.astimezone(t.zone())) == "CT"
+    monkeypatch.setenv("TZ", ":America/Los_Angeles")
+    assert t.label(NOW.astimezone(t.zone(None))) == "PT"
+
+
+def test_G4_5_system_zone_by_name_from_localtime_link(monkeypatch, tmp_path):
+    monkeypatch.delenv("TZ", raising=False)
+    fake = tmp_path / "usr" / "share" / "zoneinfo" / "America" / "New_York"
+    fake.parent.mkdir(parents=True)
+    fake.write_bytes(b"")
+    link = tmp_path / "localtime"
+    link.symlink_to(fake)
+    monkeypatch.setattr(t, "LOCALTIME", str(link))
+    assert t.label(NOW.astimezone(t.zone())) == "ET"
+    monkeypatch.setattr(t, "LOCALTIME", str(tmp_path / "missing"))
+    assert t.zone().utcoffset(None) is not None       # fixed offset, still works
+
+
+def test_G4_5_bad_name_uses_the_system_zone(monkeypatch):
+    monkeypatch.setenv("TZ", "America/Denver")
+    assert t.label(NOW.astimezone(t.zone("No/Such_Zone"))) == "MT"
