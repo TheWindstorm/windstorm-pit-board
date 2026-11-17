@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.6 · 2026-11-17 · The Windstorm**
+**Plan version 1.7 · 2026-11-17 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -330,6 +330,8 @@ Environment variables override config: `PITBOARD_MACHINE`, `PITBOARD_TZ`, `PITBO
 
 **G2.11 Incremental cache, with a time budget.** Logs are never rotated (G2.9), so re-folding a whole log on every write would grow without limit inside the lock, and a hook that waits 1 s (G2.3) would drop its ask. So an append updates the cache incrementally when all of these hold: the cache's `log_bytes` equals the log's size before the append; every new event was created in this same call (fresh `event_id`s); each new event's `(ts, event_id)` sorts after the cache's `last_applied` (the `[ts, event_id]` of the last event the cache applied); and each new event is an `asked` event or belongs to an ask the cache holds (a live ask). Then it applies only the new events to the cached asks with the G1.11 table, drops asks that became `done` or `withdrawn`, and takes the next short ID from `max_ask` without reading the log. Otherwise (inbox events, an old timestamp, a reopen of a closed ask, a stale or missing cache) it folds the whole log, but **not inside the lock**: it first reads and folds the log up to its current size N without the lock, then takes the lock, reads only the bytes after N (lines other writers added meanwhile), and applies those. Only if one of those lines sorts before the end of the first fold does it fold the whole log again inside the lock. Budget: an append to a lane whose log is 20 MB finishes in under 200 ms on the CI machines; a test builds such a log and checks it.
 
+**G2.12 One writer's events never tie.** G1.11 sorts by `(ts, event_id)` and `event_id` is random, so two events stamped in the same millisecond (`done`, then `reopened` from a script) could apply in either order. Inside the lock (G2.4), before validation: an event this writer created (`origin: lane`) whose `ts` is at or before the `ts` of the lane's newest applied event (`last_applied`), by at most 1 s, gets that `ts` + 1 ms; each later event of the same append is at least 1 ms after the one before it. A gap over 1 s comes from another machine's clock and is left alone: the one-way status table (G1.11) covers it. Events from the hub (`origin: hub`) keep their `ts`.
+
 ### G3 Lane identity
 
 A lane must keep the same key across restarts, compactions and resumes, and two lanes in the same folder must not share a key.
@@ -580,7 +582,7 @@ If it does not, end your turn now without saying anything more.
 
 **G10.4 It never fails loudly.** Any error prints nothing and exits 0.
 
-**G10.5 Joining an existing status line.** A plugin cannot set `statusLine` (the documentation describes only user and project settings, and the plugin manifest has no such key). `pitboard setup` writes `~/.pitboard/statusline.sh`, which saves stdin to a variable, runs the operator's original status line command with that input, then runs `~/.pitboard/bin/pitboard status` (the stable launcher, G21.4) with the same input, and joins the two with ` · ` when both are non-empty. Setup shows the change and asks before replacing `statusLine.command` in the operator's `settings.json`, and keeps a backup.
+**G10.5 Joining an existing status line.** A plugin cannot set `statusLine` (the documentation describes only user and project settings, and the plugin manifest has no such key). `pitboard setup` writes `~/.pitboard/statusline.sh`, which saves stdin to a variable, runs the operator's original status line command with that input, then runs `~/.pitboard/bin/pitboard status` (the stable launcher, G21.4) with the same input, and joins the two with ` · ` when both are non-empty. Pit Board's part runs under a 1 s cap (`timeout`, or `gtimeout` on macOS, when either exists): when it errors, prints nothing or runs past the cap, the operator's own line is printed alone, so a Pit Board fault never costs the operator their status line (G10.4). Setup shows the change and asks before replacing `statusLine.command` in the operator's `settings.json`, and keeps a backup.
 
 **G10.6** `pitboard status` records `session_name` from its input into `lanes.json` (`lane_name` only, G3.2, G3.4), at most once a minute per session, tracked in `state/statusline-seen.json`.
 

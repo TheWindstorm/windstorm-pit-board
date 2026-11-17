@@ -1,5 +1,9 @@
 # Changelog
 
+## Plan 1.7 (2026-11-17)
+- G2.12 (new): one writer's events never tie. An event this writer created, stamped at or up to 1 s before the lane's newest event, gets that event's `ts` + 1 ms, so `done` then `reopened` in the same millisecond keep their order (found by a macOS CI run).
+- G10.5: the status line wrapper runs Pit Board's part under a 1 s cap (`timeout`, or `gtimeout` on macOS, when either exists); on an error, no output or the cap, the operator's own line prints alone (G10.4). A pilot condition from Skills Boss.
+
 ## Plan 1.6 (2026-11-17)
 Clarifications found while building G9 (no behaviour changes elsewhere):
 - Appendix A.5 (the skill body, used word for word by G9.1) now holds the G9.2 fallback sentence: use `~/.pitboard/bin/pitboard` when `command -v pitboard` finds nothing. Before, G9.1 and G9.2 could not both hold.
