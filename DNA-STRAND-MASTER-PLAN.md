@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.7 · 2026-11-17 · The Windstorm**
+**Plan version 1.8 · 2026-11-20 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -32,7 +32,7 @@ This document is the complete blueprint for Windstorm Pit Board. Everything that
   - [G14 Hub](#g14-hub)
   - [G15 Master list page](#g15-master-list-page)
   - [G16 Answers from the page and waking a lane](#g16-answers-from-the-page-and-waking-a-lane)
-  - [G17 Other harnesses: MCP server and adapters](#g17-other-harnesses-mcp-server-and-adapters)
+  - [G17 Other harnesses: the matrix, MCP server and adapters](#g17-other-harnesses-the-matrix-mcp-server-and-adapters)
   - [G18 Setup and doctor](#g18-setup-and-doctor)
   - [G19 Secret masking](#g19-secret-masking)
   - [G20 Tests and CI](#g20-tests-and-ci)
@@ -178,6 +178,7 @@ All under `PITBOARD_HOME` (default `~/.pitboard`):
   state/<key>.activity        "busy <ts>" or "idle <ts>" (G16.4)
   state/<key>.wake            time of the last wake typed into this lane (G16.5)
   state/<key>.page-told       uids of page answers already told to the agent (G16.5)
+  state/<key>.reminded        session_id -> when a prompt hook last added the open asks (G17.6, harnesses without H5)
   state/permission-open       exists while any permission ask is open (G7.0, G7.5)
   state/statusline-seen.json  session_id -> last time status recorded its name (G10.6)
   statusline.sh               status line wrapper (G10.5)
@@ -732,13 +733,63 @@ Otherwise the lane learns of the answer at its next start (the reminder lists pa
 
 **G16.6** `pitboard inbox` lists asks of this lane that are `answered` with `via: page` and not yet `done`, with the answer text, and marks nothing.
 
-### G17 Other harnesses: MCP server and adapters
+### G17 Other harnesses: the matrix, MCP server and adapters
+
+A harness is the program an agent runs in: Claude Code; a desktop app that drives Claude Code through the Claude Agent SDK (T3 Code); Codex CLI, Gemini CLI, Cursor, GitHub Copilot CLI, OpenCode and others. Pit Board is built on Claude Code's hooks, but an ask lives in the lane log, and any program that can run `pitboard` writes it the same way. G17.4 to G17.10 say what each harness gets, what takes the place of each missing piece, and how a harness is checked before anything relies on it.
 
 **G17.1** `pitboard mcp` is a Model Context Protocol server over stdio (JSON-RPC 2.0, standard library only). Tools: `pitboard_add`, `pitboard_list`, `pitboard_answer`, `pitboard_done`, `pitboard_withdraw`, with the same fields and rules as the G6 commands, and the lane taken from a `lane` argument or `PITBOARD_LANE`.
 
-**G17.2** `AGENTS.md` at the repository root explains, for any agent in any harness: record asks with `pitboard add`, start the chat question with the ID, close asks when answered. Harnesses that read `AGENTS.md` get the rules; harnesses that support MCP get the tools.
+**G17.2** `AGENTS.md` at the repository root explains, for any agent in any harness: record asks with `pitboard add`, start the chat question with the ID, close asks when answered. Harnesses that read `AGENTS.md` get the rules; harnesses that support MCP get the tools. It also says: run `pitboard list` when a session starts and whenever you find your conversation summarised; when `pitboard` asks which lane, pass `--lane` with the key G17.6 gives; when the operator's whole message is `pb`, run `pitboard board --plain` and show its output exactly, with no comment; when it is `ok A12` or `no A12`, run that same `pitboard` command first, then act on it. These lines stand in for the hooks a harness lacks (G17.6). The same text is what goes into a harness's own rules file (G17.6, H2).
 
 **G17.3** Adapters for other harnesses' hook systems (Cursor, Codex and others) are written only after their hook contracts are checked the same way as [Part 7](#part-7-platform-contracts-to-check-before-coding), each in `adapters/<harness>/` with its own `CONTRACTS.md`.
+
+**G17.4 The floor.** In any harness where the agent can run a shell command (H1) or call the MCP tools (G17.1), an ask reaches the operator in four ways that need no hook: the agent's chat question starts with the ask's ID (the rules); `pitboard board --lane KEY` in any terminal on that machine shows it; the master list page (G15) shows it once the hub runs; and, when the lane runs inside tmux, the tab badge (G12) shows the count, because the agent's own `pitboard` writes set it (Part 4, data flow step 2). A harness where the agent can do neither is `unsupported`: Pit Board does nothing there, and its `docs/HARNESSES.md` row says so.
+
+**G17.5 Capabilities.** Each harness is described by these answers, each `yes`, `no` or `unchecked` (unchecked counts as no):
+
+| ID | Capability | Claude Code 2.1.326 |
+|---|---|---|
+| H1 | The agent runs shell commands and reads their output. | yes |
+| H2 | Standing rules load into every session: skills in the Agent Skills format (G9.4), `AGENTS.md`, or the harness's own rules file (which one is recorded). | yes, skills |
+| H3 | A session ID, stable across resumes, reaches the agent's shell commands or the hooks. | yes (C2; hooks' `session_id`) |
+| H4 | A hook at session start or resume whose output reaches the model. | yes (G7.1) |
+| H5 | A hook after the harness compacts or trims the conversation whose output reaches the model. | yes (SessionStart `compact`) |
+| H6a | A hook before each prompt that can add context for the model. | yes (G7.2) |
+| H6b | The same hook can stop the prompt and show text to the operator, with no model turn. | yes (G7.2 step 1) |
+| H7 | A turn-end hook that can make the agent continue with an instruction. | yes (G7.6) |
+| H8 | Hooks for the harness's question boxes and permission prompts. | yes (G7.3 to G7.5) |
+| H9 | A status line: a command whose output stays on screen. | yes (G10) |
+| H10 | It runs in a terminal, so tmux and the tab badge are possible. | yes |
+
+**G17.6 What takes the place of each missing piece.** Each part of Pit Board runs at the best rung the harness's answers allow:
+
+| Part | Needs | Without it |
+|---|---|---|
+| Recording an ask (G6) | H1, or the MCP tools (G17.1) | `unsupported` (G17.4). |
+| The rules | H2: the skill (G9.1) where skills load; else G17.2's text in the harness's own rules file, which its `docs/HARNESSES.md` row names | The start reminder (G7.7) carries the `Rules:` lines (H4). Without H4 as well: `unsupported`, because the agent never learns to record. |
+| Lane identity (G3) | H3 | `PITBOARD_LANE` in the environment the harness starts with (its row says where to set it). If it is unset, G3.7 step 4 lists the lanes and the agent passes `--lane` with G3.1 applied to its working folder's name. Two sessions in one folder then share a lane, as in G3.5; the row says so. |
+| Reminder at start (G7.1) | H4 | The rules tell the agent to run `pitboard list` when a session starts (G17.2). |
+| Reminder after compaction | H5 | With H6a: the prompt hook adds G7.7's list of open asks on the first prompt that comes more than 60 minutes after the last one it added in that session (`state/<key>.reminded`), and only while asks are open. Without H6a: the rules tell the agent to run `pitboard list` whenever it finds its conversation summarised (G17.2). |
+| `pb`, `ok`, `no` typed at the prompt (G7.2 steps 1 to 3) | H6b | They reach the agent as ordinary messages, and the rules (G17.2) tell it to show the board, or to run `pitboard ok` or `pitboard no` before acting: one model turn, as with the board skill (G9.3). Any other answer typed into the chat is written down by the agent with `pitboard answer` (G6.2, G7.7's rules line). The operator can also read the board with `pitboard board --lane KEY` in any terminal on that machine. |
+| Mentions (G7.2 step 4) | H6a | G7.7's rules line alone. |
+| The catcher (G8) | H7 | No catcher. Part 9's weekly read of lane endings samples these lanes on their own, and reports them by harness. |
+| Question boxes and permission prompts (G7.3 to G7.5) | H8 | Not recorded. They show in the harness itself while they wait. |
+| Status segment (G10) | H9 | The tab badge (G12) when H10 holds and the lane runs in tmux; otherwise the page in its pop-out window (G15) is the view that stays on screen. |
+| Tab badge (G12) | H10 and tmux | None. |
+| Self-update (G21) | nothing from the harness: timers, the stable copy and the launcher run outside every harness | Adapter commands call `$PITBOARD_HOME/bin/pitboard`, never a version folder (G21.4). |
+
+**G17.7 One code path.** An adapter (G17.3) only turns a harness's hook input into the input the G7 handlers already read, and their output into the form the harness expects. It never decides anything about asks itself. A harness whose hooks have Claude Code's event names, input fields and output fields (each checked, G17.8) needs no adapter: it runs `pitboard hook <event>` through the stable copy, `$PITBOARD_HOME/bin/pitboard`.
+
+**G17.8 Checking a harness.** Before any part relies on a harness, H1 to H10 are checked against an installed version the same way as [Part 7](#part-7-platform-contracts-to-check-before-coding) (read the harness's documentation, then run a throwaway hook or command that logs what it receives). The results go into `docs/HARNESSES.md`: one row per harness and version, with the date, the machine, each answer, and the rung each part of G17.6 runs at. One real input per hook event is saved as `tests/fixtures/harnesses/<harness>/<event>.json`, with personal data removed. A row older than 90 days is marked `stale` and checked again before the next release that touches its adapter.
+
+**G17.9 The first harness: T3 Code on OC3.** T3 Code drives Claude Code through the Claude Agent SDK, and Codex and OpenCode through their own command-line tools; it never calls a model itself. Each provider is its own row. The Claude provider is checked first, on the test box OC3 (booked with `test-now`), with the T3 Code version installed there:
+1. whether its sessions load the operator's plugins and their hooks (T3 Code's source hands the SDK only the plugin folders given as `--plugin-dir` launch arguments; which settings files its sessions load was not settled by reading the source on 2026-11-19);
+2. whether SessionStart fires with `source: compact`;
+3. how a UserPromptSubmit block's `reason` shows in T3 Code's window, and whether the prompt stays out of the conversation;
+4. that H9 is `no`: a desktop app has no status line, so the page's pop-out is the view that stays on screen.
+Its Codex provider comes next.
+
+**G17.10 Tests.** `tests/test_g17_matrix.py` replays each harness's saved inputs (G17.8) through its adapter, or straight through `pitboard hook` for a harness that needs none, and checks that the lane log gets the same event types and fields, apart from IDs and times, as the Claude Code fixtures for the same action: an ask recorded, a reminder returned, an approval written. A rung of G17.6 that a harness row relies on and no saved input proves is a failing test.
 
 ### G18 Setup and doctor
 
@@ -884,7 +935,9 @@ windstorm-pit-board/
   adapters/                       G17.3, empty until then
   tests/                          G20
   tests/fixtures/releases/        G21.11, one folder per released version
+  tests/fixtures/harnesses/       G17.8, one folder per harness, one real input per hook event
   docs/CONTRACTS.md               Part 7 results
+  docs/HARNESSES.md               G17.8, one row per harness and version (H1 to H10, the rung of each part)
   docs/PILOT.md                   Part 9 measurements
   AGENTS.md                       G17.2
   DNA-STRAND-MASTER-PLAN.md       this plan
@@ -959,13 +1012,14 @@ Accepted when, in one pilot lane:
 ### M2 Every lane, updating itself (0.2.0): G9.6, G9.7, G7.1 step 4, G7.3 to G7.6, G7.9, G8, G12, G18 (all of `setup`, and `doctor`), G21 (all)
 Accepted when: the trigger evals (G9.6) pass for every skill and the with-skill vs. without-skill evals (G9.7) are recorded; question boxes and permission prompts are recorded and closed by themselves; the catcher meets G8.5 over one week on the pilot lanes; tab badges show; `setup` and `doctor` work on Linux and macOS; a release published on GitHub reaches every machine within `update_check_hours` + 1 hour with nobody touching them; a deliberately broken test release is rolled back by itself on a test machine. Then it is rolled out to all lanes one machine at a time.
 
-### M3 Master list, view only (0.3.0): G13 (no inbox), G14 (no `/v1/answers`), G15, G21.7, G21.8
-Accepted when: every lane's asks from every machine are on the page within 90 s of being recorded; the page pops out on top; History scrolls back to the first ask; a hub restart and a machine offline for a day lose nothing; a new release moves the hub and the open page onto it by themselves.
+### M3 Master list, view only (0.3.0): G13 (no inbox), G14 (no `/v1/answers`), G15, G21.7, G21.8, G17.2, G17.4 to G17.10 (T3 Code's rows)
+The page is the floor every harness lands on (G17.4), so the harness matrix comes with it.
+Accepted when: every lane's asks from every machine are on the page within 90 s of being recorded; the page pops out on top; History scrolls back to the first ask; a hub restart and a machine offline for a day lose nothing; a new release moves the hub and the open page onto it by themselves; `docs/HARNESSES.md` holds checked rows for T3 Code's Claude and Codex providers on OC3, and an ask recorded in a T3 Code lane there is on the page within 90 s.
 
 ### M4 Answers from the page (0.4.0): G13.5, G14 `/v1/answers`, G16
 Accepted when: an OK on the page reaches the lane log within 90 s; with `wake: tmux`, an idle lane wakes and acts, and a busy lane is never typed into.
 
-### M5 Public release and other harnesses (1.0.0): G17, marketplace listing, README for strangers
+### M5 Public release and other harnesses (1.0.0): G17.1, G17.3 and the rows of G17.8 for other harnesses, marketplace listing, README for strangers
 Accepted when: a person outside The Windstorm installs it from the marketplace on a clean machine and gets an ask on their status line in under 10 minutes, using only the README.
 
 ---
@@ -1020,6 +1074,7 @@ These are not in the build. Each needs a decision (and a plan change) before any
 5. **Several operators:** each ask could name who it waits on. Out of scope until someone needs it.
 6. **Desktop app wrapper** around the page, only if the pop-out falls short in daily use.
 7. **Marketplace catalog:** confirm with Skills Boss, before M5, which repository's `marketplace.json` lists Pit Board (today Part 6 says Windstorm Pit Stop's).
+8. **One harness matrix for the skill family:** should Windstorm Pit Stop and the other Windstorm skills use the same capability list (H1 to H10) and the same `docs/HARNESSES.md` row shape, so each harness is checked once for every skill? Pit Stop's `main` has no harness matrix yet (read 2026-11-19).
 
 ---
 
