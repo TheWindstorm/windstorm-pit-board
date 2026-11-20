@@ -1,5 +1,20 @@
 # Changelog
 
+## Plan 1.8 (2026-11-20)
+The harness matrix, for Skills Boss's P3 request: what degrades gracefully in a harness without hooks, and how the ask still reaches the operator. Plan text only; no code follows until Skills Boss reads it and the operator has sampled M1.
+- G17 is now "Other harnesses: the matrix, MCP server and adapters", with an introduction.
+- G17.2: `AGENTS.md` gains the lines that stand in for missing hooks: run `pitboard list` at session start and after a summary; pass `--lane` as G17.6 says; a message that is only `pb`, `ok A12` or `no A12` is handled with that `pitboard` command. The same text goes into a harness's own rules file.
+- G17.4 (new) the floor: in any harness that can run `pitboard` or the MCP tools, an ask reaches the operator through the ID in chat, `pitboard board --lane KEY`, the page and the tmux badge, with no hook. Neither means `unsupported`.
+- G17.5 (new) capabilities H1 to H10 (H6 split into a and b), with Claude Code 2.1.326's answers.
+- G17.6 (new) what takes the place of each missing piece, part by part; new state file `state/<key>.reminded` (Part 4) for the hourly open-asks line in harnesses without a post-compaction hook.
+- G17.7 (new) one code path: adapters only translate; a harness with Claude Code's hook shapes needs none.
+- G17.8 (new) checking a harness the Part 7 way; results in `docs/HARNESSES.md`, inputs in `tests/fixtures/harnesses/<harness>/` (Part 6); rows go stale after 90 days.
+- G17.9 (new) the first harness: T3 Code, Claude provider first, then Codex; on OC3 if Veron HERDR Boss rules the exception, else on another test box booked with `test-now` where the lane installs T3 Code itself (Skills Boss's change, so M3 never waits on one machine).
+- G17.10 (new) `tests/test_g17_matrix.py`.
+- Part 8: G17.2 and G17.4 to G17.10 (T3 Code's rows) move to M3, because the page is the floor; M3's acceptance gains T3 Code's rows and an ask from a T3 Code lane on the page within 90 s. M5 keeps G17.1, G17.3 and the other harnesses' rows.
+- Part 11.8 (new, answered by Skills Boss): one harness matrix for the skill family, growing by division. H1 to H10 live in this plan for now, Pit Stop adds its own from H11 up, and the matrix moves to a shared home when a third skill needs it.
+No existing codon is renumbered and no existing test changes.
+
 ## Plan 1.7 (2026-11-17)
 - G2.12 (new): one writer's events never tie. An event this writer created, stamped at or up to 1 s before the lane's newest event, gets that event's `ts` + 1 ms, so `done` then `reopened` in the same millisecond keep their order (found by a macOS CI run).
 - G10.5: the status line wrapper runs Pit Board's part under a 1 s cap (`timeout`, or `gtimeout` on macOS, when either exists); on an error, no output or the cap, the operator's own line prints alone (G10.4). A pilot condition from Skills Boss.
