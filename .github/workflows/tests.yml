@@ -5,6 +5,10 @@ on:
   pull_request:
 permissions:
   contents: read
+# Every run step uses bash with pipefail, so a command piped into another can never hide a failure.
+defaults:
+  run:
+    shell: bash
 jobs:
   test:
     runs-on: ${{ matrix.os }}

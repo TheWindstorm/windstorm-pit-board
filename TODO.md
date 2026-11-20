@@ -3,18 +3,20 @@
 The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tracks where the build is against it.
 
 ## Now
-- [ ] 2026-11-17 M1: genes in the order of Part 8 (G1 → G19 → G4 → G5 → G2 → G3 → G21.4 → G6 → G11 → G10 → G7.0/7.1/7.2/7.8 → G9), each with its codon tests.
-- [ ] 2026-11-17 M1: pilot in one lane; the operator samples it before any other lane gets it.
+- [ ] 2026-11-17 M1: pilot in one lane (running since 2026-11-17, docs/PILOT.md); the operator samples it before any other lane gets it. Acceptance 1, 3, 4, 5 and 7 pass; 2 is counted again from 2026-11-20; 6 and 8 are the operator's, at the sample.
 
 ## Waiting on
 - [ ] 2026-11-17 Before the first release (G21.1): if pilot fixes change what gets written, delete and save tests/fixtures/releases/0.1.0 again in the release PR (it is final once tagged).
 - [ ] 2026-11-17 Plan 1.5: G7.5 ignores PermissionRequest for AskUserQuestion (C7 finding, docs/CONTRACTS.md); before G7.5 is built (M2).
 
 ## Later
-- [ ] 2026-11-17 After the M1 pilot: propose a plan gene for a harness matrix (Skills Boss, P3): what degrades gracefully in a harness without hooks, and how the ask still reaches the operator. T3 Code on OC3 for testing; Pit Stop goes first.
-- [ ] M2 every lane, updating itself · M3 master list (view only) · M4 answers from the page · M5 public release and other harnesses.
+- [ ] M2 every lane, updating itself · M3 master list (view only), with the harness matrix (G17.4 to G17.10) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
+- [x] 2026-11-20 CI run steps use `shell: bash` (pipefail), so a piped command cannot hide a failure (Skills Boss's fleet lesson).
+- [x] 2026-11-20 M1 pilot notes in docs/PILOT.md: acceptance 1, 3, 4, 5 and 7 pass; Part 9's first week.
+- [x] 2026-11-20 Harness matrix proposed as plan 1.8 (#26: G17.4 to G17.10, M3), approved by Skills Boss; its code waits for the operator's M1 sample.
+- [x] 2026-11-17 M1: every gene of Part 8 is on main (f105182, PRs #2 to #25), CI 5/5 green.
 - [x] 2026-11-17 Tag ruleset "release tags are immutable" on refs/tags/v* (no delete, update or force-push; creating a tag is allowed), id 27497878 (C15 warning).
 - [x] 2026-11-17 M1: G2.12 one writer's events never tie (same-millisecond done then reopen kept in order; found by a macOS CI run); 0.1.0 release folder saved again with it.
 - [x] 2026-11-17 M1: G10.5 status line wrapper caps Pit Board's part at 1 s (timeout/gtimeout); a slow or broken segment leaves the operator's own line alone (plan 1.7).
