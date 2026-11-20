@@ -9,10 +9,10 @@ The harness matrix, for Skills Boss's P3 request: what degrades gracefully in a 
 - G17.6 (new) what takes the place of each missing piece, part by part; new state file `state/<key>.reminded` (Part 4) for the hourly open-asks line in harnesses without a post-compaction hook.
 - G17.7 (new) one code path: adapters only translate; a harness with Claude Code's hook shapes needs none.
 - G17.8 (new) checking a harness the Part 7 way; results in `docs/HARNESSES.md`, inputs in `tests/fixtures/harnesses/<harness>/` (Part 6); rows go stale after 90 days.
-- G17.9 (new) the first harness: T3 Code on OC3, Claude provider first, then Codex.
+- G17.9 (new) the first harness: T3 Code, Claude provider first, then Codex; on OC3 if Veron HERDR Boss rules the exception, else on another test box booked with `test-now` where the lane installs T3 Code itself (Skills Boss's change, so M3 never waits on one machine).
 - G17.10 (new) `tests/test_g17_matrix.py`.
 - Part 8: G17.2 and G17.4 to G17.10 (T3 Code's rows) move to M3, because the page is the floor; M3's acceptance gains T3 Code's rows and an ask from a T3 Code lane on the page within 90 s. M5 keeps G17.1, G17.3 and the other harnesses' rows.
-- Part 11.8 (new): one harness matrix for the whole skill family?
+- Part 11.8 (new, answered by Skills Boss): one harness matrix for the skill family, growing by division. H1 to H10 live in this plan for now, Pit Stop adds its own from H11 up, and the matrix moves to a shared home when a third skill needs it.
 No existing codon is renumbered and no existing test changes.
 
 ## Plan 1.7 (2026-11-17)

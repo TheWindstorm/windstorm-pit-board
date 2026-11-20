@@ -782,7 +782,7 @@ A harness is the program an agent runs in: Claude Code; a desktop app that drive
 
 **G17.8 Checking a harness.** Before any part relies on a harness, H1 to H10 are checked against an installed version the same way as [Part 7](#part-7-platform-contracts-to-check-before-coding) (read the harness's documentation, then run a throwaway hook or command that logs what it receives). The results go into `docs/HARNESSES.md`: one row per harness and version, with the date, the machine, each answer, and the rung each part of G17.6 runs at. One real input per hook event is saved as `tests/fixtures/harnesses/<harness>/<event>.json`, with personal data removed. A row older than 90 days is marked `stale` and checked again before the next release that touches its adapter.
 
-**G17.9 The first harness: T3 Code on OC3.** T3 Code drives Claude Code through the Claude Agent SDK, and Codex and OpenCode through their own command-line tools; it never calls a model itself. Each provider is its own row. The Claude provider is checked first, on the test box OC3 (booked with `test-now`), with the T3 Code version installed there:
+**G17.9 The first harness: T3 Code.** T3 Code drives Claude Code through the Claude Agent SDK, and Codex and OpenCode through their own command-line tools; it never calls a model itself. Each provider is its own row. T3 Code is checked first: on OC3 if Veron HERDR Boss rules the exception for it, else on another test box (booked with `test-now`) where the lane installs T3 Code itself, so the check never waits on one machine. The row records the T3 Code version used. The Claude provider comes first:
 1. whether its sessions load the operator's plugins and their hooks (T3 Code's source hands the SDK only the plugin folders given as `--plugin-dir` launch arguments; which settings files its sessions load was not settled by reading the source on 2026-11-19);
 2. whether SessionStart fires with `source: compact`;
 3. how a UserPromptSubmit block's `reason` shows in T3 Code's window, and whether the prompt stays out of the conversation;
@@ -1014,7 +1014,7 @@ Accepted when: the trigger evals (G9.6) pass for every skill and the with-skill 
 
 ### M3 Master list, view only (0.3.0): G13 (no inbox), G14 (no `/v1/answers`), G15, G21.7, G21.8, G17.2, G17.4 to G17.10 (T3 Code's rows)
 The page is the floor every harness lands on (G17.4), so the harness matrix comes with it.
-Accepted when: every lane's asks from every machine are on the page within 90 s of being recorded; the page pops out on top; History scrolls back to the first ask; a hub restart and a machine offline for a day lose nothing; a new release moves the hub and the open page onto it by themselves; `docs/HARNESSES.md` holds checked rows for T3 Code's Claude and Codex providers on OC3, and an ask recorded in a T3 Code lane there is on the page within 90 s.
+Accepted when: every lane's asks from every machine are on the page within 90 s of being recorded; the page pops out on top; History scrolls back to the first ask; a hub restart and a machine offline for a day lose nothing; a new release moves the hub and the open page onto it by themselves; `docs/HARNESSES.md` holds checked rows for T3 Code's Claude and Codex providers (on OC3 if Veron HERDR Boss rules the exception, else on another test box booked with `test-now`, where the lane installs T3 Code itself), and an ask recorded in a T3 Code lane there is on the page within 90 s.
 
 ### M4 Answers from the page (0.4.0): G13.5, G14 `/v1/answers`, G16
 Accepted when: an OK on the page reaches the lane log within 90 s; with `wake: tmux`, an idle lane wakes and acts, and a busy lane is never typed into.
@@ -1074,7 +1074,7 @@ These are not in the build. Each needs a decision (and a plan change) before any
 5. **Several operators:** each ask could name who it waits on. Out of scope until someone needs it.
 6. **Desktop app wrapper** around the page, only if the pop-out falls short in daily use.
 7. **Marketplace catalog:** confirm with Skills Boss, before M5, which repository's `marketplace.json` lists Pit Board (today Part 6 says Windstorm Pit Stop's).
-8. **One harness matrix for the skill family:** should Windstorm Pit Stop and the other Windstorm skills use the same capability list (H1 to H10) and the same `docs/HARNESSES.md` row shape, so each harness is checked once for every skill? Pit Stop's `main` has no harness matrix yet (read 2026-11-19).
+8. **One harness matrix for the skill family. Answered by Skills Boss on 2026-11-20: yes, one matrix (P6), and it grows by division.** H1 to H10 and the `docs/HARNESSES.md` row shape live in this plan for now. Windstorm Pit Stop's harness verdict table reuses H1 to H10 and adds its own capabilities from H11 up (for example PreCompact, the auto-compact window, its updater). When a third skill needs the matrix, it moves to a shared home, by a plan change.
 
 ---
 
