@@ -5,12 +5,10 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 ## Now
 - [ ] 2026-11-22 P4 (M1 item 2, moved to M2a): two calendar days, each with a real ask recorded unprompted in an M2a lane; write the dates and lanes into `proven`. On 2026-11-22, test sessions on a shared Linux machine and on an Intel Mac each recorded an ask unprompted, from a task that needed the operator's choice and never named Pit Board (evidence, not one of the two days).
 - [ ] 2026-11-22 P1 `proven`: write it the first time an open ask shows the segment first in a real lane.
-- [ ] 2026-11-22 M2a (Part 8): the install and undo commands for a lane's own folder are tested with the real plugin commands from the 0.1.0 listing, on Linux (bash) and macOS (zsh); the undo puts the folder's settings back byte for byte. Next: the skill family's own lanes, one at a time.
-- [ ] 2026-11-22 0.1.1 (G21.14): P4, P5 and P6 have their tests; P5 and P6 with `setup --folder` (G18.1 folder mode, #38), run with the real plugin commands on Linux and macOS. Release it after the skill's owner's go; M2a lanes then use `setup --folder` instead of the lane's own scripts.
+- [ ] 2026-11-22 M2a (Part 8): lanes of the skill family run 0.1.1 from the catalog, put in by `setup --folder` from a clone of the tag: the skill's own lane since 13:22Z and a sibling skill's lane since 13:55Z (first hook from the 0.1.1 cache). The third lane follows on the skill's owner's word; P4's two days count from that hour.
 - [ ] 2026-11-22 P8 (#44, due 0.1.2): before any self-check, the stable launcher (the status line's) runs the first installed entry, not the newest (G21.4 step 6); seen on an Intel Mac with the 0.1.1 candidate beside 0.1.0. Build and test it before the first release that changes code the stable copy runs.
 - [ ] 2026-11-22 P9 (#45, due 0.1.2): a failed `claude plugin install` in setup --folder shows only the last line of Claude Code's error; show it from its first error line. The undo-on-failure itself held 7 times in round 6. Also name the no-GitHub-key case in plain words (the clone fell back to SSH: 'Host key verification failed' / 'Permission denied (publickey)'), with what to do.
 - [ ] 2026-11-22 P10 (#46, due 0.1.2): `pitboard update --pin VER` / `--unpin` before the rest of the updater, so a person can step a home back; seen with 0.1.0 folders whose status line ran 0.1.1.
-- [ ] 2026-11-22 Overnight stress test with the skill family's other two skills on two machines, with real reboots: every finding becomes a promise row and an issue the same night.
 
 ## Waiting on
 - [ ] 2026-11-17 Plan 1.5: G7.5 ignores PermissionRequest for AskUserQuestion (C7 finding, docs/CONTRACTS.md); before G7.5 is built (M2).
@@ -19,6 +17,8 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] M2 every lane, updating itself · M3 master list (view only), with the harness matrix (G17.4 to G17.10) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
+- [x] 2026-11-22 Release 0.1.1 (G18.1 folder mode, P7): tag v0.1.1 at dc80189 (#47), the GitHub release, and the marketplace entry pinned to `ref` v0.1.1 and its `sha` (merged in the marketplace's own repository after the skill's owner's install in a clean test account). The code is the candidate cf0391e, which was installed from its commit on an Intel Mac and a Linux laptop and held through clean reboots, a sudden reset and a reinstall in another order; each undo put the folder back byte for byte. A fresh clone of the tag differs from it in PROMISES.json and TODO.md only.
+- [x] 2026-11-22 Overnight stress test with the skill family's other two skills on two machines, with real reboots: rows P7 to P10 (#43 to #46), each with its issue the same night; P2, P5, P6 and P7 seen on real machines. P9 also names the no-GitHub-key case (#48).
 - [x] 2026-11-22 P5 and P6 (#38) in PROMISES.json; P4 and docs/PILOT.md name roles, not lanes (#39).
 - [x] 2026-11-22 Release 0.1.0 (G21.1): tag v0.1.0 at f725e23, the GitHub release, the `agent-skills` topic and the CHANGELOG entry. The marketplace entry pins `ref` v0.1.0 and its `sha` (merged in the marketplace's own repository). tests/fixtures/releases/0.1.0 is final.
 - [x] 2026-11-22 M1 accepted for 0.1.0: items 1 and 3 to 8 pass; item 2 moved to M2a as P4 (plan 1.11). The operator kept the pilot on 2026-11-21.
