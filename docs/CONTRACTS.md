@@ -24,7 +24,7 @@ Check these again when Claude Code's major or minor version changes (`pitboard d
 
 ## Plan change needed (C7)
 
-G7.5 records a PermissionRequest as an ask. Claude Code 2.1.326 also sends PermissionRequest for `AskUserQuestion`, which G7.3 already records from PreToolUse. Proposed for plan 1.5: G7.5 ignores `tool_name == "AskUserQuestion"`. Ruled by Skills Boss 2026-11-17 and written as plan 1.5 (#17): G7.5 skips `AskUserQuestion`; `test_G7_5_question_box_is_one_ask` feeds `pre-tool-use/AskUserQuestion.json`, `permission-request/AskUserQuestion.json` and `notification/permission_prompt.json`.
+G7.5 records a PermissionRequest as an ask. Claude Code 2.1.326 also sends PermissionRequest for `AskUserQuestion`, which G7.3 already records from PreToolUse. Proposed for plan 1.5: G7.5 ignores `tool_name == "AskUserQuestion"`. Ruled by the skill's owner on 2026-11-17 and written as plan 1.5 (#17): G7.5 skips `AskUserQuestion`; `test_G7_5_question_box_is_one_ask` feeds `pre-tool-use/AskUserQuestion.json`, `permission-request/AskUserQuestion.json` and `notification/permission_prompt.json`.
 
 ## Extra fields seen (not used by the plan)
 
@@ -32,5 +32,5 @@ G7.5 records a PermissionRequest as an ask. Claude Code 2.1.326 also sends Permi
 
 ## Notes found while building
 
-- **G2.12 timestamps can run ahead of the wall clock (by design).** To keep one writer's events in order, a bumped `ts` is the lane's newest `ts` + 1 ms, so a stored `ts` can be up to about 1 s ahead of the real time. Ordering across *different* writers is still by `(ts, event_id)`; if that ever needs to be exact, the cleaner fix is a per-writer sequence field, not tighter clocks (Skills Boss, 2026-11-17: not needed now).
+- **G2.12 timestamps can run ahead of the wall clock (by design).** To keep one writer's events in order, a bumped `ts` is the lane's newest `ts` + 1 ms, so a stored `ts` can be up to about 1 s ahead of the real time. Ordering across *different* writers is still by `(ts, event_id)`; if that ever needs to be exact, the cleaner fix is a per-writer sequence field, not tighter clocks (the skill's owner, 2026-11-17: not needed now).
 - **Marketplaces are user scope only for the plugin CLI** (Claude Code 2.1.326, 2026-11-17). `claude plugin marketplace list`, `marketplace update` and `install` ignore `extraKnownMarketplaces` in a folder's `.claude/settings.local.json` and in its `.claude/settings.json`; the user files stayed byte-identical. A per-folder pilot therefore declares its marketplace in user settings (`claude plugin marketplace add`), and only the install itself is local (`-s local`).

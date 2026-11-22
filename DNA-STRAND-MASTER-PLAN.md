@@ -782,7 +782,7 @@ A harness is the program an agent runs in: Claude Code; a desktop app that drive
 
 **G17.8 Checking a harness.** Before any part relies on a harness, H1 to H10 are checked against an installed version the same way as [Part 7](#part-7-platform-contracts-to-check-before-coding) (read the harness's documentation, then run a throwaway hook or command that logs what it receives). The results go into `docs/HARNESSES.md`: one row per harness and version, with the date, the machine, each answer, and the rung each part of G17.6 runs at. One real input per hook event is saved as `tests/fixtures/harnesses/<harness>/<event>.json`, with personal data removed. A row older than 90 days is marked `stale` and checked again before the next release that touches its adapter.
 
-**G17.9 The first harness: T3 Code.** T3 Code drives Claude Code through the Claude Agent SDK, and Codex and OpenCode through their own command-line tools; it never calls a model itself. Each provider is its own row. T3 Code is checked first: on OC3 if Veron HERDR Boss rules the exception for it, else on another test box (booked with `test-now`) where the lane installs T3 Code itself, so the check never waits on one machine. The row records the T3 Code version used. The Claude provider comes first:
+**G17.9 The first harness: T3 Code.** T3 Code drives Claude Code through the Claude Agent SDK, and Codex and OpenCode through their own command-line tools; it never calls a model itself. Each provider is its own row. T3 Code is checked first: on a fixed test machine if the machines' owner rules the exception for it, else on another test machine booked for it, where the lane installs T3 Code itself, so the check never waits on one machine. The row records the T3 Code version used. The Claude provider comes first:
 1. whether its sessions load the operator's plugins and their hooks (T3 Code's source hands the SDK only the plugin folders given as `--plugin-dir` launch arguments; which settings files its sessions load was not settled by reading the source on 2026-11-19);
 2. whether SessionStart fires with `source: compact`;
 3. how a UserPromptSubmit block's `reason` shows in T3 Code's window, and whether the prompt stays out of the conversation;
@@ -828,7 +828,7 @@ Its Codex provider comes next.
 
 **G20.7** `tests/smoke_hooks.sh` feeds every recorded hook input to `pitboard hook` and checks exit code 0 and the expected output shape.
 
-**G20.8 CI rules** (Skills Boss ruling 2026-11-17): the workflow sets `permissions: contents: read` at workflow level, uses no repository secrets (only the automatic `GITHUB_TOKEN`, read-only, which `gh skill publish --dry-run` may need), never uses `pull_request_target`, and runs only on standard GitHub-hosted runners: every `runs-on` value (directly, or each value of the matrix entry it names) must match `^(ubuntu|macos|windows)-(latest|[0-9]+(\.[0-9]+)?)$`. Larger-runner labels (for example `ubuntu-latest-4-cores`, `macos-15-xlarge`), self-hosted labels and runner groups are refused: larger runners are billed even on public repositories, and an unpaid GitHub bill is why private repositories run on our own machines. A test reads `.github/workflows/*.yml` and fails if any of these four rules is broken. CI also runs the G9.5 gate.
+**G20.8 CI rules** (ruled by the skill's owner, 2026-11-17): the workflow sets `permissions: contents: read` at workflow level, uses no repository secrets (only the automatic `GITHUB_TOKEN`, read-only, which `gh skill publish --dry-run` may need), never uses `pull_request_target`, and runs only on standard GitHub-hosted runners: every `runs-on` value (directly, or each value of the matrix entry it names) must match `^(ubuntu|macos|windows)-(latest|[0-9]+(\.[0-9]+)?)$`. Larger-runner labels (for example `ubuntu-latest-4-cores`, `macos-15-xlarge`), self-hosted labels and runner groups are refused: larger runners are billed even on public repositories, and an unpaid GitHub bill is why private repositories run on our own machines. A test reads `.github/workflows/*.yml` and fails if any of these four rules is broken. CI also runs the G9.5 gate.
 
 ### G21 Self-update: always the newest Pit Board
 
@@ -1001,7 +1001,7 @@ Claude Code changes often. These are the facts the hooks depend on. Before writi
 | C11 | How Claude Code decides a plugin from a marketplace has an update: a raised `version` in `plugin.json`, or any new commit. | G21.1 | If any commit counts, every merge to `main` must be a release (version raised each time). |
 | C12 | The exact commands `claude plugin marketplace update <name>` and `claude plugin update <plugin>@<marketplace>`, their exit codes, and that they work while sessions are running. | G21.3 | Pit Stop's tested calls; else only Claude Code's own auto-update at start-up (G21.2). |
 | C13 | `installed_plugins.json` layout, the version folder layout, and the `.orphaned_at` marker on old folders (seen; Pit Stop relies on them). | G21.4 | Highest version folder only. |
-| C15 | `gh skill publish --dry-run` (GitHub CLI 2.104 or newer, preview) exists on the CI runners, and what it needs (auth, network). | G9.5 | Install a pinned `gh` release in the workflow; if it still cannot run, the standard-library check in `tests/test_g9_skills.py` alone gates, and the gap is reported to Skills Boss. |
+| C15 | `gh skill publish --dry-run` (GitHub CLI 2.104 or newer, preview) exists on the CI runners, and what it needs (auth, network). | G9.5 | Install a pinned `gh` release in the workflow; if it still cannot run, the standard-library check in `tests/test_g9_skills.py` alone gates, and the gap is reported to the skill's owner. |
 | C14 | `command -v pitboard` works in an agent's Bash command while the plugin is enabled (plugin `bin/` on `PATH`). | G9.2, G6.1 | The skill and the reminder name `$PITBOARD_HOME/bin/pitboard`. |
 
 ---
@@ -1018,7 +1018,7 @@ The launcher (G21.4) ships in the very first release, so that every later releas
 Build order: G1 → G19 → G4 → G5 → G2 → G3 → G21.4 launcher → G6 → G11 → Part 7 checks → G10 → G18.1 `--minimal` → G7.0 → G7.1 → G7.7 → G7.2 → G16.4 → G7.8 → G9.
 Accepted when, in one pilot lane:
 1. All tests pass on Python 3.10 and 3.13, and the skill format gate (G9.5) is green.
-2. The agent records its asks with `pitboard add` without being reminded, for 2 days. *Moved to M2a* by Skills Boss's ruling of 2026-11-22. It was shown on 1 of the 2 days. It could not be shown on 2, because the pilot lane's decisions go to its owner, not to the operator, and a made-up ask would be a false proof.
+2. The agent records its asks with `pitboard add` without being reminded, for 2 days. *Moved to M2a* by a ruling of the skill's owner on 2026-11-22. It was shown on 1 of the 2 days. It could not be shown on 2, because the pilot lane's decisions go to its owner, not to the operator, and a made-up ask would be a false proof.
 3. After a `/compact`, the reminder appears and lists the open asks.
 4. The status segment shows the count, and nothing when none are open.
 5. `pb` prints the board at the bottom of the screen in under 1 s, with no model turn.
@@ -1036,7 +1036,7 @@ M2 is rolled out in two stages, because the status line wrapper sits in front of
 
 ### M3 Master list, view only (0.3.0): G13 (no inbox), G14 (no `/v1/answers`), G15, G21.7, G21.8, G17.2, G17.4 to G17.10 (T3 Code's rows)
 The page is the floor every harness lands on (G17.4), so the harness matrix comes with it.
-Accepted when: every lane's asks from every machine are on the page within 90 s of being recorded; the page pops out on top; History scrolls back to the first ask; a hub restart and a machine offline for a day lose nothing; a new release moves the hub and the open page onto it by themselves; `docs/HARNESSES.md` holds checked rows for T3 Code's Claude and Codex providers (on OC3 if Veron HERDR Boss rules the exception, else on another test box booked with `test-now`, where the lane installs T3 Code itself), and an ask recorded in a T3 Code lane there is on the page within 90 s.
+Accepted when: every lane's asks from every machine are on the page within 90 s of being recorded; the page pops out on top; History scrolls back to the first ask; a hub restart and a machine offline for a day lose nothing; a new release moves the hub and the open page onto it by themselves; `docs/HARNESSES.md` holds checked rows for T3 Code's Claude and Codex providers (on a fixed test machine if the machines' owner rules the exception, else on another booked test machine, where the lane installs T3 Code itself), and an ask recorded in a T3 Code lane there is on the page within 90 s.
 
 ### M4 Answers from the page (0.4.0): G13.5, G14 `/v1/answers`, G16
 Accepted when: an OK on the page reaches the lane log within 90 s; with `wake: tmux`, an idle lane wakes and acts, and a busy lane is never typed into.
@@ -1080,7 +1080,7 @@ Measured in the pilot and written into `docs/PILOT.md` weekly:
 | GitHub-hosted CI | Public repository: free, and no stranger's pull request can run on our machines. |
 | Self-update built in from the first release | A fix that never reaches an install is no fix. Claude Code's own auto-update is off for non-Anthropic marketplaces and only runs at start-up, and sessions run for weeks; so Pit Board switches it on, checks by itself, and routes every running part through a launcher that always runs the newest good version. |
 | Roll back by machine, by itself | A bad release must not need a person at each of a dozen machines to undo it. |
-| The Windstorm skill standard (G9.4 to G9.7, G21.1) | Set by Skills Boss for every Windstorm skill on 2026-11-17: the open Agent Skills format so any harness that reads skills can use them, a CI gate so a broken description never ships (an unquoted colon broke one), and evals that prove a skill fires when it should and earns its place. |
+| The Windstorm skill standard (G9.4 to G9.7, G21.1) | Set by the skills' owner for every Windstorm skill on 2026-11-17: the open Agent Skills format so any harness that reads skills can use them, a CI gate so a broken description never ships (an unquoted colon broke one), and evals that prove a skill fires when it should and earns its place. |
 | `pb` as the board shortcut | Plugin commands are always prefixed (`/windstorm-pit-board:board`), too long to type many times a day over a slow connection. Two letters, intercepted before the model, cost nothing. |
 
 ---
@@ -1095,8 +1095,8 @@ These are not in the build. Each needs a decision (and a plan change) before any
 4. **Operator's own items:** adding personal to-do items on the page (an `asked` event with `source: operator`, `by: operator`, written by the hub). The format allows it already; the page does not offer it yet.
 5. **Several operators:** each ask could name who it waits on. Out of scope until someone needs it.
 6. **Desktop app wrapper** around the page, only if the pop-out falls short in daily use.
-7. **Marketplace catalog:** confirm with Skills Boss, before M5, which repository's `marketplace.json` lists Pit Board (today Part 6 says Windstorm Pit Stop's).
-8. **One harness matrix for the skill family. Answered by Skills Boss on 2026-11-20: yes, one matrix (P6), and it grows by division.** H1 to H10 and the `docs/HARNESSES.md` row shape live in this plan for now. Windstorm Pit Stop's harness verdict table reuses H1 to H10 and adds its own capabilities from H11 up (for example PreCompact, the auto-compact window, its updater). When a third skill needs the matrix, it moves to a shared home, by a plan change.
+7. **Marketplace catalog:** confirm with the skill's owner, before M5, which repository's `marketplace.json` lists Pit Board (today Part 6 says Windstorm Pit Stop's).
+8. **One harness matrix for the skill family. Answered by the skill's owner on 2026-11-20: yes, one matrix (P6), and it grows by division.** H1 to H10 and the `docs/HARNESSES.md` row shape live in this plan for now. Windstorm Pit Stop's harness verdict table reuses H1 to H10 and adds its own capabilities from H11 up (for example PreCompact, the auto-compact window, its updater). When a third skill needs the matrix, it moves to a shared home, by a plan change.
 
 ---
 
