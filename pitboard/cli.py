@@ -118,6 +118,9 @@ def parser():
     _common(p)
     p.add_argument("--apply", action="store_true")
     p.add_argument("--minimal", action="store_true")
+    p.add_argument("--folder", metavar="DIR", help="one folder only (G18.1 folder mode): its own settings, never the user's")
+    p.add_argument("--undo", action="store_true", help="with --folder: take it out of that folder again")
+    p.add_argument("--plugin", default=None, help="with --folder: the plugin@marketplace to install")
 
     p = sub.add_parser("hook", help="hook entry point (reads the hook JSON on stdin)")
     _common(p)
@@ -528,6 +531,10 @@ def cmd_status(args, stdin=None):
 def cmd_setup(args):
     """G18.1: a numbered plan; nothing changes without --apply. Milestone 1 has --minimal only."""
     from . import setup as setup_mod
+    if args.folder:
+        return _setup_folder(args)
+    if args.undo:
+        raise Fail(2, "pitboard: setup --undo goes with --folder DIR")
     if not args.minimal:
         raise Fail(2, "pitboard: this release has setup --minimal only (config, stable launcher, "
                       "status line); the full setup comes in 0.2.0")
@@ -541,6 +548,25 @@ def cmd_setup(args):
         applied = setup_mod.apply(items)
     return Out(setup_mod.describe(items, applied), data={"items": [i.as_dict() for i in items],
                                                          "applied": args.apply})
+
+
+def _setup_folder(args):
+    """G18.1 folder mode: plan (default), --apply, or --undo, for one folder."""
+    from . import folder as folder_mod
+    plugin = args.plugin or folder_mod.PLUGIN
+    try:
+        if args.undo:
+            lines = folder_mod.undo(args.folder)
+        elif args.apply:
+            store.ensure_home()
+            lines = folder_mod.apply(args.folder, plugin=plugin)
+        else:
+            lines = folder_mod.plan(args.folder, plugin=plugin) + ["Nothing changed. Run again with --apply to do it."]
+    except folder_mod.Refused as e:
+        raise Fail(2, f"pitboard: setup --folder refused:\n{e}")
+    except (OSError, ValueError, RuntimeError) as e:
+        raise Fail(6, f"pitboard: setup --folder: {e}")
+    return Out("\n".join(lines), data={"folder": args.folder, "applied": bool(args.apply), "undo": bool(args.undo)})
 
 
 def cmd_hook(args, stdin=None):
