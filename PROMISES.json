@@ -145,7 +145,7 @@
    "seen": "2026-11-22, the overnight stress test, an Intel Mac after an uninstall and reinstall round: four test folders had 0.1.0 from the catalog and one had the 0.1.1 candidate. Every home's stable launcher (the status line) ran 0.1.1, while the hooks in a 0.1.0 folder ran that folder's 0.1.0. Removing a version from one folder would not move the status line back while another folder still has it, and 0.1.x has no command to choose a version (G21.10's pin comes with the updater).",
    "promise": "A person can hold a Pit Board home on a version they choose, and release it, with one command (pitboard self-update --pin VER and --unpin), before the rest of the updater exists; pitboard version names the pin.",
    "test": "test_G21_10_pin_holds_a_home_on_a_chosen_version",
-   "proven": "",
+   "proven": "2026-11-22 at 16:07Z on a Linux test account, Claude Code 2.1.280, code f9cba870 (plans 1.15 and 1.18): two folders with git-source installs, the 0.1.0 release and the P10 code (0.1.1), and a Pit Board home whose stable launcher copy came from the P10 code. Before: the status line's launcher and the newer folder's own launcher (the hooks' path) both ran 0.1.1. `self-update --pin 0.1.0` exited 0 with \"0.1.1 (installed 0.1.1, pinned 0.1.0, hooks gen 1)\"; then both launchers ran 0.1.0 and a status line call exited 0. `self-update --unpin` through the stable copy, though 0.1.0 has no self-update, exited 0 with \"0.1.1 (installed 0.1.1, hooks gen 1)\", and both launchers ran 0.1.1 again. `--pin 9.9.9` and a bare `update` were refused, the pin unchanged. Everything undone.",
    "issue": 46,
    "moved_why": "",
    "moved_by_person": ""
