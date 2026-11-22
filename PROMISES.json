@@ -53,7 +53,7 @@
   },
   {
    "id": "P4",
-   "seen": "The M1 pilot, 2026-11-17 to 2026-11-22: the agent recorded its one real ask to the operator unprompted (A2, 2026-11-21 Eastern), so acceptance item 2 was shown on 1 of its 2 days. A second day could not come, because the pilot lane's decisions go to its owner, not to the operator; a made-up ask would be a false proof. Skills Boss's ruling of 2026-11-22 moved item 2 to M2a.",
+   "seen": "The M1 pilot, 2026-11-17 to 2026-11-22: the agent recorded its one real ask to the operator unprompted (A2, 2026-11-21 Eastern), so acceptance item 2 was shown on 1 of its 2 days. A second day could not come, because the pilot lane's decisions go to its owner, not to the operator; a made-up ask would be a false proof. The skill's owner ruled on 2026-11-22 that item 2 moves to M2a.",
    "promise": "The agent records its asks to the operator with pitboard add without being reminded, on two days.",
    "codon": "G9.1",
    "owner": "maintainer",
@@ -65,6 +65,34 @@
    "moved_why": "",
    "moved_by_person": "",
    "proof_needed": "Two calendar days, each with at least one real ask recorded unprompted in an M2a lane; name the dates and the lanes."
+  },
+  {
+   "id": "P5",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.1",
+   "ship_in": "0.1.1",
+   "seen": "2026-11-22, the first night Pit Board was installed in single lanes' folders on two test machines (a shared Linux laptop and an Intel Mac): a machine with no Pit Board home could get one from pitboard setup --minimal --apply only together with a change to the user's own statusLine setting, which reaches every session of that user. The folder installer had to make the home itself, without that step.",
+   "promise": "pitboard setup has a folder mode: it makes the Pit Board home and sets the status line wrapper in one folder's .claude/settings.local.json, never in the user's settings, and its undo puts that file back byte for byte (or removes only Pit Board's entries if the file changed since).",
+   "test": "",
+   "proven": "",
+   "issue": 38,
+   "moved_why": "",
+   "moved_by_person": ""
+  },
+  {
+   "id": "P6",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.1",
+   "ship_in": "0.1.1",
+   "seen": "2026-11-22, the same night, on the Intel Mac: pgrep -x claude sees a Claude Code session's process name as its version file (2.1.330), so counting the sessions in a folder by process name could find none, and a refusal of a folder shared by several sessions would never fire.",
+   "promise": "The folder mode counts the sessions in a folder by each process's command name, on Linux and macOS, and refuses the home folder and any folder where more than one session runs.",
+   "test": "",
+   "proven": "",
+   "issue": 38,
+   "moved_why": "",
+   "moved_by_person": ""
   }
  ],
  "declined": [
