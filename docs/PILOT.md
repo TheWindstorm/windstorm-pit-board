@@ -31,6 +31,7 @@ Plan [Part 8](../DNA-STRAND-MASTER-PLAN.md#part-8-milestones-and-acceptance) say
   - The SessionStart reminder listed the open ask on resume.
   - The status segment ran in 20-30 ms.
   - Only things outside Pit Board were lost: the session's temporary files, and its own scheduled checks.
+  - Pit Board itself needed nothing re-armed. The hooks and the status line wrapper are files that run on each call, so they worked on the first prompt and the first status line after the resume. This is promise P2 in `PROMISES.json`.
 
 ### Part 9 measurements, week of 2026-11-17
 
