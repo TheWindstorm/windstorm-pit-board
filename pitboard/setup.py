@@ -10,7 +10,7 @@ import shlex
 import shutil
 import time
 
-from . import store
+from . import __version__, stablecopy, store
 
 MARK = "# pitboard-original-command: "
 WRAPPER_NAME = "statusline.sh"
@@ -128,6 +128,8 @@ def plan_minimal(home=None, settings_path=None, root=None):
         if src is None:
             raise FileNotFoundError(f"the running version has no {rel}: {root}")
         items.append(_file_item("stable launcher copy", os.path.join(home, rel), src, mode))
+    items.append(_file_item("stable launcher copy", os.path.join(home, stablecopy.MARKER),
+                            f"{__version__}\n".encode("utf-8"), 0o644))       # copied-from (G21.4)
 
     wpath = wrapper_path(home)
     try:

@@ -2,7 +2,7 @@
 
 Every handler is wrapped so that any exception means no output and exit 0 (INV6).
 Each handler appends one line to logs/pitboard.log: time, hook name, lane key, what it
-did (never ask text). Milestone 1 handles session-start (G7.1 steps 1 to 3),
+did (never ask text). Milestone 1 handles session-start (G7.1 steps 1 to 3, and from 0.1.2 step 5),
 user-prompt-submit (G7.2), stop (only the idle mark, G16.4) and cwd-changed (G7.8).
 Standard library only.
 """
@@ -10,7 +10,7 @@ import json
 import os
 import re
 
-from . import contract, lane, render, store, timefmt
+from . import contract, lane, render, stablecopy, store, timefmt
 
 BOARD_PROMPTS = {"pb": False, "pb all": True, "/board": False, "/board all": True}
 APPROVE = re.compile(r"^\s*(ok|yes|approve|approved)\s+(all|(A\d+)([\s,]+A\d+)*)\s*[.!]?\s*$", re.I)
@@ -106,6 +106,12 @@ def session_start(inp, cfg):
         asks = []
     text = render.reminder_text(key, name, cfg["machine"], asks, timefmt.zone(cfg["display_tz"]), cfg=cfg)
     log("session-start", key, f"source={inp.get('source')} {env} reminder={sum(a['status'] == 'open' for a in asks)} open")
+    try:                                                     # G7.1 step 5: never stops the reminder (INV6)
+        what = stablecopy.refresh(store.home(), cfg)
+    except Exception as e:  # noqa: BLE001
+        what = f"stable launcher kept: {type(e).__name__}"
+    if what:
+        log("session-start", key, what)
     return _context("SessionStart", [text])
 
 
