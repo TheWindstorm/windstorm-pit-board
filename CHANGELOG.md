@@ -1,5 +1,14 @@
 # Changelog
 
+## Plan 1.10 (2026-11-22)
+Skills Boss's ruling of 2026-11-22 on M1: a lesson from real use is a gate in the skill's own repository, and M2 is rolled out in two stages.
+- G21.14 (new): `PROMISES.json` and `tests/test_g21_promises.py`, the same mechanism as the other Windstorm skills. It refuses a version while a promise due in it has no test, refuses the version after until the promise was seen to work on a real machine, and only the person who saw a `person` row can move its date. Declined lessons keep their reason. M1 now lists G21.14, so 0.1.0 is released with it.
+- G21.1: a release needs the promise gate green on its commit.
+- G16.5: waking types only into a pane that is still this lane's (same tmux session name and same folder). A tmux restart gives pane ids out again from the start, so a saved id can name another lane's pane (seen at a reboot on 2026-11-22). Window names are not compared, because they change.
+- Part 6: `PROMISES.json`. The marketplace listing moves from M5 to 0.1.0 (for M2a); announcing it stays at M5.
+- Part 8: M2 in two stages. M2a: the skill family's own lanes, from the hour 0.1.0 is tagged, with one install and one tested undo command. M2b: every lane, after 3 days of M2a with no needless block and no broken status line, and the go of those lanes' owners.
+No codon is renumbered and no existing test changes.
+
 ## Plan 1.9 (2026-11-22)
 - G10.5: the status line wrapper prints Pit Board's segment first: before a one-line status line, joined with ` · `, or on its own first line above a status line of several lines. Before, it came last, and in the M1 pilot the operator could not find it at the end of an 11-line status line; the operator approved the change. The 1 s cap and the fail-soft path are unchanged.
 No codon is renumbered. `test_G10_5_wrapper_joins_the_operator_line_and_the_segment` gains a several-line case and checks the new order.
