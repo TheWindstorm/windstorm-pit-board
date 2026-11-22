@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.11 · 2026-11-22 · The Windstorm**
+**Plan version 1.12 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -795,6 +795,23 @@ Its Codex provider comes next.
 
 **G18.1** `pitboard setup` prints a numbered plan of every file it would create or change, with paths, and changes nothing. `pitboard setup --apply` does it, keeping a `.bak-<timestamp>` copy of every file it changes. Items: config file, stable launcher copy (G21.4), marketplace auto-update (G21.2), update timer (G21.3), status line wrapper (G10.5), tmux lines (G12.2, only with `--tmux`), sync timer (G13.3, only when `hub_url` is set), hub service (G14.7, only with `--hub`). Every timer and service it installs calls `$PITBOARD_HOME/bin/pitboard`, never a version folder. `--minimal` limits the plan to the config file, the stable launcher copy and the status line wrapper (what Milestone 1 needs).
 
+**G18.1 folder mode** (for M2a; promises P5 and P6). `pitboard setup --folder DIR` prints the plan for one folder and changes nothing; `--apply` does it. It never touches the user's own settings. It runs from any copy of Pit Board (a checkout, or the stable launcher of an earlier install), because `pitboard` is on the PATH only inside a session that has the plugin.
+1. Refuses, changing nothing:
+   - the home folder (local scope there reaches every session started from it);
+   - a folder where more than one Claude Code session runs. Sessions are counted by the command each process was started as (`claude`, or a path ending in it), with its folder from `/proc/<pid>/cwd` on Linux and `lsof -a -p <pid> -d cwd` on macOS. Never by process name: on macOS a session's process name is its version file (P6);
+   - a folder whose `.claude/settings.local.json` is not a JSON object, sets its own `statusLine` (the wrapper wraps only the shared one), already sets the plugin, or sets another `PITBOARD_HOME` in `env`;
+   - a folder that already has a record.
+2. Writes the record `.claude/pitboard-folder.json`: the plugin, the time, the folder's settings file exactly as it was (or that there was none), whether `.claude` existed, and the Pit Board home.
+3. Runs `claude plugin install <plugin>@<marketplace> --scope local` in the folder (120 s limit, as G21.3).
+4. Makes the Pit Board home if it is missing: the `--minimal` items without the status line setting (the config file, the stable launcher copy and the wrapper file).
+5. Sets the folder's `statusLine` to the home's wrapper (`padding` 0, `refreshInterval` 5). When the home is not the default one, it also sets `env.PITBOARD_HOME` there, so a session started in that folder, or brought back there by any tool, keeps its home.
+6. If a step fails, it undoes the steps before it.
+
+`pitboard setup --folder DIR --undo` runs `claude plugin uninstall <plugin>@<marketplace> --scope local` in the folder, then puts the folder's settings back:
+- byte for byte, when what is left after removing Pit Board's entries equals the recorded file under the same rule;
+- otherwise it removes only Pit Board's entries: `statusLine` when it is the home's wrapper, the plugin's key under `enabledPlugins`, and `env.PITBOARD_HOME` unless the person had set it before.
+Last, it deletes the record, and removes `.claude` if setup made it and it is now empty. Tests: `test_G18_1_folder_*`.
+
 **G18.2** `pitboard doctor` checks and prints one line per check, `OK` or `PROBLEM: <what> · fix: <how>`: Python version, home folder modes, config valid, every lane log readable and its invalid-line count, state caches fresh, hooks installed (plugin enabled), status line wrapper in place, tmux badge format present (when in tmux), hub reachable and token accepted (when `hub_url` set), outbox size and oldest file, clock within 2 minutes of the hub's, running version vs newest installed vs newest released, marketplace auto-update on, last update check and its result, any pin or bad version, sessions running an older hook generation.
 
 ### G19 Secret masking
@@ -1030,7 +1047,7 @@ Accepted when, in one pilot lane:
 Accepted when: the trigger evals (G9.6) pass for every skill and the with-skill vs. without-skill evals (G9.7) are recorded; question boxes and permission prompts are recorded and closed by themselves; the catcher meets G8.5 over one week on the pilot lanes; tab badges show; `setup` and `doctor` work on Linux and macOS; a release published on GitHub reaches every machine within `update_check_hours` + 1 hour with nobody touching them; a deliberately broken test release is rolled back by itself on a test machine. Then it is rolled out to all lanes one machine at a time.
 
 M2 is rolled out in two stages, because the status line wrapper sits in front of every lane's own status line:
-- **M2a** starts the hour 0.1.0 is tagged. 0.1.0 goes into the lanes of the skill family itself, each in its own folder only: the plugin with local scope, and the status line wrapper set in that folder's settings. One command installs it in a lane and one command undoes it; the undo is tested before the first lane gets it.
+- **M2a** starts the hour 0.1.0 is tagged. 0.1.0 goes into the lanes of the skill family itself, each in its own folder only: the plugin with local scope, and the status line wrapper set in that folder's settings. One command installs it in a lane and one command undoes it (`pitboard setup --folder DIR --apply` and `--undo`, G18.1 folder mode); the undo is tested before the first lane gets it.
   M2a is accepted when the agent records its asks to the operator without being reminded, on two calendar days, each with at least one real ask recorded unprompted in an M2a lane (M1's item 2, moved; promise P4 in `PROMISES.json`).
 - **M2b** is every lane on the machine. It starts only after M2a has run 3 days with no needless block and no broken status line, and after the owners of those lanes have each said go.
 

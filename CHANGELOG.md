@@ -3,6 +3,11 @@
 ## Unreleased
 - Wording only: the plan, this changelog, `docs/CONTRACTS.md` and `TODO.md` name roles (the skill's owner, a test machine), not lanes or machines. No rule changes and no test changes.
 
+## Plan 1.12 (2026-11-22)
+- G18.1 folder mode (new): `pitboard setup --folder DIR`, its `--apply` and its `--undo`, for M2a. It is the tested folder installer of the first night of folder installs, moved into Pit Board, with promises P5 and P6. It never touches the user's own settings. It counts a folder's sessions by their command, not their process name. It writes a Pit Board home other than the default into the folder's own `env`, so a session brought back by any tool keeps it. The undo puts the folder's file back byte for byte, or removes only Pit Board's entries if another tool changed the file since.
+- Part 8, M2a: the one install command and the one undo command are `setup --folder`.
+No codon is renumbered and no existing test changes.
+
 ## 0.1.0 (2026-11-22)
 The first release, Milestone 1 (one lane): every ask an agent needs from its operator is kept out of the scroll.
 
