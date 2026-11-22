@@ -144,7 +144,7 @@ def test_G21_4_step6_an_install_with_no_version_comes_last(world):
     assert pick(world) == (odd, 6)
 
 
-def test_G21_4_stable_copy_runs_the_highest_install_before_any_self_check(world):
+def test_G21_4_launcher_runs_the_newest_install_before_any_self_check(world):
     """P8 as seen: the status line wrapper calls the stable copy; no version is in good-versions yet."""
     stable = world.pb / "pitboard"
     stable.mkdir()
