@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Wording only: the plan, this changelog, `docs/CONTRACTS.md` and `TODO.md` name roles (the skill's owner, a test machine), not lanes or machines. No rule changes and no test changes.
+
 ## 0.1.0 (2026-11-22)
 The first release, Milestone 1 (one lane): every ask an agent needs from its operator is kept out of the scroll.
 
@@ -18,7 +21,7 @@ The first release, Milestone 1 (one lane): every ask an agent needs from its ope
 Accepted in a one-lane pilot (`docs/PILOT.md`): items 1 and 3 to 8 pass, and item 2 moved to M2a (plan 1.11). Tested on Python 3.10 and 3.13, on Linux and macOS.
 
 ## Plan 1.11 (2026-11-22)
-Skills Boss's rulings of 2026-11-22 before 0.1.0:
+Rulings of the skill's owner on 2026-11-22, before 0.1.0:
 - **Part 8:** M1's acceptance item 2 (the agent records its asks without being reminded, for 2 days) moves to M2a.
   - It was shown on 1 of the 2 days. It could not be shown on 2, because the pilot lane's decisions go to its owner, not to the operator.
   - M2a is accepted when two calendar days each have at least one real ask recorded unprompted in an M2a lane (promise P4).
@@ -28,7 +31,7 @@ Skills Boss's rulings of 2026-11-22 before 0.1.0:
 No codon is renumbered and no test changes.
 
 ## Plan 1.10 (2026-11-22)
-Skills Boss's ruling of 2026-11-22 on M1: a lesson from real use is a gate in the skill's own repository, and M2 is rolled out in two stages.
+Ruling of the skill's owner on M1, 2026-11-22: a lesson from real use is a gate in the skill's own repository, and M2 is rolled out in two stages.
 - G21.14 (new): `PROMISES.json` and `tests/test_g21_promises.py`, the same mechanism as the other Windstorm skills. It refuses a version while a promise due in it has no test, refuses the version after until the promise was seen to work on a real machine, and only the person who saw a `person` row can move its date. Declined lessons keep their reason. M1 now lists G21.14, so 0.1.0 is released with it.
 - G21.1: a release needs the promise gate green on its commit.
 - G16.5: waking types only into a pane that is still this lane's (same tmux session name and same folder). A tmux restart gives pane ids out again from the start, so a saved id can name another lane's pane (seen at a reboot on 2026-11-22). Window names are not compared, because they change.
@@ -41,7 +44,7 @@ No codon is renumbered and no existing test changes.
 No codon is renumbered. `test_G10_5_wrapper_joins_the_operator_line_and_the_segment` gains a several-line case and checks the new order.
 
 ## Plan 1.8 (2026-11-20)
-The harness matrix, for Skills Boss's P3 request: what degrades gracefully in a harness without hooks, and how the ask still reaches the operator. Plan text only; no code follows until Skills Boss reads it and the operator has sampled M1.
+The harness matrix, at the skill's owner's request (P3): what degrades gracefully in a harness without hooks, and how the ask still reaches the operator. Plan text only; no code follows until the skill's owner reads it and the operator has sampled M1.
 - G17 is now "Other harnesses: the matrix, MCP server and adapters", with an introduction.
 - G17.2: `AGENTS.md` gains the lines that stand in for missing hooks: run `pitboard list` at session start and after a summary; pass `--lane` as G17.6 says; a message that is only `pb`, `ok A12` or `no A12` is handled with that `pitboard` command. The same text goes into a harness's own rules file.
 - G17.4 (new) the floor: in any harness that can run `pitboard` or the MCP tools, an ask reaches the operator through the ID in chat, `pitboard board --lane KEY`, the page and the tmux badge, with no hook. Neither means `unsupported`.
@@ -49,15 +52,15 @@ The harness matrix, for Skills Boss's P3 request: what degrades gracefully in a 
 - G17.6 (new) what takes the place of each missing piece, part by part; new state file `state/<key>.reminded` (Part 4) for the hourly open-asks line in harnesses without a post-compaction hook.
 - G17.7 (new) one code path: adapters only translate; a harness with Claude Code's hook shapes needs none.
 - G17.8 (new) checking a harness the Part 7 way; results in `docs/HARNESSES.md`, inputs in `tests/fixtures/harnesses/<harness>/` (Part 6); rows go stale after 90 days.
-- G17.9 (new) the first harness: T3 Code, Claude provider first, then Codex; on OC3 if Veron HERDR Boss rules the exception, else on another test box booked with `test-now` where the lane installs T3 Code itself (Skills Boss's change, so M3 never waits on one machine).
+- G17.9 (new) the first harness: T3 Code, Claude provider first, then Codex; on a fixed test machine if the machines' owner rules the exception, else on another booked test machine where the lane installs T3 Code itself (a change from the skill's owner, so M3 never waits on one machine).
 - G17.10 (new) `tests/test_g17_matrix.py`.
 - Part 8: G17.2 and G17.4 to G17.10 (T3 Code's rows) move to M3, because the page is the floor; M3's acceptance gains T3 Code's rows and an ask from a T3 Code lane on the page within 90 s. M5 keeps G17.1, G17.3 and the other harnesses' rows.
-- Part 11.8 (new, answered by Skills Boss): one harness matrix for the skill family, growing by division. H1 to H10 live in this plan for now, Pit Stop adds its own from H11 up, and the matrix moves to a shared home when a third skill needs it.
+- Part 11.8 (new, answered by the skill's owner): one harness matrix for the skill family, growing by division. H1 to H10 live in this plan for now, Pit Stop adds its own from H11 up, and the matrix moves to a shared home when a third skill needs it.
 No existing codon is renumbered and no existing test changes.
 
 ## Plan 1.7 (2026-11-17)
 - G2.12 (new): one writer's events never tie. An event this writer created, stamped at or up to 1 s before the lane's newest event, gets that event's `ts` + 1 ms, so `done` then `reopened` in the same millisecond keep their order (found by a macOS CI run).
-- G10.5: the status line wrapper runs Pit Board's part under a 1 s cap (`timeout`, or `gtimeout` on macOS, when either exists); on an error, no output or the cap, the operator's own line prints alone (G10.4). A pilot condition from Skills Boss.
+- G10.5: the status line wrapper runs Pit Board's part under a 1 s cap (`timeout`, or `gtimeout` on macOS, when either exists); on an error, no output or the cap, the operator's own line prints alone (G10.4). A pilot condition set by the skill's owner.
 
 ## Plan 1.6 (2026-11-17)
 Clarifications found while building G9 (no behaviour changes elsewhere):
@@ -66,7 +69,7 @@ Clarifications found while building G9 (no behaviour changes elsewhere):
 - G20.6 and G9.5: CI runs on every pull request and every push to `main`, so each job runs once per change (it ran twice when every push and every pull request triggered it).
 
 ## Plan 1.5 (2026-11-17)
-- G7.5: a PermissionRequest for `AskUserQuestion` writes nothing. On Claude Code 2.1.326 a question box also fires PermissionRequest and a `permission_prompt` Notification (check C7, `docs/CONTRACTS.md`; saved inputs under `tests/fixtures/hooks/`), so without this every question box would be two asks. New test `test_G7_5_question_box_is_one_ask`. C7 now also records which tools fire PermissionRequest. Skills Boss ruling 2026-11-17.
+- G7.5: a PermissionRequest for `AskUserQuestion` writes nothing. On Claude Code 2.1.326 a question box also fires PermissionRequest and a `permission_prompt` Notification (check C7, `docs/CONTRACTS.md`; saved inputs under `tests/fixtures/hooks/`), so without this every question box would be two asks. New test `test_G7_5_question_box_is_one_ask`. C7 now also records which tools fire PermissionRequest. Ruled by the skill's owner on 2026-11-17.
 
 ## Plan 1.4 (2026-11-17)
 Fixes from the DNA Strand lane's review of plan 1.2:
@@ -78,7 +81,7 @@ Fixes from the DNA Strand lane's review of plan 1.2:
 - Inline sync respects backoff; `permission-open` is deleted on every closing path; `<ts compact>`, machine-name cleaning, `lanes.json.lock` and `outbox/.backoff` defined; plain output shows ANSWERED vs DONE; marketplace catalog added to open questions; C9 marked removed; DST rule for G4.4; the G21.5 self-check log named.
 
 ## Plan 1.3 (2026-11-17)
-- The Windstorm skill standard (Skills Boss, 2026-11-17): G9.4 format (agentskills.io, quoted description up to 1 024 characters, SKILL.md under 500 lines, references/scripts/assets), G9.5 `gh skill publish --dry-run` gate, G9.6 20-query trigger evals, G9.7 with-skill vs. without-skill evals, G20.8 CI rules (read-only permissions, no repo secrets, no pull_request_target, standard GitHub-hosted runners only), G21.1 release with `gh skill publish --tag`, check C15. Format gate in M1, evals in M2; M1 order unchanged.
+- The Windstorm skill standard (set by the skill's owner, 2026-11-17): G9.4 format (agentskills.io, quoted description up to 1 024 characters, SKILL.md under 500 lines, references/scripts/assets), G9.5 `gh skill publish --dry-run` gate, G9.6 20-query trigger evals, G9.7 with-skill vs. without-skill evals, G20.8 CI rules (read-only permissions, no repo secrets, no pull_request_target, standard GitHub-hosted runners only), G21.1 release with `gh skill publish --tag`, check C15. Format gate in M1, evals in M2; M1 order unchanged.
 
 ## Plan 1.2 (2026-11-17)
 - Part 8, M1 build order: G5 (flags) now comes before G2 (store), because the state cache (G2.6) computes `worst_flag` with G5.

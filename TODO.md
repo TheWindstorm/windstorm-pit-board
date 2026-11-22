@@ -3,24 +3,26 @@
 The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tracks where the build is against it.
 
 ## Now
-- [ ] 2026-11-17 M1: pilot in one lane (docs/PILOT.md). The operator kept it on 2026-11-21. Acceptance 1 and 3 to 8 pass; item 2 has 1 of its 2 days.
-- [ ] 2026-11-22 Release 0.1.0 (G21.1): GO from Skills Boss on 2026-11-22 once plan 1.11 and P4 are merged. Then the CHANGELOG 0.1.0 entry, `gh skill publish --tag v0.1.0` and the `agent-skills` topic. The marketplace entry, pinned to the tag's `ref` and `sha`, goes through the Pit Stop lane.
-- [ ] 2026-11-22 P4 (M1 item 2, moved to M2a): two calendar days, each with a real ask recorded unprompted in an M2a lane; write the dates and lanes into `proven`.
-- [ ] 2026-11-22 P1 `proven`: write it the first time an open ask shows the segment first in the pilot lane.
-- [ ] 2026-11-22 M2a (Part 8): one install and one undo command for a lane's own folder. Both refuse the home folder and any folder where more than one session runs. Tested with a stand-in; test them again with the real plugin commands once the marketplace lists 0.1.0, before the first lane.
+- [ ] 2026-11-22 P4 (M1 item 2, moved to M2a): two calendar days, each with a real ask recorded unprompted in an M2a lane; write the dates and lanes into `proven`. On 2026-11-22, test sessions on a shared Linux machine and on an Intel Mac each recorded an ask unprompted, from a task that needed the operator's choice and never named Pit Board (evidence, not one of the two days).
+- [ ] 2026-11-22 P1 `proven`: write it the first time an open ask shows the segment first in a real lane.
+- [ ] 2026-11-22 M2a (Part 8): the install and undo commands for a lane's own folder are tested with the real plugin commands from the 0.1.0 listing, on Linux (bash) and macOS (zsh); the undo puts the folder's settings back byte for byte. Next: the skill family's own lanes, one at a time.
+- [ ] 2026-11-22 0.1.1 (G21.14): P4, P5 and P6 each need their test before 0.1.1 is released. P5 and P6 come with setup's folder mode (G18.1, #38).
+- [ ] 2026-11-22 Overnight stress test with the skill family's other two skills on two machines, with real reboots: every finding becomes a promise row and an issue the same night.
 
 ## Waiting on
-- [ ] 2026-11-17 Before the first release (G21.1): if pilot fixes change what gets written, delete and save tests/fixtures/releases/0.1.0 again in the release PR (it is final once tagged).
 - [ ] 2026-11-17 Plan 1.5: G7.5 ignores PermissionRequest for AskUserQuestion (C7 finding, docs/CONTRACTS.md); before G7.5 is built (M2).
 
 ## Later
 - [ ] M2 every lane, updating itself · M3 master list (view only), with the harness matrix (G17.4 to G17.10) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
+- [x] 2026-11-22 P5 and P6 (#38) in PROMISES.json; P4 and docs/PILOT.md name roles, not lanes (#39).
+- [x] 2026-11-22 Release 0.1.0 (G21.1): tag v0.1.0 at f725e23, the GitHub release, the `agent-skills` topic and the CHANGELOG entry. The marketplace entry pins `ref` v0.1.0 and its `sha` (merged in the marketplace's own repository). tests/fixtures/releases/0.1.0 is final.
+- [x] 2026-11-22 M1 accepted for 0.1.0: items 1 and 3 to 8 pass; item 2 moved to M2a as P4 (plan 1.11). The operator kept the pilot on 2026-11-21.
 - [x] 2026-11-22 Plan 1.10 and G21.14: PROMISES.json and its gate (#32, #33); plan 1.9 and G10.5, segment first (#28, #29); M1 acceptance 6 and 8 (#30).
-- [x] 2026-11-20 CI run steps use `shell: bash` (pipefail), so a piped command cannot hide a failure (Skills Boss's fleet lesson).
+- [x] 2026-11-20 CI run steps use `shell: bash` (pipefail), so a piped command cannot hide a failure (a lesson from the skill's owner).
 - [x] 2026-11-20 M1 pilot notes in docs/PILOT.md: acceptance 1, 3, 4, 5 and 7 pass; Part 9's first week.
-- [x] 2026-11-20 Harness matrix proposed as plan 1.8 (#26: G17.4 to G17.10, M3), approved by Skills Boss; its code waits for the operator's M1 sample.
+- [x] 2026-11-20 Harness matrix proposed as plan 1.8 (#26: G17.4 to G17.10, M3), approved by the skill's owner; its code waits for the operator's M1 sample.
 - [x] 2026-11-17 M1: every gene of Part 8 is on main (f105182, PRs #2 to #25), CI 5/5 green.
 - [x] 2026-11-17 Tag ruleset "release tags are immutable" on refs/tags/v* (no delete, update or force-push; creating a tag is allowed), id 27497878 (C15 warning).
 - [x] 2026-11-17 M1: G2.12 one writer's events never tie (same-millisecond done then reopen kept in order; found by a macOS CI run); 0.1.0 release folder saved again with it.
