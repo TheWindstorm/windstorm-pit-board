@@ -4,11 +4,8 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 
 ## Now
 - [ ] 2026-11-17 M1: pilot in one lane (docs/PILOT.md). The operator kept it on 2026-11-21. Acceptance 1 and 3 to 8 pass; item 2 has 1 of its 2 days.
-- [ ] 2026-11-22 Release 0.1.0 (G21.1), with Skills Boss's three conditions (2026-11-22):
-  - acceptance item 2's second day, shown in docs/PILOT.md by Mon 2026-11-23 22:00Z; if it cannot be, say what stands in the way;
-  - PROMISES.json and its gate (done, #33);
-  - the tag ruleset (in place, id 27497878).
-  Then the CHANGELOG 0.1.0 entry, `gh skill publish --tag v0.1.0`, the `agent-skills` topic, and the marketplace entry through the Pit Stop lane.
+- [ ] 2026-11-22 Release 0.1.0 (G21.1): GO from Skills Boss on 2026-11-22 once plan 1.11 and P4 are merged. Then the CHANGELOG 0.1.0 entry, `gh skill publish --tag v0.1.0` and the `agent-skills` topic. The marketplace entry, pinned to the tag's `ref` and `sha`, goes through the Pit Stop lane.
+- [ ] 2026-11-22 P4 (M1 item 2, moved to M2a): two calendar days, each with a real ask recorded unprompted in an M2a lane; write the dates and lanes into `proven`.
 - [ ] 2026-11-22 P1 `proven`: write it the first time an open ask shows the segment first in the pilot lane.
 - [ ] 2026-11-22 M2a (Part 8): one install and one undo command for a lane's own folder. Both refuse the home folder and any folder where more than one session runs. Tested with a stand-in; test them again with the real plugin commands once the marketplace lists 0.1.0, before the first lane.
 
