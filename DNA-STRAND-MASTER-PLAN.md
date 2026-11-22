@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.20 · 2026-11-22 · The Windstorm**
+**Plan version 1.21 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -846,7 +846,7 @@ Last, it deletes the record, and removes `.claude` if setup made it and it is no
 
 **G20.5** The page gets a smoke test: a script that loads `index.html` with the hub running and checks that `app.js` and `app.css` load and that no inline script or style exists.
 
-**G20.6 CI** runs the tests on Python 3.10 and 3.13, on Linux and macOS, on every pull request and every push to `main` (a push to a pull request's branch runs through the pull request, so each job runs once). This is a public repository, so CI uses GitHub-hosted runners, the same as Windstorm Pit Stop: public repositories do not use paid minutes, and self-hosted runners must never serve a public repository (anyone's pull request could run code on our machines).
+**G20.6 CI** runs the tests on Python 3.10 and 3.13, on Linux and macOS, on every pull request and every push to `main` (a push to a pull request's branch runs through the pull request, so each job runs once). Its log names every test and its outcome (`pytest -rA`: one line per test after the run), so a reader can see that a given test ran, and passed, in each job; a count cannot show that. This is a public repository, so CI uses GitHub-hosted runners, the same as Windstorm Pit Stop: public repositories do not use paid minutes, and self-hosted runners must never serve a public repository (anyone's pull request could run code on our machines).
 
 **G20.7** `tests/smoke_hooks.sh` feeds every recorded hook input to `pitboard hook` and checks exit code 0 and the expected output shape.
 
@@ -929,7 +929,7 @@ A test replays the fixtures of every earlier release (`tests/fixtures/releases/<
   - `id` (`P1`, `P2`, ...), `seen` (what happened, with its date) and `promise`.
   - `codon`: a codon or invariant of this plan.
   - `owner`: `person` when the person Pit Board is for saw it on their own machine, else `maintainer`.
-  - `first_ship_in` and `ship_in` (versions), `test` (the name of a test), `proven` (which machine, which version and when it was seen to work) and `issue`.
+  - `first_ship_in` and `ship_in` (versions), `test` (the name of a test), `proven` (which machine, which version and when it was seen to work; a proof that leans on CI names the run and the test, as its log shows them) and `issue`.
   - `moved_why` and `moved_by_person`.
 - **A lesson heard and not taken** goes under `declined`, with `heard` and `why`, so nothing is dropped without a word.
 - **A row is never deleted.** A promise that proves wrong is closed by a new row that says why.

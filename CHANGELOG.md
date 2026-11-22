@@ -18,6 +18,11 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.21 (2026-11-22)
+- G20.6: CI's log names every test and its outcome (`pytest -rA`), so a reader can see that a given test ran and passed in each job; a count cannot show that.
+- G21.14: a row's `proven` that leans on CI names the run and the test, as the log shows them.
+No codon is renumbered and no existing test changes.
+
 ## Plan 1.20 (2026-11-22)
 - G21.14: a promise row's test counts only when the test runner collects it and runs it to a pass in this checkout, never because its name is found as text. A skipped test, one the runner cannot collect, and a name defined twice in one file (only the last definition runs) do not count. A planted test showed the old check passing for all three while the real test never ran. The gate runs the rows' tests and reads the runner's own report. Every row that names a test is checked at every version, not only once the version reaches the row's due version. A test skipped on a condition of the machine, with a written reason, is listed as not run here and is not a pass. A skip with no reason fails, and so does an unconditional skip, whatever its reason, because it runs on no machine. The gate leaves itself out of what it runs, has a time limit, and leaves nothing behind when stopped part-way.
 No codon is renumbered and no existing test changes.
