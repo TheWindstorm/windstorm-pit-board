@@ -16,6 +16,7 @@ Every release before this one still reads the same: the lane logs, the cache and
 
 ## Plan 1.15 (2026-11-22)
 - G21.4 step 6 (P8): before any version has passed a self-check, the launcher runs the highest installed version, not the first entry in `installed_plugins.json`, which can be the oldest when folders have different versions.
+- G21.4, the stable copy: until the updater exists, the session-start hook refreshes a home's stable launcher copy from a newer version than the one it came from, never an older one, so the P8 fix reaches homes made by 0.1.0 and 0.1.1.
 - G21.10 (P10): `pitboard update --pin VER` and `--unpin` come before the rest of the updater, so a person can hold a Pit Board home on a version and release it. A version with no runnable folder, or a bad one, is refused.
 - G6.2: `update` with an ask ID changes the ask; with no ask ID it is the updater. An ask ID together with an updater flag is refused.
 No codon is renumbered and no existing test changes.
