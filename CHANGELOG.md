@@ -1,5 +1,15 @@
 # Changelog
 
+## Plan 1.11 (2026-11-22)
+Skills Boss's rulings of 2026-11-22 before 0.1.0:
+- **Part 8:** M1's acceptance item 2 (the agent records its asks without being reminded, for 2 days) moves to M2a.
+  - It was shown on 1 of the 2 days. It could not be shown on 2, because the pilot lane's decisions go to its owner, not to the operator.
+  - M2a is accepted when two calendar days each have at least one real ask recorded unprompted in an M2a lane (promise P4).
+- **G21.1:** the marketplace entry pins the release, with `ref` set to the tag and `sha` to the tag's commit, instead of pointing at `main`. A machine that installs it later gets that release. Each release moves the pin in the same hour as its tag.
+- **Part 6:** the listing is pinned to the release tag.
+
+No codon is renumbered and no test changes.
+
 ## Plan 1.10 (2026-11-22)
 Skills Boss's ruling of 2026-11-22 on M1: a lesson from real use is a gate in the skill's own repository, and M2 is rolled out in two stages.
 - G21.14 (new): `PROMISES.json` and `tests/test_g21_promises.py`, the same mechanism as the other Windstorm skills. It refuses a version while a promise due in it has no test, refuses the version after until the promise was seen to work on a real machine, and only the person who saw a `person` row can move its date. Declined lessons keep their reason. M1 now lists G21.14, so 0.1.0 is released with it.

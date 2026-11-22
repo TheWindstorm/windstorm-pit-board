@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.10 · 2026-11-22 · The Windstorm**
+**Plan version 1.11 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -844,7 +844,7 @@ Every installation, for every person who installs Pit Board, must find new relea
 | Sync and update timers, status line | by the operating system / Claude Code | they call the stable launcher copy, never a version folder (G21.4) |
 | Hub and the open page | by the service manager / the browser | the hub restarts itself onto the new version (G21.7); the page reloads itself (G21.8) |
 
-**G21.1 What a release is.** A release is a commit on `main` that raises `version` in `.claude-plugin/plugin.json` (semantic versioning: `MAJOR.MINOR.PATCH`), with a matching `CHANGELOG.md` entry and a git tag `vMAJOR.MINOR.PATCH`. `main` is the release channel: a merge that does not raise the version is not shipped to anyone. A release is made only when CI is green on that exact commit, which includes the promise gate (G21.14), and is published with `gh skill publish --tag vMAJOR.MINOR.PATCH`, which validates the skills again, creates the tag and a GitHub release with notes. The repository has the `agent-skills` topic, and GitHub secret scanning and push protection are on. These are repository settings, set once and checked again at each release. The marketplace entry (in `TheWindstorm/windstorm-pit-stop`'s `marketplace.json`) points at this repository's `main` and never pins a version (check C11 for how Claude Code decides an update exists).
+**G21.1 What a release is.** A release is a commit on `main` that raises `version` in `.claude-plugin/plugin.json` (semantic versioning: `MAJOR.MINOR.PATCH`), with a matching `CHANGELOG.md` entry and a git tag `vMAJOR.MINOR.PATCH`. Releases are made on `main`: a merge that does not raise the version is not shipped to anyone. A release is made only when CI is green on that exact commit, which includes the promise gate (G21.14), and is published with `gh skill publish --tag vMAJOR.MINOR.PATCH`, which validates the skills again, creates the tag and a GitHub release with notes. The repository has the `agent-skills` topic, and GitHub secret scanning and push protection are on. These are repository settings, set once and checked again at each release. The marketplace entry (in `TheWindstorm/windstorm-pit-stop`'s `marketplace.json`) pins the release. Its source is `{"source": "github", "repo": "TheWindstorm/windstorm-pit-board", "ref": "vMAJOR.MINOR.PATCH", "sha": "<the tag's full 40-character commit>"}`, so a machine that installs it later gets that release, not whatever `main` is that day. Each release moves the pin in the same hour as its tag, and Claude Code's marketplace update (G21.2) then brings it to installs (check C11 for how Claude Code decides an update exists: `version` in `plugin.json` comes first).
 
 **G21.2 Switch on Claude Code's own auto-update.** Claude Code leaves auto-update off for marketplaces other than Anthropic's. `pitboard setup --apply` (and the first SessionStart after install, if `self_update` is true and the operator has not written a choice) sets `"autoUpdate": true` on the marketplace's entry under `extraKnownMarketplaces` in `~/.claude/settings.json`, keeping a backup, exactly as Windstorm Pit Stop does. An explicit `"autoUpdate": false` written by the operator is never changed; `pitboard doctor` reports it.
 
@@ -961,7 +961,7 @@ windstorm-pit-board/
   README.md  TODO.md  CHANGELOG.md  LICENSE  NOTICE
 ```
 
-The plugin is listed in The Windstorm's marketplace (the `TheWindstorm/windstorm-pit-stop` repository's `marketplace.json`) from 0.1.0, for M2a; announcing it and the README for strangers stay at Milestone 5. It installs with:
+The plugin is listed in The Windstorm's marketplace (the `TheWindstorm/windstorm-pit-stop` repository's `marketplace.json`) from 0.1.0, for M2a, pinned to the release tag (G21.1); announcing it and the README for strangers stay at Milestone 5. It installs with:
 
 ```
 /plugin marketplace add TheWindstorm/windstorm-pit-stop
@@ -1018,7 +1018,7 @@ The launcher (G21.4) ships in the very first release, so that every later releas
 Build order: G1 → G19 → G4 → G5 → G2 → G3 → G21.4 launcher → G6 → G11 → Part 7 checks → G10 → G18.1 `--minimal` → G7.0 → G7.1 → G7.7 → G7.2 → G16.4 → G7.8 → G9.
 Accepted when, in one pilot lane:
 1. All tests pass on Python 3.10 and 3.13, and the skill format gate (G9.5) is green.
-2. The agent records its asks with `pitboard add` without being reminded, for 2 days.
+2. The agent records its asks with `pitboard add` without being reminded, for 2 days. *Moved to M2a* by Skills Boss's ruling of 2026-11-22. It was shown on 1 of the 2 days. It could not be shown on 2, because the pilot lane's decisions go to its owner, not to the operator, and a made-up ask would be a false proof.
 3. After a `/compact`, the reminder appears and lists the open asks.
 4. The status segment shows the count, and nothing when none are open.
 5. `pb` prints the board at the bottom of the screen in under 1 s, with no model turn.
@@ -1031,6 +1031,7 @@ Accepted when: the trigger evals (G9.6) pass for every skill and the with-skill 
 
 M2 is rolled out in two stages, because the status line wrapper sits in front of every lane's own status line:
 - **M2a** starts the hour 0.1.0 is tagged. 0.1.0 goes into the lanes of the skill family itself, each in its own folder only: the plugin with local scope, and the status line wrapper set in that folder's settings. One command installs it in a lane and one command undoes it; the undo is tested before the first lane gets it.
+  M2a is accepted when the agent records its asks to the operator without being reminded, on two calendar days, each with at least one real ask recorded unprompted in an M2a lane (M1's item 2, moved; promise P4 in `PROMISES.json`).
 - **M2b** is every lane on the machine. It starts only after M2a has run 3 days with no needless block and no broken status line, and after the owners of those lanes have each said go.
 
 ### M3 Master list, view only (0.3.0): G13 (no inbox), G14 (no `/v1/answers`), G15, G21.7, G21.8, G17.2, G17.4 to G17.10 (T3 Code's rows)
