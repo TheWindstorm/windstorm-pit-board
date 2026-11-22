@@ -17,6 +17,12 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.19 (2026-11-22)
+- G21.4 step 4: when a hook stops before refreshing the stable copy, its log line says what that hook did and what it read (`this hook left the copy as it was (it read 0.1.1 when it started)`), not that the copy was kept at the old version. Ten hooks at once on a loaded machine showed why: four stopped at the 3 s check after six others had already refreshed the copy, and their lines said `kept at before-0.1.2` about a copy that was new.
+- G21.4: on a very busy machine every hook of a restore may miss the 3 s check, so that start leaves the launcher as it was and the next start tries again. This is stated, not changed: it fails on the safe side, and the limit is not raised, because a session start must not wait longer for Pit Board. The README says it in one sentence.
+- G6.2 `version`: a second line when the home's launcher copy came from a version older than the newest installed one (`launcher copy from 0.1.1; the next session start refreshes it`), so a person can see a copy that has not been refreshed yet. The first line, which the refresh's own check and scripts read, does not change.
+No codon is renumbered. With the code, one existing test changes: the stopped hook's expected log line in `tests/test_g21_stablecopy.py`.
+
 ## Plan 1.18 (2026-11-22)
 - G21.4 step 1: the pin is skipped for `pitboard self-update`, which starts at step 2. Without this, a home pinned to 0.1.1 or older could not be released: every launcher would run the pinned version, which has no `self-update`, and the person would have to delete `update/pin` by hand.
 No codon is renumbered and no existing test changes.
