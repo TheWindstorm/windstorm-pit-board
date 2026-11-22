@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.12 · 2026-11-22 · The Windstorm**
+**Plan version 1.13 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -795,7 +795,7 @@ Its Codex provider comes next.
 
 **G18.1** `pitboard setup` prints a numbered plan of every file it would create or change, with paths, and changes nothing. `pitboard setup --apply` does it, keeping a `.bak-<timestamp>` copy of every file it changes. Items: config file, stable launcher copy (G21.4), marketplace auto-update (G21.2), update timer (G21.3), status line wrapper (G10.5), tmux lines (G12.2, only with `--tmux`), sync timer (G13.3, only when `hub_url` is set), hub service (G14.7, only with `--hub`). Every timer and service it installs calls `$PITBOARD_HOME/bin/pitboard`, never a version folder. `--minimal` limits the plan to the config file, the stable launcher copy and the status line wrapper (what Milestone 1 needs).
 
-**G18.1 folder mode** (for M2a; promises P5 and P6). `pitboard setup --folder DIR` prints the plan for one folder and changes nothing; `--apply` does it. It never touches the user's own settings. Outside a session `pitboard` is not on the PATH. Run the stable launcher of an earlier install (`$PITBOARD_HOME/bin/pitboard`, which runs the newest installed version, G21.4). On a machine with no install, first run `claude plugin install … --scope local` in that folder, then run the plugin's own copy.
+**G18.1 folder mode** (for M2a; promises P5, P6, P7 and P9). `pitboard setup --folder DIR` prints the plan for one folder and changes nothing; `--apply` does it. It never touches the user's own settings. Outside a session `pitboard` is not on the PATH. Run the stable launcher of an earlier install (`$PITBOARD_HOME/bin/pitboard`, which runs the newest installed version, G21.4). On a machine with no install, first run `claude plugin install … --scope local` in that folder, then run the plugin's own copy.
 1. Refuses, changing nothing:
    - the home folder (local scope there reaches every session started from it);
    - a folder where more than one Claude Code session runs. Sessions are counted by the command each process was started as (`claude`, or a path ending in it), with its folder from `/proc/<pid>/cwd` on Linux and `lsof -a -p <pid> -d cwd` on macOS. Never by process name: on macOS a session's process name is its version file (P6);
@@ -805,9 +805,11 @@ Its Codex provider comes next.
 3. Runs `claude plugin install <plugin>@<marketplace> --scope local` in the folder (120 s limit, as G21.3), unless Claude Code's plugin registry already lists the plugin with local scope for that folder.
 4. Makes the Pit Board home if it is missing: the `--minimal` items without the status line setting (the config file, the stable launcher copy and the wrapper file).
 5. Sets the folder's `statusLine` to the home's wrapper (`padding` 0, `refreshInterval` 5). When the home is not the default one, it also sets `env.PITBOARD_HOME` there, so a session started in that folder, or brought back there by any tool, keeps its home.
-6. If a step fails, it undoes the steps before it.
+6. If a step fails, it undoes the steps before it, and says what failed (P9). For a failed `claude plugin` command it shows Claude Code's error, not only its last line: from its first error line (the first line that starts with `✘`, or else the first line of its error output) to the end, at most 12 lines, without Claude Code's progress lines (`SSH not configured, cloning via HTTPS: …`, `HTTPS clone failed, retrying with SSH: …`), which it prints last. When that error shows the clone failed over SSH because GitHub accepted no key (`Host key verification failed` or `Permission denied (publickey)`), the message first says so in plain words, then what to do:
+   - after `HTTPS clone failed, retrying with SSH`: "Claude Code could not clone the plugin from GitHub over HTTPS, and the retry over SSH failed: this account is not set up for GitHub over SSH (GitHub accepted no key from it). Check that this machine reaches github.com over HTTPS, or add a GitHub key to this account, then run the same command again."
+   - otherwise (Claude Code 2.1.280 clones a `github` entry over SSH only): "Claude Code could not clone the plugin from GitHub over SSH; this account is not set up for GitHub over SSH (GitHub accepted no key from it). Update Claude Code (2.1.330 clones over HTTPS when SSH is not set up), or add a GitHub key to this account, then run the same command again."
 
-`pitboard setup --folder DIR --undo` runs `claude plugin uninstall <plugin>@<marketplace> --scope local` in the folder, then puts the folder's settings back:
+`pitboard setup --folder DIR --undo` runs `claude plugin uninstall <plugin>@<marketplace> --scope local` in the folder (a failure is shown as in step 6), then puts the folder's settings back:
 - byte for byte, when what is left after removing Pit Board's entries equals the recorded file under the same rule;
 - otherwise it removes only Pit Board's entries: `statusLine` when it is the home's wrapper, the plugin's key under `enabledPlugins`, and `env.PITBOARD_HOME` unless the person had set it before.
 Last, it deletes the record, and removes `.claude` if setup made it and it is now empty. Tests: `test_G18_1_folder_*`.
