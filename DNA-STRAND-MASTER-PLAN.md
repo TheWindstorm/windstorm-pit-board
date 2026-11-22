@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.15 · 2026-11-22 · The Windstorm**
+**Plan version 1.16 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -482,6 +482,7 @@ Each handler writes at most one JSON object to stdout. Context for the model goe
 2. Append `export PITBOARD_LANE=<key>` as one line to the file named by `CLAUDE_ENV_FILE` (documented for SessionStart; each later Bash command runs it first), unless that exact line is already in the file. Never overwrite the file: other plugins write to it too.
 3. Return the reminder (G7.7) as `additionalContext`.
 4. *(From M2.)* If the version this machine runs differs from `update/last-seen-version`, also return the one-line update note (G21.9) as `systemMessage` (shown to the operator, not to the model), then write the version there. So it shows once per machine per version.
+5. *(From 0.1.2.)* Refresh the stable launcher copy when it came from an older version (G21.4, the stable copy).
 
 **G7.2 UserPromptSubmit.** Reads `prompt`.
 1. **Board request.** If the whole prompt, trimmed and lower-cased, is `pb`, `pb all`, `/board` or `/board all`: block the prompt (`decision: "block"`, `reason` = the board as text, `hookSpecificOutput.suppressOriginalPrompt: true`). The operator sees the board at once and no model turn runs. (`pb` is the sure trigger. Whether a typed `/board`, which is not a registered command, reaches this hook is check C4.)
@@ -890,7 +891,7 @@ Every installation, for every person who installs Pit Board, must find new relea
 
 A version that is installed but not yet in `update/good-versions` is self-checked by the next `pitboard self-update` run (G21.3), so new releases are used within `update_check_hours`. It then puts the chosen folder first on `sys.path` and calls that version's `pitboard.cli.main()`. `launch.py` itself must stay tiny and must never change in a way that an older copy of it cannot still run the newest code (it only picks a folder and calls `cli.main()`).
 
-**The stable copy.** `pitboard setup --apply` copies `bin/pitboard` to `$PITBOARD_HOME/bin/pitboard` and `pitboard/launch.py` to `$PITBOARD_HOME/pitboard/launch.py` (the same relative layout as the plugin, G6.1), and points timers, services and the status line wrapper at `$PITBOARD_HOME/bin/pitboard`, writing `PITBOARD_HOME` into each of them (timers do not inherit the shell's environment). They never name a version folder. Every `~/.pitboard/bin/pitboard` in this plan means `$PITBOARD_HOME/bin/pitboard`. Each `pitboard self-update` run refreshes the copy from the chosen version.
+**The stable copy.** `pitboard setup --apply` copies `bin/pitboard` to `$PITBOARD_HOME/bin/pitboard` and `pitboard/launch.py` to `$PITBOARD_HOME/pitboard/launch.py` (the same relative layout as the plugin, G6.1), and points timers, services and the status line wrapper at `$PITBOARD_HOME/bin/pitboard`, writing `PITBOARD_HOME` into each of them (timers do not inherit the shell's environment). They never name a version folder. Every `~/.pitboard/bin/pitboard` in this plan means `$PITBOARD_HOME/bin/pitboard`. Each `pitboard self-update` run refreshes the copy from the chosen version. Until the updater exists, the session-start hook refreshes it instead (G7.1 step 5), so a launcher fix such as P8's reaches a home made by an earlier release. The hook acts only when it runs from an installed version folder in the plugin cache, only when the stable copy exists (it never makes one), and not when `self_update` is false (G21.12). When its version is newer than the one the copy came from (`$PITBOARD_HOME/pitboard/copied-from`, one line, which `setup --apply` writes too; a copy without it came from a release before 0.1.2), it replaces the two files and then that line, each written whole (a temporary file, then a rename). It never writes an older copy over a newer one. A failure leaves the old copy, is one log line, and the hook still exits 0 (INV6).
 
 **G21.5 Self-check.** `pitboard doctor --quick` runs from the new version's folder, in a temporary `PITBOARD_HOME` with a copy of the machine's largest lane log (or the built-in fixture `tests/fixtures/selfcheck.jsonl` when the machine has none), and must: import every module; fold the copied log with the same result as the running version; run `add`, `ok`, `done`, `board`, `status` against the temporary home; finish in under 20 s. Any failure is a fail.
 
