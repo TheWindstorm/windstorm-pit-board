@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.14 · 2026-11-22 · The Windstorm**
+**Plan version 1.15 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -412,7 +412,7 @@ Reset after each coloured span: `\x1b[0m`.
 | Command | Does | Prints (text) |
 |---|---|---|
 | `add --title T [--kind K] [--severity S] [--suggested S] [--why W] [--detail D] [--step S]... [--deadline D]` | Appends `asked` (`by: agent`, `source: agent`). Defaults: `--kind question`, `--severity blocking`. | `A12 recorded (RED). Ask it in chat as: "A12: <title>"` |
-| `update A12 [same field flags]` | Appends `updated`. | `A12 updated.` |
+| `update A12 [same field flags]` | Appends `updated`. With no ask ID, `update` is the updater instead (G21.3, G21.10); an ask ID together with an updater flag (`--check`, `--now`, `--pin`, `--unpin`) is refused, exit 2. | `A12 updated.` |
 | `answer A12 --answer TEXT [--by operator\|agent]` | Appends `answered` (`via: text`). Default `--by agent` (an agent writing down an answer the operator gave in chat). | `A12 answered.` |
 | `ok A12 [A13 ...]` / `ok all` | For each: appends `answered` with `answer` = the ask's `suggested`, `via: ok`, `by: operator`. `all` = every open ask in the lane that has a `suggested`. Asks without `suggested` are skipped with a note. | `Approved: A12, A13. Skipped (no suggested answer): A14.` |
 | `no A12 [A13 ...]` | Appends `answered` with `answer: "No."`, `via: no`, `by: operator`. | `Declined: A12.` |
@@ -884,7 +884,7 @@ Every installation, for every person who installs Pit Board, must find new relea
 3. The install path recorded in `installed_plugins.json`, if its version is in `update/good-versions`.
 4. The highest version folder in the plugin cache that is in `update/good-versions`, has no `.orphaned_at` marker, and contains `pitboard/cli.py`.
 5. Its own plugin folder, if `launch.py` is running from a plugin version folder (it has `pitboard/cli.py` beside it).
-6. The install path recorded in `installed_plugins.json`, whatever its version (this is how the stable copy runs before any version has passed a self-check).
+6. Of the install paths recorded in `installed_plugins.json`, the one with the highest version, whatever `update/good-versions` holds (this is how the stable copy runs before any version has passed a self-check). Never the first one listed: on a machine where folders have different versions, the first entry can be the oldest (P8).
 7. Nothing found: print `pitboard: no installed version found` to stderr and exit 1 (hooks exit 0, INV6).
 
 A version that is installed but not yet in `update/good-versions` is self-checked by the next `pitboard update` run (G21.3), so new releases are used within `update_check_hours`. It then puts the chosen folder first on `sys.path` and calls that version's `pitboard.cli.main()`. `launch.py` itself must stay tiny and must never change in a way that an older copy of it cannot still run the newest code (it only picks a folder and calls `cli.main()`).
@@ -901,7 +901,7 @@ A version that is installed but not yet in `update/good-versions` is self-checke
 
 **G21.9 Telling the operator.** After a version change on a machine, the first SessionStart there shows one line to the operator (not to the model): `Pit Board updated to 0.3.1: <the first line of that version's CHANGELOG entry>`. Once per machine per version, never in every lane. `pitboard version` and the page footer show the running version.
 
-**G21.10 Rolling back.** When a version fails its self-check (G21.5) or a hub migration (G21.7), or when its hook errors on one machine pass 20 in an hour (each handler's exception is counted in `logs/pitboard.log`; `pitboard update` reads the count), that version goes into `update/bad-versions` on that machine. The launcher never picks a bad version (G21.4), so the machine is back on its newest good version at the next call; if the bad version was the pinned one, the pin is removed. A rollback by itself writes no pin. When a newer release passes its self-check, the machine moves to it as usual. `pitboard update --pin VER` and `--unpin` let the operator choose by hand.
+**G21.10 Rolling back.** When a version fails its self-check (G21.5) or a hub migration (G21.7), or when its hook errors on one machine pass 20 in an hour (each handler's exception is counted in `logs/pitboard.log`; `pitboard update` reads the count), that version goes into `update/bad-versions` on that machine. The launcher never picks a bad version (G21.4), so the machine is back on its newest good version at the next call; if the bad version was the pinned one, the pin is removed. A rollback by itself writes no pin. When a newer release passes its self-check, the machine moves to it as usual. `pitboard update --pin VER` and `--unpin` let the operator choose by hand, and they come before the rest of the updater (P10): `--pin VER` refuses a version with no runnable folder in the plugin cache or one in `update/bad-versions` (exit 2, nothing changed), and otherwise writes `update/pin` (G21.4 step 1); `--unpin` removes it. Both work on this Pit Board home only, and print the `version` line, which names the pin; the status line and the hooks follow at their next call.
 
 **G21.11 Compatibility across versions** (INV11). Every release must:
 - read every lane log every earlier release wrote (G1.13);
