@@ -4,8 +4,13 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 
 ## Now
 - [ ] 2026-11-17 M1: pilot in one lane (docs/PILOT.md). The operator kept it on 2026-11-21. Acceptance 1 and 3 to 8 pass; item 2 has 1 of its 2 days.
-- [ ] 2026-11-22 Plan 1.9 and G10.5: the status line wrapper prints Pit Board's segment first (ask A2, approved); in the pilot lane since 2026-11-22.
-- [ ] 2026-11-22 Release 0.1.0 (G21.1) after G10.5 merges: tag, `gh skill publish --tag v0.1.0`, the `agent-skills` topic, then the marketplace entry. Waits for Skills Boss's GO.
+- [ ] 2026-11-22 Release 0.1.0 (G21.1), with Skills Boss's three conditions (2026-11-22):
+  - acceptance item 2's second day, shown in docs/PILOT.md by Mon 2026-11-23 22:00Z; if it cannot be, say what stands in the way;
+  - PROMISES.json and its gate (done, #33);
+  - the tag ruleset (in place, id 27497878).
+  Then the CHANGELOG 0.1.0 entry, `gh skill publish --tag v0.1.0`, the `agent-skills` topic, and the marketplace entry through the Pit Stop lane.
+- [ ] 2026-11-22 P1 `proven`: write it the first time an open ask shows the segment first in the pilot lane.
+- [ ] 2026-11-22 M2a (Part 8): one install and one undo command for a lane's own folder. Both refuse the home folder and any folder where more than one session runs. Tested with a stand-in; test them again with the real plugin commands once the marketplace lists 0.1.0, before the first lane.
 
 ## Waiting on
 - [ ] 2026-11-17 Before the first release (G21.1): if pilot fixes change what gets written, delete and save tests/fixtures/releases/0.1.0 again in the release PR (it is final once tagged).
@@ -15,6 +20,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] M2 every lane, updating itself · M3 master list (view only), with the harness matrix (G17.4 to G17.10) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
+- [x] 2026-11-22 Plan 1.10 and G21.14: PROMISES.json and its gate (#32, #33); plan 1.9 and G10.5, segment first (#28, #29); M1 acceptance 6 and 8 (#30).
 - [x] 2026-11-20 CI run steps use `shell: bash` (pipefail), so a piped command cannot hide a failure (Skills Boss's fleet lesson).
 - [x] 2026-11-20 M1 pilot notes in docs/PILOT.md: acceptance 1, 3, 4, 5 and 7 pass; Part 9's first week.
 - [x] 2026-11-20 Harness matrix proposed as plan 1.8 (#26: G17.4 to G17.10, M3), approved by Skills Boss; its code waits for the operator's M1 sample.
