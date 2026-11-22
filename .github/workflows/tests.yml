@@ -23,7 +23,8 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install pytest
-      - run: python -m pytest -q tests/
+      # G20.6 (plan 1.21): -rA names every test and its outcome after the run, so the log shows each test ran.
+      - run: python -m pytest -q -rA tests/
   skills:
     # G9.5: the skill format gate (check C15). A gh without `skill` gets the pinned release.
     runs-on: ubuntu-latest

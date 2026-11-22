@@ -43,6 +43,13 @@ def test_G20_6_python_and_os_matrix_and_triggers():
     assert "on:\n  push:\n    branches: [main]\n  pull_request:\n" in text
 
 
+def test_G20_6_ci_log_names_every_test_and_its_outcome():
+    """Plan 1.21: a count cannot show that a given test ran in a job; -rA lists each test with its outcome."""
+    text = dict(workflows())["tests.yml"]
+    runs = re.findall(r"^\s+- run: (python -m pytest .*)$", text, re.M)
+    assert runs and all(re.search(r"(^| )-rA( |$)", r) for r in runs), runs
+
+
 def test_G9_5_ci_runs_the_skill_format_gate():
     text = dict(workflows())["tests.yml"]
     assert "gh skill publish --dry-run" in text
