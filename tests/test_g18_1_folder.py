@@ -21,6 +21,10 @@ with open(log, "a") as f:
     f.write(" ".join(sys.argv[1:]) + " in " + os.getcwd() + "\n")
 if os.environ.get("STAND_IN_FAIL"):
     print("stand-in: install failed on purpose"); sys.exit(1)
+if os.environ.get("STAND_IN_REPLAY"):   # a real failed run, recorded: its stdout and stderr, exit 1
+    b = os.environ["STAND_IN_REPLAY"]
+    sys.stdout.write(open(b + ".stdout", encoding="utf-8").read()); sys.stderr.write(open(b + ".stderr", encoding="utf-8").read())
+    sys.exit(1)
 if sys.argv[1:3] in (["plugin", "install"], ["plugin", "uninstall"]):
     ls = os.path.join(os.getcwd(), ".claude", "settings.local.json")
     d = json.load(open(ls)) if os.path.exists(ls) and open(ls).read().strip() else {}
@@ -50,6 +54,7 @@ def world(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.delenv("PITBOARD_HOME", raising=False)
     monkeypatch.delenv("STAND_IN_FAIL", raising=False)
+    monkeypatch.delenv("STAND_IN_REPLAY", raising=False)
     monkeypatch.setattr(F, "sessions_in", lambda folder, ps_lines=None, cwd_of=None: [])
     return home, pb, lane
 
@@ -209,3 +214,62 @@ def test_G18_1_folder_a_plugin_already_installed_here_is_not_installed_again(wor
     calls = (tmp_path / "calls.log").read_text() if (tmp_path / "calls.log").exists() else ""
     assert "plugin install" not in calls
     assert json.loads(ls_of(lane).read_text())["statusLine"]["command"] == S.wrapper_path(str(pb))
+
+
+# P9: Claude Code's real output for a failed clone, recorded in test accounts with no GitHub key and run as setup runs
+# it (stdin closed, no terminal): 2.1.280 clones a github entry over SSH only; 2.1.330 tried HTTPS first (a repository
+# that does not exist), then SSH, and prints its progress lines last. Paths name a test account.
+ERRS = os.path.join(ROOT, "tests", "fixtures", "claude_plugin_errors")
+SSH_ONLY = f"Claude Code could not clone the plugin from GitHub over SSH; {F.NOT_SET_UP}."
+AFTER_HTTPS = f"Claude Code could not clone the plugin from GitHub over HTTPS, and the retry over SSH failed: {F.NOT_SET_UP}."
+
+
+def unwrapped(lines):
+    """The message as written: every line fits 100 columns and none is cut; a line that starts with two spaces
+    continues the one before it."""
+    assert all(len(l) <= 100 and not l.endswith("…") for l in lines), [l for l in lines if len(l) > 100]
+    out = []
+    for l in lines:
+        if l.startswith("  ") and out:
+            out[-1] += " " + l.strip()
+        else:
+            out.append(l)
+    return out
+
+
+@pytest.mark.parametrize("capture, plain, last", [
+    ("2.1.280-ssh-only", SSH_ONLY, "and the repository exists."),
+    ("2.1.330-https-then-ssh", AFTER_HTTPS, "Check the repository and ref in the marketplace entry"),
+])
+def test_G18_1_folder_shows_claude_codes_whole_error(world, monkeypatch, capture, plain, last):
+    home, pb, lane = world
+    monkeypatch.setenv("STAND_IN_REPLAY", os.path.join(ERRS, capture))
+    rc, out, err = run("setup", "--folder", str(lane), "--apply")
+    lines = unwrapped(err.rstrip("\n").splitlines())
+    assert rc == 6 and lines[0] == "pitboard: setup --folder: claude plugin install failed; undone", lines[:2]
+    assert lines[1] == plain and lines[2].endswith("then run the same command again.")
+    body = lines[3:]
+    assert body[0].startswith("✘ Failed to install plugin") and "Host key verification failed." in body
+    assert body[-1].startswith(last) and 0 < len(body) <= F.ERROR_LINES
+    assert not any(l.startswith(F.PROGRESS) or not l.strip() for l in lines)
+    assert not (lane / ".claude").exists()   # undone: setup made .claude, so it is gone again
+
+
+def test_G18_1_folder_undo_shows_claude_codes_whole_error(world, monkeypatch):
+    home, pb, lane = world
+    assert run("setup", "--folder", str(lane), "--apply")[0] == 0
+    monkeypatch.setenv("STAND_IN_REPLAY", os.path.join(ERRS, "2.1.280-ssh-only"))
+    rc, out, err = run("setup", "--folder", str(lane), "--undo")
+    raw = out.splitlines()
+    i = raw.index(f"plugin {PLUGIN}: uninstall said:")
+    j = next(k for k in range(i + 1, len(raw)) if raw[k].startswith("Pit Board is off in")) - 1   # the settings line
+    error = unwrapped(raw[i + 1:j])
+    assert error[0] == SSH_ONLY and error[2].startswith("✘ Failed to install plugin") and error[-1] == "and the repository exists."
+
+
+def test_G18_1_folder_names_a_key_github_refused():
+    # A constructed line: git prints it when GitHub refuses the account's key. The form follows what the error says.
+    text = F.error_text("", "✘ Failed to install plugin \"x@y\": Failed to clone repository: Cloning into 'z'...\n"
+                            "git@github.com: Permission denied (publickey).\nfatal: Could not read from remote repository.\n")
+    assert unwrapped(text.splitlines())[0] == SSH_ONLY and unwrapped(text.splitlines())[2].startswith("✘")
+    assert F.error_text("stand-in: install failed on purpose\n", "") == "stand-in: install failed on purpose"
