@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.16 · 2026-11-22 · The Windstorm**
+**Plan version 1.17 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -1032,6 +1032,7 @@ Claude Code changes often. These are the facts the hooks depend on. Before writi
 | C12 | The exact commands `claude plugin marketplace update <name>` and `claude plugin update <plugin>@<marketplace>`, their exit codes, and that they work while sessions are running. | G21.3 | Pit Stop's tested calls; else only Claude Code's own auto-update at start-up (G21.2). |
 | C13 | `installed_plugins.json` layout, the version folder layout, and the `.orphaned_at` marker on old folders (seen; Pit Stop relies on them). | G21.4 | Highest version folder only. |
 | C15 | `gh skill publish --dry-run` (GitHub CLI 2.104 or newer, preview) exists on the CI runners, and what it needs (auth, network). | G9.5 | Install a pinned `gh` release in the workflow; if it still cannot run, the standard-library check in `tests/test_g9_skills.py` alone gates, and the gap is reported to the skill's owner. |
+| C16 | Where an installed plugin's code runs from, by catalog source: for a `github` or git-URL source, its version folder in `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/` (the hooks' `CLAUDE_PLUGIN_ROOT`); for a directory source, the cache copy that `installed_plugins.json` names, or the catalog folder in place. | G21.4 (version folders, refreshing the stable copy) | An install whose code runs outside the cache is treated like a checkout: the session-start refresh does not act for it. A check of cache behavior uses a git source. |
 | C14 | `command -v pitboard` works in an agent's Bash command while the plugin is enabled (plugin `bin/` on `PATH`). | G9.2, G6.1 | The skill and the reminder name `$PITBOARD_HOME/bin/pitboard`. |
 
 ---
