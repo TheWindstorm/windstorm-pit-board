@@ -65,6 +65,47 @@ def test_G21_10_pin_holds_a_home_on_a_chosen_version(world):
     assert run("self-update", "--unpin")[0] == 0                     # releasing twice is fine
 
 
+def test_G21_4_self_update_skips_the_pin_so_an_old_pin_can_be_released(world):
+    """Plan 1.18: pinned to a version that has no self-update, every launcher runs that version, so
+    self-update alone starts at step 2 (here the fake 0.1.1 answers, standing in for the newest)."""
+    home, pb, folders = world
+    run("self-update", "--pin", "0.1.0")
+    assert stable(pb, "status") == "ran 0.1.0" and stable(pb, "self-update", "--unpin") == "ran 0.1.1"
+    assert L.choose(own_root=folders["0.1.1"], skip_pin=True) == (folders["0.1.1"], 5)
+    assert L.choose(skip_pin=True) == (folders["0.1.1"], 6)
+
+
+def test_G21_4_unpin_through_the_stable_copy_from_an_old_pin_prints_the_version_line(tmp_path, monkeypatch):
+    """Plan 1.18 with this real code as the newest install and a 0.1.0 that has no self-update, pinned."""
+    from pitboard import __version__ as V
+    home, pb = tmp_path / "home", tmp_path / "pb"
+    cache = home / ".claude" / "plugins" / "cache" / "mk" / L.PLUGIN
+    new, old = cache / V, cache / "0.1.0"
+    for d in ("pitboard", "bin", "hooks"):
+        shutil.copytree(os.path.join(ROOT, d), new / d, ignore=shutil.ignore_patterns("__pycache__"))
+    (old / "pitboard").mkdir(parents=True)
+    (old / "pitboard" / "__init__.py").write_text("")
+    (old / "pitboard" / "cli.py").write_text("import sys\ndef main():\n    print('0.1.0 has no', sys.argv[1:])\n    return 2\n")
+    (home / ".claude" / "plugins" / "installed_plugins.json").write_text(json.dumps({"version": 2, "plugins": {
+        f"{L.PLUGIN}@mk": [{"scope": "local", "installPath": str(p), "version": v} for p, v in ((old, "0.1.0"), (new, V))]}}))
+    (pb / "pitboard").mkdir(parents=True)
+    (pb / "bin").mkdir()
+    shutil.copy(LAUNCH, pb / "pitboard" / "launch.py")
+    shutil.copy(os.path.join(ROOT, "bin", "pitboard"), pb / "bin" / "pitboard")
+    (pb / "update").mkdir()
+    (pb / "update" / "pin").write_text("0.1.0\n")
+    env = dict(os.environ, HOME=str(home), PITBOARD_HOME=str(pb))
+    env.pop("PITBOARD_SELF_UPDATE", None)
+    sh = lambda *a: subprocess.run([str(pb / "bin" / "pitboard"), *a], capture_output=True, text=True, env=env,
+                                   timeout=60)
+    r = sh("version")
+    assert r.stdout.startswith("0.1.0 has no")                                  # pinned: the status line runs 0.1.0
+    r = sh("self-update", "--unpin")
+    assert r.returncode == 0 and r.stdout.startswith(f"{V} (installed {V}, hooks gen ") and "pinned" not in r.stdout
+    assert not (pb / "update" / "pin").exists()
+    assert sh("version").stdout.startswith(f"{V} (installed {V}")                # and then runs the newest
+
+
 @pytest.mark.parametrize("ver, why", [
     ("0.2.0", "no runnable 0.2.0 in the plugin cache"),
     ("latest", "not a version: latest"),

@@ -89,11 +89,13 @@ def _cached(claude_dir):
     return out
 
 
-def choose(home=None, claude_dir=None, own_root=None):
+def choose(home=None, claude_dir=None, own_root=None, skip_pin=False):
     """G21.4: (folder, step) for the version to run, or (None, 7).
 
     A version in update/bad-versions is never picked (G21.10), except by step 2:
-    with self_update off the operator's own install runs whatever its version (G21.12)."""
+    with self_update off the operator's own install runs whatever its version (G21.12).
+    skip_pin (for `self-update`, plan 1.18): start at step 2, so a pin to a version without
+    self-update can still be released."""
     home = home or _home()
     claude_dir = claude_dir or _claude_dir()
     upd = os.path.join(home, "update")
@@ -102,7 +104,7 @@ def choose(home=None, claude_dir=None, own_root=None):
     installed = _installed(claude_dir)
     cached = _cached(claude_dir)
 
-    if pin and pin not in bad and _runnable(cached.get(pin)):                       # 1
+    if pin and not skip_pin and pin not in bad and _runnable(cached.get(pin)):      # 1
         return cached[pin], 1
     if not _self_update(home):                                                      # 2
         for path, _ in installed:
@@ -127,7 +129,7 @@ def main(argv=None):
     is_hook = bool(argv) and argv[0] == "hook"
     own = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
-        root, _ = choose(own_root=own)
+        root, _ = choose(own_root=own, skip_pin=argv[:1] == ["self-update"])
     except Exception:  # noqa: BLE001 - a hook never breaks the session (INV6)
         if is_hook:
             return 0
