@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.14 · 2026-11-22 · The Windstorm**
+**Plan version 1.15 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -151,7 +151,7 @@ Each invariant has a test (named `test_INV<n>_...`).
 | Sync | every machine, every 60 s | `pitboard sync` (timer) | G13 |
 | Hub | one machine | `pitboard hub serve` | G14 |
 | Page | the operator's browser | served by the hub | G15 |
-| Launcher and updater | every machine | `bin/pitboard` → newest installed version; `pitboard update` (daily timer) | G21 |
+| Launcher and updater | every machine | `bin/pitboard` → newest installed version; `pitboard self-update` (daily timer) | G21 |
 
 ### Data flow for one ask
 
@@ -407,12 +407,12 @@ Reset after each coloured span: `\x1b[0m`.
 
 **G6.1 Running it.** `bin/pitboard` is a POSIX shell file that runs `python3 -I "$(dirname "$0")/../pitboard/launch.py" "$@"` (the same relative path works in the plugin folder and in the stable copy, G21.4), falling back to `python` when `python3` is not a real interpreter (same trick as Windstorm Pit Stop). `launch.py` picks the version to run ([G21.4](#g21-self-update-always-the-newest-pit-board)), puts that version's folder first on `sys.path` and calls its `pitboard.cli.main()`. Claude Code puts a plugin's `bin/` folder on the agent's `PATH` while the plugin is enabled, so agents type `pitboard`.
 
-**G6.2 Commands.** Every command accepts `--lane KEY` and `--json`. With `--json`, the only thing printed to stdout is one JSON object with exactly these keys: `{"ok": bool, "exit": int, "message": str, "ids": [short IDs written or affected], "asks": [ask objects in the G2.6 shape], "data": {command-specific, or {}}}`. `data` holds: for `version`, `{"running", "installed", "pinned", "generation"}`; for `sync`, `{"sent", "received", "rejected"}`; for `update`, the `last-check.json` object; for `lane`, `{"lane", "lane_name"}`; for `doctor`, `{"checks": [{"name", "ok", "detail", "fix"}]}`. Every flag any gene names is listed in this table; a flag not listed here does not exist.
+**G6.2 Commands.** Every command accepts `--lane KEY` and `--json`. With `--json`, the only thing printed to stdout is one JSON object with exactly these keys: `{"ok": bool, "exit": int, "message": str, "ids": [short IDs written or affected], "asks": [ask objects in the G2.6 shape], "data": {command-specific, or {}}}`. `data` holds: for `version`, `{"running", "installed", "pinned", "generation"}`; for `sync`, `{"sent", "received", "rejected"}`; for `self-update`, the `last-check.json` object; for `lane`, `{"lane", "lane_name"}`; for `doctor`, `{"checks": [{"name", "ok", "detail", "fix"}]}`. Every flag any gene names is listed in this table; a flag not listed here does not exist.
 
 | Command | Does | Prints (text) |
 |---|---|---|
 | `add --title T [--kind K] [--severity S] [--suggested S] [--why W] [--detail D] [--step S]... [--deadline D]` | Appends `asked` (`by: agent`, `source: agent`). Defaults: `--kind question`, `--severity blocking`. | `A12 recorded (RED). Ask it in chat as: "A12: <title>"` |
-| `update A12 [same field flags]` | Appends `updated`. | `A12 updated.` |
+| `update A12 [same field flags]` | Appends `updated`. It only ever changes an ask: with no ask ID it is refused (exit 2) with one line that names `self-update`, and it never updates Pit Board itself. | `A12 updated.` |
 | `answer A12 --answer TEXT [--by operator\|agent]` | Appends `answered` (`via: text`). Default `--by agent` (an agent writing down an answer the operator gave in chat). | `A12 answered.` |
 | `ok A12 [A13 ...]` / `ok all` | For each: appends `answered` with `answer` = the ask's `suggested`, `via: ok`, `by: operator`. `all` = every open ask in the lane that has a `suggested`. Asks without `suggested` are skipped with a note. | `Approved: A12, A13. Skipped (no suggested answer): A14.` |
 | `no A12 [A13 ...]` | Appends `answered` with `answer: "No."`, `via: no`, `by: operator`. | `Declined: A12.` |
@@ -433,7 +433,8 @@ Reset after each coloured span: `\x1b[0m`.
 | `doctor [--quick]` | G18.2; `--quick` is the self-check (G21.5). | |
 | `export [--format jsonl\|csv] [--all-lanes]` | Writes every event (jsonl) or every ask's folded state (csv) to stdout. | |
 | `mcp` | G17. | |
-| `version` | The running version, the newest installed version, the pinned version if any, and the hook generation. | `0.2.1 (installed 0.2.1, hooks gen 1)` |
+| `self-update [--check] [--now] [--pin VER] [--unpin]` | Pit Board's own updater (G21.3, G21.10). `--pin` and `--unpin` come first (P10). | |
+| `version` | The running version, the newest installed version, the pinned version if any (`self-update --pin`), and the hook generation. | `0.2.1 (installed 0.2.1, hooks gen 1)` |
 | `update [--check] [--now] [--pin VER] [--unpin]` | G21. | `up to date (0.2.1)` / `updated 0.2.0 → 0.2.1` |
 
 **G6.3 Exit codes.** `0` ok · `1` unexpected error · `2` bad usage · `3` lane unknown · `4` ask not found · `5` transition not allowed (G1.11), with the current status in the message · `6` invalid field · `7` lane busy (lock timeout) · `8` hub unreachable (sync only) · `9` update failed (update only; the running version is unchanged).
@@ -868,7 +869,7 @@ Every installation, for every person who installs Pit Board, must find new relea
 
 **G21.2 Switch on Claude Code's own auto-update.** Claude Code leaves auto-update off for marketplaces other than Anthropic's. `pitboard setup --apply` (and the first SessionStart after install, if `self_update` is true and the operator has not written a choice) sets `"autoUpdate": true` on the marketplace's entry under `extraKnownMarketplaces` in `~/.claude/settings.json`, keeping a backup, exactly as Windstorm Pit Stop does. An explicit `"autoUpdate": false` written by the operator is never changed; `pitboard doctor` reports it.
 
-**G21.3 Our own updater**, because Claude Code checks marketplaces when it starts, and sessions that run for weeks rarely start. `pitboard update` (run by a user timer every `update_check_hours`, at a random minute fixed per machine so a fleet does not update all at once):
+**G21.3 Our own updater**, because Claude Code checks marketplaces when it starts, and sessions that run for weeks rarely start. `pitboard self-update` (run by a user timer every `update_check_hours`, at a random minute fixed per machine so a fleet does not update all at once):
 0. The timer fires every hour at this machine's fixed minute (`update/minute`, a random 0 to 59 chosen once by `setup`).
 1. Exit at once if `self_update` is false, or if the last check was less than `update_check_hours` ago (unless `--now`).
 2. Run `claude plugin marketplace update <marketplace>` then `claude plugin update windstorm-pit-board@<marketplace>`, each with a 120 s limit (check C12 for the exact commands; Windstorm Pit Stop runs these same two).
@@ -876,7 +877,7 @@ Every installation, for every person who installs Pit Board, must find new relea
 4. Write `update/last-check.json`: `{"checked_at", "before", "after", "result": "up-to-date" | "updated" | "rolled-back" | "failed", "detail"}`.
 5. A failure leaves the running version unchanged, is one log line, and shows in `pitboard doctor` (exit code 9).
 
-`pitboard update --check` only reports whether a newer release exists (by running the marketplace update and comparing versions), and installs nothing.
+`pitboard self-update --check` only reports whether a newer release exists (by running the marketplace update and comparing versions), and installs nothing.
 
 **G21.4 The launcher: running code follows the newest install.** Claude Code keeps each version in its own folder (`~/.claude/plugins/cache/<marketplace>/windstorm-pit-board/<version>/`) and a running session keeps calling the folder it started with. So nothing Pit Board runs uses that folder's code directly. Every entry point (hooks, `bin/pitboard`, timers, the status line, the hub) goes through `pitboard/launch.py`, which picks the version to run, in this order:
 1. The pinned version, if `update/pin` names one and its folder exists.
@@ -884,12 +885,12 @@ Every installation, for every person who installs Pit Board, must find new relea
 3. The install path recorded in `installed_plugins.json`, if its version is in `update/good-versions`.
 4. The highest version folder in the plugin cache that is in `update/good-versions`, has no `.orphaned_at` marker, and contains `pitboard/cli.py`.
 5. Its own plugin folder, if `launch.py` is running from a plugin version folder (it has `pitboard/cli.py` beside it).
-6. The install path recorded in `installed_plugins.json`, whatever its version (this is how the stable copy runs before any version has passed a self-check).
+6. Of the install paths recorded in `installed_plugins.json`, the one with the highest version, whatever `update/good-versions` holds (this is how the stable copy runs before any version has passed a self-check). Never the first one listed: on a machine where folders have different versions, the first entry can be the oldest (P8).
 7. Nothing found: print `pitboard: no installed version found` to stderr and exit 1 (hooks exit 0, INV6).
 
-A version that is installed but not yet in `update/good-versions` is self-checked by the next `pitboard update` run (G21.3), so new releases are used within `update_check_hours`. It then puts the chosen folder first on `sys.path` and calls that version's `pitboard.cli.main()`. `launch.py` itself must stay tiny and must never change in a way that an older copy of it cannot still run the newest code (it only picks a folder and calls `cli.main()`).
+A version that is installed but not yet in `update/good-versions` is self-checked by the next `pitboard self-update` run (G21.3), so new releases are used within `update_check_hours`. It then puts the chosen folder first on `sys.path` and calls that version's `pitboard.cli.main()`. `launch.py` itself must stay tiny and must never change in a way that an older copy of it cannot still run the newest code (it only picks a folder and calls `cli.main()`).
 
-**The stable copy.** `pitboard setup --apply` copies `bin/pitboard` to `$PITBOARD_HOME/bin/pitboard` and `pitboard/launch.py` to `$PITBOARD_HOME/pitboard/launch.py` (the same relative layout as the plugin, G6.1), and points timers, services and the status line wrapper at `$PITBOARD_HOME/bin/pitboard`, writing `PITBOARD_HOME` into each of them (timers do not inherit the shell's environment). They never name a version folder. Every `~/.pitboard/bin/pitboard` in this plan means `$PITBOARD_HOME/bin/pitboard`. Each `pitboard update` run refreshes the copy from the chosen version.
+**The stable copy.** `pitboard setup --apply` copies `bin/pitboard` to `$PITBOARD_HOME/bin/pitboard` and `pitboard/launch.py` to `$PITBOARD_HOME/pitboard/launch.py` (the same relative layout as the plugin, G6.1), and points timers, services and the status line wrapper at `$PITBOARD_HOME/bin/pitboard`, writing `PITBOARD_HOME` into each of them (timers do not inherit the shell's environment). They never name a version folder. Every `~/.pitboard/bin/pitboard` in this plan means `$PITBOARD_HOME/bin/pitboard`. Each `pitboard self-update` run refreshes the copy from the chosen version.
 
 **G21.5 Self-check.** `pitboard doctor --quick` runs from the new version's folder, in a temporary `PITBOARD_HOME` with a copy of the machine's largest lane log (or the built-in fixture `tests/fixtures/selfcheck.jsonl` when the machine has none), and must: import every module; fold the copied log with the same result as the running version; run `add`, `ok`, `done`, `board`, `status` against the temporary home; finish in under 20 s. Any failure is a fail.
 
@@ -901,7 +902,7 @@ A version that is installed but not yet in `update/good-versions` is self-checke
 
 **G21.9 Telling the operator.** After a version change on a machine, the first SessionStart there shows one line to the operator (not to the model): `Pit Board updated to 0.3.1: <the first line of that version's CHANGELOG entry>`. Once per machine per version, never in every lane. `pitboard version` and the page footer show the running version.
 
-**G21.10 Rolling back.** When a version fails its self-check (G21.5) or a hub migration (G21.7), or when its hook errors on one machine pass 20 in an hour (each handler's exception is counted in `logs/pitboard.log`; `pitboard update` reads the count), that version goes into `update/bad-versions` on that machine. The launcher never picks a bad version (G21.4), so the machine is back on its newest good version at the next call; if the bad version was the pinned one, the pin is removed. A rollback by itself writes no pin. When a newer release passes its self-check, the machine moves to it as usual. `pitboard update --pin VER` and `--unpin` let the operator choose by hand.
+**G21.10 Rolling back.** When a version fails its self-check (G21.5) or a hub migration (G21.7), or when its hook errors on one machine pass 20 in an hour (each handler's exception is counted in `logs/pitboard.log`; `pitboard self-update` reads the count), that version goes into `update/bad-versions` on that machine. The launcher never picks a bad version (G21.4), so the machine is back on its newest good version at the next call; if the bad version was the pinned one, the pin is removed. A rollback by itself writes no pin. When a newer release passes its self-check, the machine moves to it as usual. `pitboard self-update --pin VER` and `--unpin` let the operator choose by hand, and they come before the rest of the updater (P10): `--pin VER` refuses a version with no runnable folder in the plugin cache or one in `update/bad-versions` (exit 2, nothing changed), and otherwise writes `update/pin` (G21.4 step 1); `--unpin` removes it. Both work on this Pit Board home only, and print the `version` line, which names the pin; the status line and the hooks follow at their next call.
 
 **G21.11 Compatibility across versions** (INV11). Every release must:
 - read every lane log every earlier release wrote (G1.13);
@@ -1033,7 +1034,7 @@ Each milestone ends with a release, a `CHANGELOG.md` entry and a short note in `
 ### M0 Plan (this commit)
 - This plan, `README.md`, `TODO.md`, `LICENSE`, `NOTICE` in `TheWindstorm/windstorm-pit-board`.
 
-### M1 One lane (0.1.0): G1, G2, G3, G4, G5, G6 (all but `sync`, `inbox`, `hub`, `mcp`, `update`), G7.0, G7.1 (steps 1 to 3), G7.2, G7.7, G7.8, G9, G10, G11, G16.4, G18.1 `--minimal`, G19, G21.1, G21.4, G21.6, G21.11, G21.14, G20 for those
+### M1 One lane (0.1.0): G1, G2, G3, G4, G5, G6 (all but `sync`, `inbox`, `hub`, `mcp`, `self-update`), G7.0, G7.1 (steps 1 to 3), G7.2, G7.7, G7.8, G9, G10, G11, G16.4, G18.1 `--minimal`, G19, G21.1, G21.4, G21.6, G21.11, G21.14, G20 for those
 The launcher (G21.4) ships in the very first release, so that every later release reaches the first installs without anyone reinstalling.
 Build order: G1 → G19 → G4 → G5 → G2 → G3 → G21.4 launcher → G6 → G11 → Part 7 checks → G10 → G18.1 `--minimal` → G7.0 → G7.1 → G7.7 → G7.2 → G16.4 → G7.8 → G9.
 Accepted when, in one pilot lane:

@@ -14,6 +14,12 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.15 (2026-11-22)
+- G21.4 step 6 (P8): before any version has passed a self-check, the launcher runs the highest installed version, not the first entry in `installed_plugins.json`, which can be the oldest when folders have different versions.
+- G21.10 (P10): `pitboard self-update --pin VER` and `--unpin` come before the rest of the updater, so a person can hold a Pit Board home on a version and release it. A version with no runnable folder, or a bad one, is refused.
+- The updater is renamed `pitboard self-update` (G6.2, G21.3, G21.4, G21.10, M1), and `pitboard update` keeps one meaning: it changes an ask. With no ask ID it is refused, with a line that names `self-update`, and it never updates anything. One name, one job: a command that changes the installed version when an agent forgets an ask ID would be a trap. The updater is not built yet, so the rename costs nothing to anyone. P10's promise wording changed with it (`self-update --pin` for `update --pin`); its date does not move.
+No codon is renumbered and no existing test changes.
+
 ## Plan 1.14 (2026-11-22)
 - G18.1 folder mode, step 6: the lines of a failed command's message (the plain words and Claude Code's error) are wrapped to G6.8's 100 columns, never cut with `…`; a continued line starts with two spaces. The plain-words line is longer than 100 columns, so cutting it would lose the words P9 is for.
 No codon is renumbered and no existing test changes.
