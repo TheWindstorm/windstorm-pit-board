@@ -9,7 +9,7 @@ import json
 import os
 import sys
 
-from . import __version__, contract, flags, lane, launch, render, store, timefmt
+from . import __version__, contract, flags, lane, launch, render, stablecopy, store, timefmt
 
 WIDTH = 100
 
@@ -682,7 +682,29 @@ def cmd_version(args):
     if pin:
         parts.append(f"pinned {pin}")
     parts.append(f"hooks gen {gen if gen is not None else '?'}")
-    return Out(f"{__version__} ({', '.join(parts)})", data=data)
+    try:                                         # the refresh's own check runs `version`: this line never fails it
+        copy = _copy_line(store.home(), pin)
+    except Exception:  # noqa: BLE001
+        copy = None
+    return Out(f"{__version__} ({', '.join(parts)})" + (f"\n{copy}" if copy else ""), data=data)
+
+
+def _copy_line(home, pin):
+    """G6.2 (plan 1.19): the second version line, when the home's launcher copy came from a version older than
+    the newest installed one that is not bad, and no pin holds the home (in either case no start refreshes it)."""
+    if pin or not all(os.path.isfile(os.path.join(home, rel)) for rel, _ in stablecopy.FILES):
+        return None
+    bad = set(launch._lines(os.path.join(home, "update", "bad-versions")))
+    good = [v for _, v in launch._installed(launch._claude_dir()) if launch._vkey(v) and v not in bad]
+    newest = max(good, key=launch._vkey) if good else None
+    if newest is None or launch._vkey(newest) < (0, 1, 2):      # no release before 0.1.2 refreshes a copy
+        return None
+    was = stablecopy.copied_from(home)
+    if was is not None and launch._vkey(was) >= launch._vkey(newest):
+        return None
+    how = ("self_update is off, so no start refreshes it" if store.config().get("self_update") is False
+           else "the next session start refreshes it")
+    return f"launcher copy from {was or 'before-0.1.2'}; {how}"
 
 
 def _write_whole(path, text):

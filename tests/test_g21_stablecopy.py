@@ -101,15 +101,15 @@ def test_G21_4_same_files_get_the_marker_only(world):
 
 
 @pytest.mark.parametrize("broken, why", [
-    (b"raise SystemExit(3)\n", "it answered exit 3"),
-    (b"print('not a version line')\n", "it answered exit 0"),
-    (b"import time\ntime.sleep(30)\n", "it did not answer in 1 s"),
+    (b"raise SystemExit(3)\n", "answered exit 3"),
+    (b"print('not a version line')\n", "answered exit 0"),
+    (b"import time\ntime.sleep(30)\n", "did not answer in 1 s"),
 ])
 def test_G21_4_a_broken_launcher_never_replaces_a_working_one(world, monkeypatch, broken, why):
     home, pb, ver = world
     monkeypatch.setattr(SC, "CHECK_SECONDS", 1)
     (ver / "pitboard" / "launch.py").write_bytes(broken)
-    assert go(world) == f"stable launcher kept at before-0.1.2: the {V} launcher was checked and {why}"
+    assert go(world) == f"stable launcher: this hook left the copy as it was (it read before-0.1.2 when it started): the {V} launcher {why}"
     assert copy_of(pb) == (OLD_BIN, OLD_LAUNCH) and leftovers(pb) == []
     assert not (pb / "pitboard" / "copied-from").exists() and not (pb / "pitboard" / "launch.py.prev").exists()
 
