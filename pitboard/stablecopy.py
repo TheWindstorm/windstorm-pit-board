@@ -91,12 +91,12 @@ def _answers(folder, home):
         r = subprocess.run([os.path.join(folder, "bin", "pitboard"), "version"], stdin=subprocess.DEVNULL,
                            capture_output=True, text=True, timeout=CHECK_SECONDS, env=env)
     except subprocess.TimeoutExpired:
-        return False, f"it did not answer in {CHECK_SECONDS} s"
+        return False, f"did not answer in {CHECK_SECONDS} s"
     except OSError as e:
-        return False, f"it could not start ({type(e).__name__})"
+        return False, f"could not start ({type(e).__name__})"
     first = (r.stdout.splitlines() or [""])[0]
     if r.returncode != 0 or not VERSION_LINE.match(first):
-        return False, f"it answered exit {r.returncode}"
+        return False, f"answered exit {r.returncode}"
     return True, ""
 
 
@@ -129,7 +129,8 @@ def refresh(home, cfg, root=ROOT, claude_dir=None, version=__version__):
             _write_whole(os.path.join(tmp, rel), new[rel], mode)
         ok, why = _answers(tmp, home)
         if not ok:
-            return f"stable launcher kept at {was_text}: the {version} launcher was checked and {why}"
+            # plan 1.19: what this hook did and what it read; another hook may already have refreshed the copy
+            return f"stable launcher: this hook left the copy as it was (it read {was_text} when it started): the {version} launcher {why}"
         for rel, mode in FILES:
             dst = os.path.join(home, rel)
             old = _read(dst)

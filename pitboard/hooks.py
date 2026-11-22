@@ -109,7 +109,7 @@ def session_start(inp, cfg):
     try:                                                     # G7.1 step 5: never stops the reminder (INV6)
         what = stablecopy.refresh(store.home(), cfg)
     except Exception as e:  # noqa: BLE001
-        what = f"stable launcher kept: {type(e).__name__}"
+        what = f"stable launcher: this hook left the copy as it was ({type(e).__name__})"
     if what:
         log("session-start", key, what)
     return _context("SessionStart", [text])
