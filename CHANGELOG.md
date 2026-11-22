@@ -18,6 +18,9 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.22 (2026-11-22)
+- G20.6: CI names every test with `pytest -v` (without `-q`), not `-rA`. On CI's own macOS log, `-rA` folded the two skipped cases of one test into `SKIPPED [2] file:line: reason`, with no names; `-v` gives each test its own line with its outcome and a skip's reason.
+
 ## Plan 1.21 (2026-11-22)
 - G20.6: CI's log names every test and its outcome (`pytest -rA`), so a reader can see that a given test ran and passed in each job; a count cannot show that.
 - G21.14: a row's `proven` that leans on CI names the run and the test, as the log shows them.
