@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.19 · 2026-11-22 · The Windstorm**
+**Plan version 1.20 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -935,7 +935,7 @@ A test replays the fixtures of every earlier release (`tests/fixtures/releases/<
 - **A row is never deleted.** A promise that proves wrong is closed by a new row that says why.
 
 `tests/test_g21_promises.py` refuses the version in `.claude-plugin/plugin.json`, so CI goes red:
-- while a row due in that version or earlier has no test, or names a test that does not exist under `tests/` or is not named with the row's codon (rule 2);
+- while a row due in that version or earlier has no test, or names a test that is not named with the row's codon (rule 2), or that the test runner does not collect and run to a pass in this checkout. A name found as text is not enough: a skipped test, a test the runner cannot collect (under a helper after its `return`, inside a string, renamed), and a test whose name is defined twice in one file, where only the last definition runs, do not count. The gate runs the rows' tests itself and reads the runner's own report;
 - once the version is past a row's `ship_in`, while that row has no `proven`;
 - when a row's `ship_in` differs from its `first_ship_in` with no `moved_why`, or, for a `person` row, with no `moved_by_person`: only that person's word moves their row, restated there;
 - when a row is not whole, its codon is not in this plan, two rows share an id, or a declined lesson has no reason.
