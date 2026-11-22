@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.9 · 2026-11-22 · The Windstorm**
+**Plan version 1.10 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -723,7 +723,7 @@ This gene comes after the view-only page has proven itself (Milestone 4).
 
 **G16.4 Busy and idle.** UserPromptSubmit writes `state/<key>.activity` = `busy <ts>`; Stop writes `idle <ts>`.
 
-**G16.5 Waking.** Only when `config.wake` is `tmux`: after G16.3, if the lane is `idle` for at least 30 s, the `where.tmux_pane` of the lane's newest `asked` event still exists and runs Claude Code (`#{pane_current_command}` is `claude` or `node`), and `state/<key>.wake` shows no wake in the last 5 minutes, sync types into that pane (then writes the time to `state/<key>.wake`), with `tmux send-keys -l` for the text and a separate `Enter`:
+**G16.5 Waking.** Only when `config.wake` is `tmux`: after G16.3, if the lane is `idle` for at least 30 s, the `where.tmux_pane` of the lane's newest `asked` event still exists, runs Claude Code (`#{pane_current_command}` is `claude` or `node`) and is still this lane's (its `#{session_name}` equals `where.tmux_session` and its `#{pane_current_path}` equals `where.cwd`; no wake when either is missing), and `state/<key>.wake` shows no wake in the last 5 minutes, sync types into that pane (then writes the time to `state/<key>.wake`), with `tmux send-keys -l` for the text and a separate `Enter`. A tmux server that restarts, for example after a reboot, gives pane ids out again from the start, so a pane id saved before it can name another lane's pane (P3 in `PROMISES.json`); window names also change (one lane's went from `bash` to `claude`), so they are not compared:
 
 ```
 Pit Board: the operator answered A12 on the master list. Run `pitboard inbox` and act on it.
@@ -844,7 +844,7 @@ Every installation, for every person who installs Pit Board, must find new relea
 | Sync and update timers, status line | by the operating system / Claude Code | they call the stable launcher copy, never a version folder (G21.4) |
 | Hub and the open page | by the service manager / the browser | the hub restarts itself onto the new version (G21.7); the page reloads itself (G21.8) |
 
-**G21.1 What a release is.** A release is a commit on `main` that raises `version` in `.claude-plugin/plugin.json` (semantic versioning: `MAJOR.MINOR.PATCH`), with a matching `CHANGELOG.md` entry and a git tag `vMAJOR.MINOR.PATCH`. `main` is the release channel: a merge that does not raise the version is not shipped to anyone. A release is made only when CI is green on that exact commit, and is published with `gh skill publish --tag vMAJOR.MINOR.PATCH`, which validates the skills again, creates the tag and a GitHub release with notes. The repository has the `agent-skills` topic, and GitHub secret scanning and push protection are on. These are repository settings, set once and checked again at each release. The marketplace entry (in `TheWindstorm/windstorm-pit-stop`'s `marketplace.json`) points at this repository's `main` and never pins a version (check C11 for how Claude Code decides an update exists).
+**G21.1 What a release is.** A release is a commit on `main` that raises `version` in `.claude-plugin/plugin.json` (semantic versioning: `MAJOR.MINOR.PATCH`), with a matching `CHANGELOG.md` entry and a git tag `vMAJOR.MINOR.PATCH`. `main` is the release channel: a merge that does not raise the version is not shipped to anyone. A release is made only when CI is green on that exact commit, which includes the promise gate (G21.14), and is published with `gh skill publish --tag vMAJOR.MINOR.PATCH`, which validates the skills again, creates the tag and a GitHub release with notes. The repository has the `agent-skills` topic, and GitHub secret scanning and push protection are on. These are repository settings, set once and checked again at each release. The marketplace entry (in `TheWindstorm/windstorm-pit-stop`'s `marketplace.json`) points at this repository's `main` and never pins a version (check C11 for how Claude Code decides an update exists).
 
 **G21.2 Switch on Claude Code's own auto-update.** Claude Code leaves auto-update off for marketplaces other than Anthropic's. `pitboard setup --apply` (and the first SessionStart after install, if `self_update` is true and the operator has not written a choice) sets `"autoUpdate": true` on the marketplace's entry under `extraKnownMarketplaces` in `~/.claude/settings.json`, keeping a backup, exactly as Windstorm Pit Stop does. An explicit `"autoUpdate": false` written by the operator is never changed; `pitboard doctor` reports it.
 
@@ -894,6 +894,22 @@ A test replays the fixtures of every earlier release (`tests/fixtures/releases/<
 
 **G21.13 Never during the operator's work.** Updating installs files only. It never restarts or types into a session, except G21.6's one-line note and, if the operator has Pit Stop's fleet mode, Pit Stop's own reload at a break.
 
+**G21.14 Promises: a lesson from real use is a gate.** `PROMISES.json` at the repository root holds what real use showed must change or must stay true, and the version each is due in. The same mechanism is used by the other Windstorm skills.
+- **A row** has these fields:
+  - `id` (`P1`, `P2`, ...), `seen` (what happened, with its date) and `promise`.
+  - `codon`: a codon or invariant of this plan.
+  - `owner`: `person` when the person Pit Board is for saw it on their own machine, else `maintainer`.
+  - `first_ship_in` and `ship_in` (versions), `test` (the name of a test), `proven` (which machine, which version and when it was seen to work) and `issue`.
+  - `moved_why` and `moved_by_person`.
+- **A lesson heard and not taken** goes under `declined`, with `heard` and `why`, so nothing is dropped without a word.
+- **A row is never deleted.** A promise that proves wrong is closed by a new row that says why.
+
+`tests/test_g21_promises.py` refuses the version in `.claude-plugin/plugin.json`, so CI goes red:
+- while a row due in that version or earlier has no test, or names a test that does not exist under `tests/` or is not named with the row's codon (rule 2);
+- once the version is past a row's `ship_in`, while that row has no `proven`;
+- when a row's `ship_in` differs from its `first_ship_in` with no `moved_why`, or, for a `person` row, with no `moved_by_person`: only that person's word moves their row, restated there;
+- when a row is not whole, its codon is not in this plan, two rows share an id, or a declined lesson has no reason.
+
 ---
 
 ## Part 6. Repository layout
@@ -939,12 +955,13 @@ windstorm-pit-board/
   docs/CONTRACTS.md               Part 7 results
   docs/HARNESSES.md               G17.8, one row per harness and version (H1 to H10, the rung of each part)
   docs/PILOT.md                   Part 9 measurements
+  PROMISES.json                   G21.14, lessons from real use and the version each is due in
   AGENTS.md                       G17.2
   DNA-STRAND-MASTER-PLAN.md       this plan
   README.md  TODO.md  CHANGELOG.md  LICENSE  NOTICE
 ```
 
-The plugin is listed in The Windstorm's marketplace (the `TheWindstorm/windstorm-pit-stop` repository's `marketplace.json`) at Milestone 5, so it installs with:
+The plugin is listed in The Windstorm's marketplace (the `TheWindstorm/windstorm-pit-stop` repository's `marketplace.json`) from 0.1.0, for M2a; announcing it and the README for strangers stay at Milestone 5. It installs with:
 
 ```
 /plugin marketplace add TheWindstorm/windstorm-pit-stop
@@ -996,7 +1013,7 @@ Each milestone ends with a release, a `CHANGELOG.md` entry and a short note in `
 ### M0 Plan (this commit)
 - This plan, `README.md`, `TODO.md`, `LICENSE`, `NOTICE` in `TheWindstorm/windstorm-pit-board`.
 
-### M1 One lane (0.1.0): G1, G2, G3, G4, G5, G6 (all but `sync`, `inbox`, `hub`, `mcp`, `update`), G7.0, G7.1 (steps 1 to 3), G7.2, G7.7, G7.8, G9, G10, G11, G16.4, G18.1 `--minimal`, G19, G21.1, G21.4, G21.6, G21.11, G20 for those
+### M1 One lane (0.1.0): G1, G2, G3, G4, G5, G6 (all but `sync`, `inbox`, `hub`, `mcp`, `update`), G7.0, G7.1 (steps 1 to 3), G7.2, G7.7, G7.8, G9, G10, G11, G16.4, G18.1 `--minimal`, G19, G21.1, G21.4, G21.6, G21.11, G21.14, G20 for those
 The launcher (G21.4) ships in the very first release, so that every later release reaches the first installs without anyone reinstalling.
 Build order: G1 → G19 → G4 → G5 → G2 → G3 → G21.4 launcher → G6 → G11 → Part 7 checks → G10 → G18.1 `--minimal` → G7.0 → G7.1 → G7.7 → G7.2 → G16.4 → G7.8 → G9.
 Accepted when, in one pilot lane:
@@ -1012,6 +1029,10 @@ Accepted when, in one pilot lane:
 ### M2 Every lane, updating itself (0.2.0): G9.6, G9.7, G7.1 step 4, G7.3 to G7.6, G7.9, G8, G12, G18 (all of `setup`, and `doctor`), G21 (all)
 Accepted when: the trigger evals (G9.6) pass for every skill and the with-skill vs. without-skill evals (G9.7) are recorded; question boxes and permission prompts are recorded and closed by themselves; the catcher meets G8.5 over one week on the pilot lanes; tab badges show; `setup` and `doctor` work on Linux and macOS; a release published on GitHub reaches every machine within `update_check_hours` + 1 hour with nobody touching them; a deliberately broken test release is rolled back by itself on a test machine. Then it is rolled out to all lanes one machine at a time.
 
+M2 is rolled out in two stages, because the status line wrapper sits in front of every lane's own status line:
+- **M2a** starts the hour 0.1.0 is tagged. 0.1.0 goes into the lanes of the skill family itself, each in its own folder only: the plugin with local scope, and the status line wrapper set in that folder's settings. One command installs it in a lane and one command undoes it; the undo is tested before the first lane gets it.
+- **M2b** is every lane on the machine. It starts only after M2a has run 3 days with no needless block and no broken status line, and after the owners of those lanes have each said go.
+
 ### M3 Master list, view only (0.3.0): G13 (no inbox), G14 (no `/v1/answers`), G15, G21.7, G21.8, G17.2, G17.4 to G17.10 (T3 Code's rows)
 The page is the floor every harness lands on (G17.4), so the harness matrix comes with it.
 Accepted when: every lane's asks from every machine are on the page within 90 s of being recorded; the page pops out on top; History scrolls back to the first ask; a hub restart and a machine offline for a day lose nothing; a new release moves the hub and the open page onto it by themselves; `docs/HARNESSES.md` holds checked rows for T3 Code's Claude and Codex providers (on OC3 if Veron HERDR Boss rules the exception, else on another test box booked with `test-now`, where the lane installs T3 Code itself), and an ask recorded in a T3 Code lane there is on the page within 90 s.
@@ -1019,7 +1040,7 @@ Accepted when: every lane's asks from every machine are on the page within 90 s 
 ### M4 Answers from the page (0.4.0): G13.5, G14 `/v1/answers`, G16
 Accepted when: an OK on the page reaches the lane log within 90 s; with `wake: tmux`, an idle lane wakes and acts, and a busy lane is never typed into.
 
-### M5 Public release and other harnesses (1.0.0): G17.1, G17.3 and the rows of G17.8 for other harnesses, marketplace listing, README for strangers
+### M5 Public release and other harnesses (1.0.0): G17.1, G17.3 and the rows of G17.8 for other harnesses, announcing the marketplace listing, README for strangers
 Accepted when: a person outside The Windstorm installs it from the marketplace on a clean machine and gets an ask on their status line in under 10 minutes, using only the README.
 
 ---
