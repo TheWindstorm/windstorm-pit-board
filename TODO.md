@@ -6,7 +6,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] 2026-11-22 P4 (M1 item 2, moved to M2a): two calendar days, each with a real ask recorded unprompted in an M2a lane; write the dates and lanes into `proven`. On 2026-11-22, test sessions on a shared Linux machine and on an Intel Mac each recorded an ask unprompted, from a task that needed the operator's choice and never named Pit Board (evidence, not one of the two days).
 - [ ] 2026-11-22 P1 `proven`: write it the first time an open ask shows the segment first in a real lane.
 - [ ] 2026-11-22 M2a (Part 8): the install and undo commands for a lane's own folder are tested with the real plugin commands from the 0.1.0 listing, on Linux (bash) and macOS (zsh); the undo puts the folder's settings back byte for byte. Next: the skill family's own lanes, one at a time.
-- [ ] 2026-11-22 0.1.1 (G21.14): P4, P5 and P6 each need their test before 0.1.1 is released. P5 and P6 come with setup's folder mode (G18.1, #38).
+- [ ] 2026-11-22 0.1.1 (G21.14): P4, P5 and P6 have their tests; P5 and P6 with `setup --folder` (G18.1 folder mode, #38), run with the real plugin commands on Linux and macOS. Release it after the skill's owner's go; M2a lanes then use `setup --folder` instead of the lane's own scripts.
 - [ ] 2026-11-22 Overnight stress test with the skill family's other two skills on two machines, with real reboots: every finding becomes a promise row and an issue the same night.
 
 ## Waiting on
