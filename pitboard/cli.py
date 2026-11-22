@@ -70,11 +70,21 @@ def parser():
     p.add_argument("--title", required=True)
     _fields(p)
 
-    p = sub.add_parser("update", help="change an open ask")
+    p = sub.add_parser("update", help="change an open ask (Pit Board itself: self-update)")
     _common(p)
-    p.add_argument("id")
+    p.add_argument("id", nargs="?")
     p.add_argument("--title")
     _fields(p, kind=False)
+    for flag in UPDATER_FLAGS:                     # refused with a line that names self-update (G6.2)
+        p.add_argument(flag, nargs="?", const=True, default=None, help=argparse.SUPPRESS)
+
+    p = sub.add_parser("self-update", help="Pit Board's own updater: --pin VER and --unpin so far (G21.10)")
+    _common(p)
+    g = p.add_mutually_exclusive_group()
+    g.add_argument("--pin", metavar="VER")
+    g.add_argument("--unpin", action="store_true")
+    g.add_argument("--check", action="store_true")
+    g.add_argument("--now", action="store_true")
 
     p = sub.add_parser("answer", help="write down an answer")
     _common(p)
@@ -304,7 +314,13 @@ def cmd_add(args):
     return Out(msg, [ev["ask"]], ask)
 
 
+UPDATER_FLAGS = ("--check", "--now", "--pin", "--unpin")
+NOT_SELF_UPDATE = "pitboard: update changes an ask: update A12 --title ... (Pit Board itself: self-update)"
+
+
 def cmd_update(args):
+    if args.id is None or any(getattr(args, f[2:]) is not None for f in UPDATER_FLAGS):
+        raise Fail(2, NOT_SELF_UPDATE)                # G6.2: one meaning, never updates Pit Board
     ctx = _Ctx(args)
     ask_id = _ask_id(args.id)
     data = {k: getattr(args, k) for k in ("severity", "title", "suggested", "why", "detail", "steps")
@@ -669,10 +685,40 @@ def cmd_version(args):
     return Out(f"{__version__} ({', '.join(parts)})", data=data)
 
 
+def _write_whole(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = f"{path}.{os.getpid()}.tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(text)
+    os.replace(tmp, path)
+
+
+def cmd_self_update(args):
+    """G21.10, before the rest of the updater (P10): --pin VER holds this home on a version, --unpin releases it.
+    The status line and the hooks follow at their next call (G21.4 step 1)."""
+    if args.check or args.now or not (args.pin or args.unpin):
+        raise Fail(2, "pitboard: the updater itself comes in 0.2.0 (G21.3); self-update has only --pin VER and --unpin")
+    pin_path = os.path.join(store.home(), "update", "pin")
+    if args.unpin:
+        if os.path.exists(pin_path):
+            os.remove(pin_path)
+        return cmd_version(args)
+    ver = args.pin.strip()
+    if not launch._vkey(ver):
+        raise Fail(2, f"pitboard: not a version: {args.pin} (they look like 0.1.2). Nothing changed.")
+    if ver in launch._lines(os.path.join(store.home(), "update", "bad-versions")):
+        raise Fail(2, f"pitboard: {ver} is in update/bad-versions, so it is not pinned. Nothing changed.")
+    if not launch._runnable(launch._cached(launch._claude_dir()).get(ver)):
+        raise Fail(2, f"pitboard: no runnable {ver} in the plugin cache, so it is not pinned. Nothing changed.")
+    _write_whole(pin_path, ver + "\n")
+    return cmd_version(args)
+
+
 COMMANDS = {"add": cmd_add, "update": cmd_update, "answer": cmd_answer, "ok": cmd_ok, "no": cmd_no,
             "done": cmd_done, "withdraw": cmd_withdraw, "reopen": cmd_reopen, "list": cmd_list,
             "board": cmd_board, "status": cmd_status, "setup": cmd_setup, "hook": cmd_hook, "show": cmd_show,
-            "lane": cmd_lane, "export": cmd_export, "version": cmd_version}
+            "lane": cmd_lane, "export": cmd_export, "version": cmd_version,
+            "self-update": cmd_self_update}
 
 
 # ---------------------------------------------------------------- main

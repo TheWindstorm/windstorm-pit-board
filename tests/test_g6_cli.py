@@ -154,7 +154,7 @@ def test_G6_2_no_unlisted_commands_or_flags():
     names = set(cli.COMMANDS)
     plan = {"add", "update", "answer", "ok", "no", "done", "withdraw", "reopen", "list", "board", "show",
             "status", "badge", "lane", "sync", "inbox", "hook", "hub", "setup", "doctor", "export", "mcp",
-            "version"}
+            "version", "self-update"}                                             # plan 1.15 names the updater
     assert names <= plan
     p = cli.parser()
     sub = next(a for a in p._actions if isinstance(a, cli.argparse._SubParsersAction))
