@@ -75,7 +75,7 @@
    "seen": "2026-11-22, the first night Pit Board was installed in single lanes' folders on two test machines (a shared Linux laptop and an Intel Mac): a machine with no Pit Board home could get one from pitboard setup --minimal --apply only together with a change to the user's own statusLine setting, which reaches every session of that user. The folder installer had to make the home itself, without that step.",
    "promise": "pitboard setup has a folder mode: it makes the Pit Board home and sets the status line wrapper in one folder's .claude/settings.local.json, never in the user's settings, and its undo puts that file back byte for byte (or removes only Pit Board's entries if the file changed since).",
    "test": "test_G18_1_folder_undo_puts_the_folder_back_byte_for_byte",
-   "proven": "",
+   "proven": "2026-11-22, the overnight stress test, setup --folder from the folder mode on main with Claude Code 2.1.330's real plugin commands: on a shared Linux laptop (bash) and on an Intel Mac (zsh), the main user, apply then undo left the folder empty, the registry with no entry for it and the user's settings.json byte for byte the same; on a fresh macOS test account with no Pit Board home, apply made the home (config, launcher, wrapper) without the user's status line setting and the undo left the folder empty; and in a folder another skill had changed after the install, the undo removed only Pit Board's entries and kept the other skill's env and backup file.",
    "issue": 38,
    "moved_why": "",
    "moved_by_person": ""
@@ -89,7 +89,7 @@
    "seen": "2026-11-22, the same night, on the Intel Mac: pgrep -x claude sees a Claude Code session's process name as its version file (2.1.330), so counting the sessions in a folder by process name could find none, and a refusal of a folder shared by several sessions would never fire.",
    "promise": "The folder mode counts the sessions in a folder by each process's command name, on Linux and macOS, and refuses the home folder and any folder where more than one session runs.",
    "test": "test_G18_1_folder_counts_sessions_by_their_command_on_macos",
-   "proven": "",
+   "proven": "2026-11-22, the overnight stress test: on an Intel Mac, where a session's process name is its version file, the folder mode counted exactly one session in each of three test folders that each held one (and the same on a shared Linux laptop), and refused the home folder on both.",
    "issue": 38,
    "moved_why": "",
    "moved_by_person": ""
