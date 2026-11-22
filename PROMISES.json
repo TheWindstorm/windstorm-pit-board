@@ -149,6 +149,20 @@
    "issue": 46,
    "moved_why": "",
    "moved_by_person": ""
+  },
+  {
+   "id": "P11",
+   "codon": "G21.14",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.2",
+   "ship_in": "0.1.2",
+   "seen": "2026-11-22, a check asked of every Windstorm skill after a sister skill's row test had never run anywhere: the promise gate found a row's test by its name as text in the test files. A row's real test (due in the version then in plugin.json) was moved six ways where it cannot run, each in a throwaway copy: the gate refused three (under a helper after its return, renamed, under if False) and PASSED three while the real test never ran (marked skip; shadowed by a later empty definition of the same name, which the runner passes under that name; inside a module string). The gate also checked a row only once the version reached its due version, so on 0.1.1 the tests of P8, P9 and P10, due in 0.1.2, were not checked at all.",
+   "promise": "The promise gate counts a row's test only when the test runner collects it and runs it to a pass in this checkout, from the runner's own report, for every row that names a test at every version. A name defined twice in one file, an unconditional skip and a skip with no reason fail; a skip on a condition of the machine is listed as not run here and is not a pass.",
+   "test": "test_G21_14_the_gate_counts_only_tests_the_runner_runs",
+   "proven": "",
+   "issue": 65,
+   "moved_why": "",
+   "moved_by_person": ""
   }
  ],
  "declined": [
