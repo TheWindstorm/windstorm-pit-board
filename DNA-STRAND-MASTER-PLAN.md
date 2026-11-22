@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.8 · 2026-11-20 · The Windstorm**
+**Plan version 1.9 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -583,7 +583,7 @@ If it does not, end your turn now without saying anything more.
 
 **G10.4 It never fails loudly.** Any error prints nothing and exits 0.
 
-**G10.5 Joining an existing status line.** A plugin cannot set `statusLine` (the documentation describes only user and project settings, and the plugin manifest has no such key). `pitboard setup` writes `~/.pitboard/statusline.sh`, which saves stdin to a variable, runs the operator's original status line command with that input, then runs `~/.pitboard/bin/pitboard status` (the stable launcher, G21.4) with the same input, and joins the two with ` · ` when both are non-empty. Pit Board's part runs under a 1 s cap (`timeout`, or `gtimeout` on macOS, when either exists): when it errors, prints nothing or runs past the cap, the operator's own line is printed alone, so a Pit Board fault never costs the operator their status line (G10.4). Setup shows the change and asks before replacing `statusLine.command` in the operator's `settings.json`, and keeps a backup.
+**G10.5 Joining an existing status line.** A plugin cannot set `statusLine` (the documentation describes only user and project settings, and the plugin manifest has no such key). `pitboard setup` writes `~/.pitboard/statusline.sh`, which saves stdin to a variable, runs the operator's original status line command with that input, then runs `~/.pitboard/bin/pitboard status` (the stable launcher, G21.4) with the same input. When both print something, Pit Board's segment comes first: before a one-line status line, joined with ` · `, or on its own first line above a status line of several lines, so a long status line never pushes it past the right edge. (In the M1 pilot the operator could not find the segment at the end of an 11-line status line.) Pit Board's part runs under a 1 s cap (`timeout`, or `gtimeout` on macOS, when either exists): when it errors, prints nothing or runs past the cap, the operator's own line is printed alone, so a Pit Board fault never costs the operator their status line (G10.4). Setup shows the change and asks before replacing `statusLine.command` in the operator's `settings.json`, and keeps a backup.
 
 **G10.6** `pitboard status` records `session_name` from its input into `lanes.json` (`lane_name` only, G3.2, G3.4), at most once a minute per session, tracked in `state/statusline-seen.json`.
 

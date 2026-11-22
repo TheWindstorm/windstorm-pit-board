@@ -1,5 +1,9 @@
 # Changelog
 
+## Plan 1.9 (2026-11-22)
+- G10.5: the status line wrapper prints Pit Board's segment first: before a one-line status line, joined with ` · `, or on its own first line above a status line of several lines. Before, it came last, and in the M1 pilot the operator could not find it at the end of an 11-line status line; the operator approved the change. The 1 s cap and the fail-soft path are unchanged.
+No codon is renumbered. `test_G10_5_wrapper_joins_the_operator_line_and_the_segment` gains a several-line case and checks the new order.
+
 ## Plan 1.8 (2026-11-20)
 The harness matrix, for Skills Boss's P3 request: what degrades gracefully in a harness without hooks, and how the ask still reaches the operator. Plan text only; no code follows until Skills Boss reads it and the operator has sampled M1.
 - G17 is now "Other harnesses: the matrix, MCP server and adapters", with an introduction.
