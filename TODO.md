@@ -3,7 +3,9 @@
 The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tracks where the build is against it.
 
 ## Now
-- [ ] 2026-11-17 M1: pilot in one lane (running since 2026-11-17, docs/PILOT.md); the operator samples it before any other lane gets it. Acceptance 1, 3, 4, 5 and 7 pass; 2 is counted again from 2026-11-20; 6 and 8 are the operator's, at the sample.
+- [ ] 2026-11-17 M1: pilot in one lane (docs/PILOT.md). The operator kept it on 2026-11-21. Acceptance 1 and 3 to 8 pass; item 2 has 1 of its 2 days.
+- [ ] 2026-11-22 Plan 1.9 and G10.5: the status line wrapper prints Pit Board's segment first (ask A2, approved); in the pilot lane since 2026-11-22.
+- [ ] 2026-11-22 Release 0.1.0 (G21.1) after G10.5 merges: tag, `gh skill publish --tag v0.1.0`, the `agent-skills` topic, then the marketplace entry. Waits for Skills Boss's GO.
 
 ## Waiting on
 - [ ] 2026-11-17 Before the first release (G21.1): if pilot fixes change what gets written, delete and save tests/fixtures/releases/0.1.0 again in the release PR (it is final once tagged).
