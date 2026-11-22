@@ -116,8 +116,8 @@ def choose(home=None, claude_dir=None, own_root=None):
             return cached[v], 4
     if _runnable(own_root) and os.path.basename(own_root) not in bad:               # 5
         return own_root, 5
-    for path, v in installed:                                                       # 6
-        if v not in bad and _runnable(path):
+    for path, v in sorted(installed, key=lambda r: _vkey(r[1]) or (-1,), reverse=True):  # 6
+        if v not in bad and _runnable(path):                # the highest version, never the first entry (P8)
             return path, 6
     return None, 7
 
