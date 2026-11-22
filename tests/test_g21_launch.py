@@ -123,6 +123,38 @@ def test_G21_4_step6_and_7(world):
     assert pick(world) == (None, 7)
 
 
+def test_G21_4_step6_runs_the_highest_install_not_the_first(world):
+    """P8: folders with different versions; installed_plugins.json lists the oldest first."""
+    old, new = world.version("0.1.0"), world.version("0.1.1")
+    world.install(old, "0.1.0", scope="local")
+    world.install(new, "0.1.1", scope="local")
+    assert pick(world) == (new, 6)
+    world.install(old, "0.1.0")                              # a user-scope install of the older one too
+    assert pick(world) == (new, 6)
+    world.lines("bad-versions", "0.1.1")
+    assert pick(world) == (old, 6)
+
+
+def test_G21_4_step6_an_install_with_no_version_comes_last(world):
+    odd, new = world.version("0.0.9"), world.version("0.1.1")
+    world.install(odd, "", scope="local")
+    world.install(new, "0.1.1", scope="local")
+    assert pick(world) == (new, 6)
+    shutil.rmtree(os.path.join(new, "pitboard"))
+    assert pick(world) == (odd, 6)
+
+
+def test_G21_4_launcher_runs_the_newest_install_before_any_self_check(world):
+    """P8 as seen: the status line wrapper calls the stable copy; no version is in good-versions yet."""
+    stable = world.pb / "pitboard"
+    stable.mkdir()
+    shutil.copy(LAUNCH, stable / "launch.py")
+    world.install(world.version("0.1.0"), "0.1.0", scope="local")
+    world.install(world.version("0.1.1"), "0.1.1", scope="local")
+    r = _run(world, str(stable / "launch.py"), "status")
+    assert r.returncode == 0 and r.stdout.strip() == "ran 0.1.1 ['status']", r.stderr
+
+
 def test_G21_4_broken_files_do_not_crash(world):
     (world.claude / "plugins" / "installed_plugins.json").write_text("{not json")
     (world.pb / "config.json").write_text("[1, 2]")

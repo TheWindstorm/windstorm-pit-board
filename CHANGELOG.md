@@ -2,6 +2,7 @@
 
 ## 0.1.2 (not yet released)
 - **A failed `claude plugin` command in `setup --folder` shows Claude Code's error** (P9, plan 1.13), not only its last line: from its first error line, at most 12 lines, without its progress lines, wrapped to 100 columns so nothing is cut. When the clone failed over SSH because GitHub accepted no key from the account, the message says so first, in plain words, with what to do.
+- **The status line runs the newest installed version** (P8, plan G21.4 step 6). Before any version has passed a self-check, the stable launcher took the first entry in `installed_plugins.json`, which on a machine with folders on different versions can be the oldest.
 
 ## 0.1.1 (2026-11-22)
 Install Pit Board in one lane's folder, and take it out again.
