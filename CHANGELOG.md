@@ -11,6 +11,10 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.14 (2026-11-22)
+- G18.1 folder mode, step 6: the lines of a failed command's message (the plain words and Claude Code's error) are wrapped to G6.8's 100 columns, never cut with `…`; a continued line starts with two spaces. The plain-words line is longer than 100 columns, so cutting it would lose the words P9 is for.
+No codon is renumbered and no existing test changes.
+
 ## Plan 1.13 (2026-11-22)
 - G18.1 folder mode, step 6 (P9): a failed `claude plugin` command shows Claude Code's error from its first error line, not only its last line (which is often a progress line, or the end of git's sentence). When the clone failed over SSH because GitHub accepted no key from the account, the message says so first, in plain words, with what to do. The wording follows Claude Code's real output for a failed clone, captured on 2.1.280 and 2.1.330 in test accounts with no GitHub key.
 No codon is renumbered and no existing test changes.

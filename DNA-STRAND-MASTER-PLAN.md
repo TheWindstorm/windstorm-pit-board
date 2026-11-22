@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.13 · 2026-11-22 · The Windstorm**
+**Plan version 1.14 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -808,6 +808,7 @@ Its Codex provider comes next.
 6. If a step fails, it undoes the steps before it, and says what failed (P9). For a failed `claude plugin` command it shows Claude Code's error, not only its last line: from its first error line (the first line that starts with `✘`, or else the first line of its error output) to the end, at most 12 lines, without Claude Code's progress lines (`SSH not configured, cloning via HTTPS: …`, `HTTPS clone failed, retrying with SSH: …`), which it prints last. When that error shows the clone failed over SSH because GitHub accepted no key (`Host key verification failed` or `Permission denied (publickey)`), the message first says so in plain words, then what to do:
    - after `HTTPS clone failed, retrying with SSH`: "Claude Code could not clone the plugin from GitHub over HTTPS, and the retry over SSH failed: this account is not set up for GitHub over SSH (GitHub accepted no key from it). Check that this machine reaches github.com over HTTPS, or add a GitHub key to this account, then run the same command again."
    - otherwise (Claude Code 2.1.280 clones a `github` entry over SSH only): "Claude Code could not clone the plugin from GitHub over SSH; this account is not set up for GitHub over SSH (GitHub accepted no key from it). Update Claude Code (2.1.330 clones over HTTPS when SSH is not set up), or add a GitHub key to this account, then run the same command again."
+   - These lines (the plain words and Claude Code's error) are wrapped to G6.8's 100 columns, never cut with `…`; a continued line starts with two spaces.
 
 `pitboard setup --folder DIR --undo` runs `claude plugin uninstall <plugin>@<marketplace> --scope local` in the folder (a failure is shown as in step 6), then puts the folder's settings back:
 - byte for byte, when what is left after removing Pit Board's entries equals the recorded file under the same rule;
