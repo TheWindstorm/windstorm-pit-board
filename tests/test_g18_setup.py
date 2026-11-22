@@ -110,7 +110,7 @@ def _install_fake_version(home):
             {"scope": "user", "installPath": str(v), "version": "0.1.0"}]}}))
 
 
-@pytest.mark.parametrize("own", ["printf 'MINE'", None])
+@pytest.mark.parametrize("own", ["printf 'MINE'", "printf 'L1\\nL2'", None])
 def test_G10_5_wrapper_joins_the_operator_line_and_the_segment(world, own):
     home, pb = world
     if own:
@@ -125,11 +125,17 @@ def test_G10_5_wrapper_joins_the_operator_line_and_the_segment(world, own):
         return subprocess.run([wrap], input='{"session_id": "x"}', capture_output=True, text=True, env=env,
                               timeout=30).stdout
 
-    assert line() == ("MINE" if own else "")                      # nothing waits: no segment
+    mine = {"printf 'MINE'": "MINE", "printf 'L1\\nL2'": "L1\nL2"}.get(own, "")
+    assert line() == mine                                         # nothing waits: no segment
     run("add", "--lane", "api", "--title", "Go?", "--suggested", "yes")
     out = line()
     seg = "🔴 1 ask · oldest 0m"
-    assert seg in out and (out.startswith("MINE · ") if own else out.startswith("\x1b[31m"))
+    assert out.startswith("\x1b[31m") and seg in out             # the segment comes first
+    if mine == "MINE":
+        assert out.endswith(" · MINE") and "\n" not in out        # before a one-line status line
+    elif mine:
+        first, rest = out.split("\n", 1)                         # its own line above several lines
+        assert seg in first and rest == "L1\nL2"
 
 
 @pytest.mark.skipif(not (shutil.which("timeout") or shutil.which("gtimeout")), reason="no timeout command here")
