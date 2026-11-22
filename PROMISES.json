@@ -1,0 +1,61 @@
+{
+ "about": "What real use, and the person Pit Board is for, showed must change or must stay true in Windstorm Pit Board, and the version each is due in. A lesson here is a gate, not a note: tests/test_g21_promises.py (G21.14) refuses a version while a row due in it is not built, and refuses the version after it until the row says where it was proven on a real machine.",
+ "how_to_use": [
+  "A new lesson gets a row the day it is learned: what was seen, the promise, a codon in DNA-STRAND-MASTER-PLAN.md, the version it is due in, and a tracking issue when work is left.",
+  "When it is built: put the name of its test in 'test'. The test must exist under tests/ and be named with the row's codon (test_G10_5_... for G10.5).",
+  "When it has been seen to work on a real machine: say which machine, which version and when in 'proven'.",
+  "'ship_in' moves only with a reason in 'moved_why'. A row whose owner is 'person' was seen by the person Pit Board is for, on their own machine: its date moves only by their word, restated in 'moved_by_person'.",
+  "A row is never deleted. A promise that turns out wrong is closed by a row that says why.",
+  "A lesson that was heard and not taken goes under 'declined' with the reason, so that nothing is dropped without a word."
+ ],
+ "rows": [
+  {
+   "id": "P1",
+   "seen": "2026-11-21, the M1 pilot, on the operator's own machine: the operator asked where the pilot was running, because they saw no red dot. The status segment was there, at the end of line 11 of an 11-line status line, after the operator's own fields.",
+   "promise": "Pit Board's status segment is printed first: before a one-line status line, joined with ' · ', or on its own first line above a status line of several lines, so a long status line never hides it.",
+   "codon": "G10.5",
+   "owner": "person",
+   "first_ship_in": "0.1.0",
+   "ship_in": "0.1.0",
+   "test": "test_G10_5_wrapper_joins_the_operator_line_and_the_segment",
+   "proven": "",
+   "issue": null,
+   "moved_why": "",
+   "moved_by_person": ""
+  },
+  {
+   "id": "P2",
+   "seen": "2026-11-22, a reboot of the machine the pilot runs on: the lane log was byte-identical before and after, the open ask kept its ID, uid and state, the board listed the same asks, and the start-up reminder and the status segment worked with nothing re-armed. Only things outside Pit Board were lost (the session's temporary files and its own scheduled checks).",
+   "promise": "A reboot loses no ask and leaves Pit Board nothing to re-arm: asks live only in the lane logs on disk (INV2), and the hooks and the status line wrapper are files that run on each call.",
+   "codon": "INV2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.0",
+   "ship_in": "0.1.0",
+   "test": "test_INV2_cache_can_be_deleted_without_loss",
+   "proven": "The pilot machine, 0.1.0 (the pilot copy), 2026-11-22T04:19Z: reads of the lane log, the asks and the board before the reboot and after it matched.",
+   "issue": null,
+   "moved_why": "",
+   "moved_by_person": ""
+  },
+  {
+   "id": "P3",
+   "seen": "2026-11-22, the same reboot: the terminal tab showing the pilot lane got a new id and kept its label. The tmux pane id saved with an ask before the reboot (%148) no longer existed; the lane came back as %10, because a new tmux server gives pane ids out again from the start. Its window name changed too (bash to claude).",
+   "promise": "Waking (G16.5) types into a saved pane only when it still runs Claude Code, its tmux session name equals the ask's where.tmux_session and its folder equals where.cwd; never by a saved id alone, and window names are not compared.",
+   "codon": "G16.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.4.0",
+   "ship_in": "0.4.0",
+   "test": "",
+   "proven": "",
+   "issue": 31,
+   "moved_why": "",
+   "moved_by_person": ""
+  }
+ ],
+ "declined": [
+  {
+   "heard": "2026-11-21, the M1 pilot: the pitboard command on the agent's PATH is the pilot marketplace's source folder, not the version folder the hooks run from.",
+   "why": "Only a directory (local) marketplace has a source folder to put on PATH. In the pilot both copies were the same commit, and both go through the G21.4 launcher. M2a installs from the GitHub marketplace, and the first M2a lane checks which folder is on PATH there. If it differs from the hooks' folder, this becomes a row."
+  }
+ ]
+}
