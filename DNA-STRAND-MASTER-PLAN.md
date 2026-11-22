@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.18 · 2026-11-22 · The Windstorm**
+**Plan version 1.19 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -434,7 +434,7 @@ Reset after each coloured span: `\x1b[0m`.
 | `export [--format jsonl\|csv] [--all-lanes]` | Writes every event (jsonl) or every ask's folded state (csv) to stdout. | |
 | `mcp` | G17. | |
 | `self-update [--check] [--now] [--pin VER] [--unpin]` | Pit Board's own updater (G21.3, G21.10). `--pin` and `--unpin` come first (P10). | |
-| `version` | The running version, the newest installed version, the pinned version if any (`self-update --pin`), and the hook generation. | `0.2.1 (installed 0.2.1, hooks gen 1)` |
+| `version` | The running version, the newest installed version, the pinned version if any (`self-update --pin`), and the hook generation. When the home's launcher copy came from a version older than the newest installed one that is not in `update/bad-versions` (G21.4), and no pin holds the home, a second line says so (with `self_update` false: `launcher copy from 0.2.0; self_update is off, so no start refreshes it`); the first line never changes. | `0.2.1 (installed 0.2.1, hooks gen 1)`, then perhaps `launcher copy from 0.2.0; the next session start refreshes it` |
 | `update [--check] [--now] [--pin VER] [--unpin]` | G21. | `up to date (0.2.1)` / `updated 0.2.0 → 0.2.1` |
 
 **G6.3 Exit codes.** `0` ok · `1` unexpected error · `2` bad usage · `3` lane unknown · `4` ask not found · `5` transition not allowed (G1.11), with the current status in the message · `6` invalid field · `7` lane busy (lock timeout) · `8` hub unreachable (sync only) · `9` update failed (update only; the running version is unchanged).
@@ -897,9 +897,9 @@ A version that is installed but not yet in `update/good-versions` is self-checke
 1. Write its `bin/pitboard` and `pitboard/launch.py` whole into a new temporary folder in `$PITBOARD_HOME`, in the stable copy's layout.
 2. Run that folder's `bin/pitboard version` against this home (3 s limit), so the check runs the same code the copy will run. Unless it exits 0 with a `version` line (G6.2), stop and keep the old copy.
 3. Keep the current copy as the one backup (`.prev` beside each file, replacing any older backup), then rename the checked files over the copy and write `copied-from` last. There is no moment without a launcher.
-4. Write one log line that names both versions (`stable launcher 0.1.1 -> 0.1.2, backup kept`), or that names the version kept and why.
+4. Write one log line that names both versions (`stable launcher 0.1.1 -> 0.1.2, backup kept`), or, when it stopped, one that says what this hook did and what it read, and why (`stable launcher: this hook left the copy as it was (it read 0.1.1 when it started): the 0.1.2 launcher did not answer in 3 s`). By then another hook may already have refreshed the copy, so the line never says the copy is old.
 
-Any number of hooks refreshing the same home at the same second leave one whole copy: each writes whole files under its own temporary names and renames them, all with the same content, and the last rename wins. If two versions race, the next session start of the newer one refreshes again, because `copied-from` or the torn-copy check then shows it. A failure leaves the old copy, is one log line, and the hook still exits 0 (INV6). The README says in one sentence that a session start may refresh the home's launcher, when it does, and how to switch that off (`self_update` false).
+Any number of hooks refreshing the same home at the same second leave one whole copy: each writes whole files under its own temporary names and renames them, all with the same content, and the last rename wins. If two versions race, the next session start of the newer one refreshes again, because `copied-from` or the torn-copy check then shows it. A failure leaves the old copy, is one log line, and the hook still exits 0 (INV6). On a very busy machine every hook of a restore may miss the 3 s check. That start then leaves the launcher as it was, which is the safe side, and the next session start tries again. The limit is not raised: a session start never waits longer for Pit Board. Until a start succeeds, `pitboard version` shows that the copy is older (G6.2), so a person can see it. The README says in one sentence that a session start may refresh the home's launcher, when it does, and how to switch that off (`self_update` false), and in one more that on a very busy machine a start may leave the launcher as it was and the next start tries again.
 
 **G21.5 Self-check.** `pitboard doctor --quick` runs from the new version's folder, in a temporary `PITBOARD_HOME` with a copy of the machine's largest lane log (or the built-in fixture `tests/fixtures/selfcheck.jsonl` when the machine has none), and must: import every module; fold the copied log with the same result as the running version; run `add`, `ok`, `done`, `board`, `status` against the temporary home; finish in under 20 s. Any failure is a fail.
 
