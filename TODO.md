@@ -8,6 +8,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] 2026-11-22 M2a (Part 8): the install and undo commands for a lane's own folder are tested with the real plugin commands from the 0.1.0 listing, on Linux (bash) and macOS (zsh); the undo puts the folder's settings back byte for byte. Next: the skill family's own lanes, one at a time.
 - [ ] 2026-11-22 0.1.1 (G21.14): P4, P5 and P6 have their tests; P5 and P6 with `setup --folder` (G18.1 folder mode, #38), run with the real plugin commands on Linux and macOS. Release it after the skill's owner's go; M2a lanes then use `setup --folder` instead of the lane's own scripts.
 - [ ] 2026-11-22 P8 (#44, due 0.1.2): before any self-check, the stable launcher (the status line's) runs the first installed entry, not the newest (G21.4 step 6); seen on an Intel Mac with the 0.1.1 candidate beside 0.1.0. Build and test it before the first release that changes code the stable copy runs.
+- [ ] 2026-11-22 P9 (#45, due 0.1.2): a failed `claude plugin install` in setup --folder shows only the last line of Claude Code's error; show it from its first error line. The undo-on-failure itself held 7 times in round 6.
 - [ ] 2026-11-22 Overnight stress test with the skill family's other two skills on two machines, with real reboots: every finding becomes a promise row and an issue the same night.
 
 ## Waiting on
