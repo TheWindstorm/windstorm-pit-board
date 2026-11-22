@@ -7,6 +7,7 @@ the settings file exactly as it was, so the undo can put it back byte for byte. 
 import json
 import os
 import subprocess
+import textwrap
 import time
 
 from . import setup as setup_mod
@@ -115,16 +116,48 @@ def _write_atomic(path, text, mode=0o600):
     os.replace(tmp, path)
 
 
+PROGRESS = ("SSH not configured, cloning via HTTPS:", "HTTPS clone failed, retrying with SSH:")   # printed last
+NO_KEY = ("Host key verification failed", "Permission denied (publickey)")
+NOT_SET_UP = "this account is not set up for GitHub over SSH (GitHub accepted no key from it)"
+ERROR_LINES = 12
+WRAP = 100   # G6.8's width: these lines are wrapped to it, so the CLI never has to cut one
+
+
+def error_text(stdout, stderr):
+    """G18.1 step 6 (P9): Claude Code's error from its first error line (the first that starts with ✘, or else the
+    first line of its error output) to the end, at most 12 lines, without its progress lines; first, in plain words,
+    when the clone failed over SSH because GitHub accepted no key, with what to do. Every line is wrapped to G6.8's
+    100 columns (a continued line starts with two spaces), so nothing is cut."""
+    out, err = (stdout or "").splitlines(), (stderr or "").splitlines()
+    lines = [l.rstrip() for l in out + err]
+    start = next((i for i, l in enumerate(lines) if l.lstrip().startswith("✘")), None)
+    if start is None:
+        start = len(out) if any(l.strip() for l in err) else 0
+    body = [l for l in lines[start:] if l.strip() and not l.startswith(PROGRESS)][:ERROR_LINES]
+    whole = "\n".join(lines)
+    head = []
+    if any(k in whole for k in NO_KEY):
+        if "HTTPS clone failed, retrying with SSH" in whole:
+            head = [f"Claude Code could not clone the plugin from GitHub over HTTPS, and the retry over SSH failed: "
+                    f"{NOT_SET_UP}.", "Check that this machine reaches github.com over HTTPS, or add a GitHub key to "
+                    "this account, then run the same command again."]
+        else:
+            head = [f"Claude Code could not clone the plugin from GitHub over SSH; {NOT_SET_UP}.",
+                    "Update Claude Code (2.1.330 clones over HTTPS when SSH is not set up), or add a GitHub key to "
+                    "this account, then run the same command again."]
+    return "\n".join(w for l in head + body for w in textwrap.wrap(l, WRAP, subsequent_indent="  ",
+                                                                    break_on_hyphens=False) or [""])
+
+
 def _claude(args, folder, run=None):
-    """Run `claude plugin ...` in the folder; (ok, last line of its output)."""
+    """Run `claude plugin ...` in the folder; (ok, Claude Code's error when it failed, G18.1 step 6)."""
     run = run or subprocess.run
     try:
         r = run(["claude"] + args, cwd=folder, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                 timeout=CLAUDE_LIMIT_SECONDS)
     except (OSError, subprocess.SubprocessError) as e:
         return False, str(e)
-    tail = ((r.stdout or "") + (r.stderr or "")).strip().splitlines()
-    return r.returncode == 0, (tail[-1] if tail else "")
+    return r.returncode == 0, ("" if r.returncode == 0 else error_text(r.stdout, r.stderr))
 
 
 def installed_here(folder, plugin=PLUGIN, registry=None):
@@ -201,7 +234,7 @@ def apply(folder, home=None, plugin=PLUGIN, sessions=None, root=None, run=None):
         else:
             ok, tail = _claude(["plugin", "install", plugin, "--scope", "local"], folder, run)
             if not ok:
-                raise RuntimeError(f"claude plugin install failed: {tail}")
+                raise RuntimeError(f"claude plugin install failed\n{tail}")
             out.append(f"plugin {plugin}: installed for {folder} only")
         if not (os.path.exists(os.path.join(home, "bin", "pitboard")) and os.path.exists(setup_mod.wrapper_path(home))):
             items = [i for i in setup_mod.plan_minimal(home=home, root=root) if i.name != "status line setting"]
@@ -216,7 +249,8 @@ def apply(folder, home=None, plugin=PLUGIN, sessions=None, root=None, run=None):
         out.append(f"folder status line: {ls}")
     except Exception as e:
         undo(folder, run=run)
-        raise RuntimeError(f"{e}; undone")
+        first, _, rest = str(e).partition("\n")   # "; undone" on the first line, the error below it
+        raise RuntimeError(f"{first}; undone" + (f"\n{rest}" if rest else ""))
     out += [f"Pit Board is on in {folder} only.", "A session started (or resumed) there picks it up."]
     return out
 
@@ -233,7 +267,7 @@ def undo(folder, run=None, envhome=None):
     home = r.get("home") or envhome or store.home()
     out = []
     ok, tail = _claude(["plugin", "uninstall", plugin, "--scope", "local"], folder, run)
-    out.append(f"plugin {plugin}: " + ("removed from this folder" if ok else f"uninstall said: {tail}"))
+    out.append(f"plugin {plugin}: " + ("removed from this folder" if ok else f"uninstall said:\n{tail}"))
     _, now = _load(ls)
     old = json.loads(before) if before and before.strip() else {}
     keep_env = (old.get("env") or {}).get("PITBOARD_HOME") == home   # the person's own, set before setup

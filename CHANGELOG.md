@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.2 (not yet released)
+- **A failed `claude plugin` command in `setup --folder` shows Claude Code's error** (P9, plan 1.13), not only its last line: from its first error line, at most 12 lines, without its progress lines, wrapped to 100 columns so nothing is cut. When the clone failed over SSH because GitHub accepted no key from the account, the message says so first, in plain words, with what to do.
+
 ## 0.1.1 (2026-11-22)
 Install Pit Board in one lane's folder, and take it out again.
 

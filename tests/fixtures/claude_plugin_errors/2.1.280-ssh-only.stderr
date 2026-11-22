@@ -1,0 +1,7 @@
+✘ Failed to install plugin "windstorm-pit-board@p9-capture-real": Failed to clone repository: Cloning into '/home/test/.claude/plugins/cache/temp_github_1795357747230_qlj9aw'...
+No ED25519 host key is known for github.com and you have requested strict checking. 
+Host key verification failed. 
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.

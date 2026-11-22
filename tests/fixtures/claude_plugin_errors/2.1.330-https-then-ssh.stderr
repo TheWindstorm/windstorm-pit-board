@@ -1,0 +1,12 @@
+✘ Failed to install plugin "windstorm-pit-board@p9-capture-absent": Failed to clone repository: Cloning into '/Users/test/.claude/plugins/cache/temp_github_1795357819179_a5e2dd'...
+fatal: could not read Username for 'https://github.com': terminal prompts disabled
+The retry over SSH failed too: Failed to clone repository: Cloning into '/Users/test/.claude/plugins/cache/temp_github_1795357819179_a5e2dd'...
+No ED25519 host key is known for github.com and you have requested strict checking. 
+Host key verification failed. 
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+Check the repository and ref in the marketplace entry and that github.com can be reached. If the repository is private, add an SSH key to your GitHub account or set up a git credential helper for https://github.com. Then install again.
+SSH not configured, cloning via HTTPS: https://github.com/TheWindstorm/windstorm-pit-board-p9-no-such-repo.git
+HTTPS clone failed, retrying with SSH: git@github.com:TheWindstorm/windstorm-pit-board-p9-no-such-repo.git
