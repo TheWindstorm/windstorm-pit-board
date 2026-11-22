@@ -14,6 +14,10 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.16 (2026-11-22)
+- G21.4, refreshing the stable copy from a session start, and G7.1 step 5: until the updater exists, the session-start hook refreshes a home's stable launcher copy when it came from an older version (a new one-line file, `pitboard/copied-from`, says which) or is torn. It never refreshes from a bad version, never writes an older copy over a newer one, and does not run with `self_update` false. The new launcher must answer its `version` line from a temporary copy before it replaces the old one, the old copy is kept as one backup, and any number of hooks at once leave one whole copy. The README says so in one sentence. Without this, P8's launcher fix would reach only homes set up by 0.1.2 or later, not those set up by 0.1.0 or 0.1.1.
+No codon is renumbered and no existing test changes.
+
 ## Plan 1.15 (2026-11-22)
 - G21.4 step 6 (P8): before any version has passed a self-check, the launcher runs the highest installed version, not the first entry in `installed_plugins.json`, which can be the oldest when folders have different versions.
 - G21.10 (P10): `pitboard self-update --pin VER` and `--unpin` come before the rest of the updater, so a person can hold a Pit Board home on a version and release it. A version with no runnable folder, or a bad one, is refused.
