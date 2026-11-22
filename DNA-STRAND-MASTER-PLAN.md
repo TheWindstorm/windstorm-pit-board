@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.17 · 2026-11-22 · The Windstorm**
+**Plan version 1.18 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -881,7 +881,7 @@ Every installation, for every person who installs Pit Board, must find new relea
 `pitboard self-update --check` only reports whether a newer release exists (by running the marketplace update and comparing versions), and installs nothing.
 
 **G21.4 The launcher: running code follows the newest install.** Claude Code keeps each version in its own folder (`~/.claude/plugins/cache/<marketplace>/windstorm-pit-board/<version>/`) and a running session keeps calling the folder it started with. So nothing Pit Board runs uses that folder's code directly. Every entry point (hooks, `bin/pitboard`, timers, the status line, the hub) goes through `pitboard/launch.py`, which picks the version to run, in this order:
-1. The pinned version, if `update/pin` names one and its folder exists.
+1. The pinned version, if `update/pin` names one and its folder exists. Not for `pitboard self-update`: it always starts at step 2, so a home pinned to a version that has no `self-update` (0.1.1 or older) can still be released with `--unpin` or pinned again. With a home pinned to such a version, `pitboard self-update --unpin` through the stable copy works and prints the `version` line of what it then runs.
 2. If `self_update` is false: the install path recorded for `windstorm-pit-board` in `~/.claude/plugins/installed_plugins.json` (the user-scope install first), whatever its version.
 3. The install path recorded in `installed_plugins.json`, if its version is in `update/good-versions`.
 4. The highest version folder in the plugin cache that is in `update/good-versions`, has no `.orphaned_at` marker, and contains `pitboard/cli.py`.

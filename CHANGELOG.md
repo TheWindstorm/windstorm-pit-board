@@ -17,6 +17,10 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.18 (2026-11-22)
+- G21.4 step 1: the pin is skipped for `pitboard self-update`, which starts at step 2. Without this, a home pinned to 0.1.1 or older could not be released: every launcher would run the pinned version, which has no `self-update`, and the person would have to delete `update/pin` by hand.
+No codon is renumbered and no existing test changes.
+
 ## Plan 1.17 (2026-11-22)
 - Part 7, C16: where an installed plugin's code runs from, by catalog source. On Claude Code 2.1.330 a `github` or git-URL source runs from its version folder in the cache, but a directory source runs in place from the catalog folder, although `installed_plugins.json` names a cache path. So G21.4's refresh treats a directory-source install like a checkout, and test rounds of cache behavior use a git source. Result in `docs/CONTRACTS.md`.
 No codon is renumbered and no existing test changes.
