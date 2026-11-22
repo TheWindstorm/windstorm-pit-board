@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.0 (2026-11-22)
+The first release, Milestone 1 (one lane): every ask an agent needs from its operator is kept out of the scroll.
+
+- **Lane logs:** one append-only log per lane, with locks, and a state cache that can be deleted without loss. Secrets are masked before anything is written (G1, G2, G19).
+- **The `pitboard` command:** `add`, `update`, `answer`, `ok`, `no`, `done`, `withdraw`, `reopen`, `show`, `lane`, `list`, `board`, `status`, `export`, `version` and `hook` (G6, G10, G11).
+- **Hooks:**
+  - the start-up reminder lists the open asks after a new session, a resume or a compaction;
+  - `pb`, `ok A1` and `no A1` typed at the prompt are handled without a model turn;
+  - busy and idle marks (G7, G16.4).
+- **Status line segment:** it shows the count of open asks, and nothing when none are open. It is printed first, before the operator's own status line, under a 1 s cap, so a fault never costs the operator that line (G10, G10.5).
+- **`pitboard setup --minimal`:** the config, a stable launcher copy and the status line wrapper, with a backup of every file it changes (G18.1).
+- **The launcher** runs the newest good installed version on every call (G21.4). This release has hook generation 1 (G21.6) and skips events from newer releases cleanly (INV9). Every later release must read what this one writes; the files are saved in `tests/fixtures/releases/0.1.0` (G21.11).
+- **Skills:** `pit-board` and `board`, in the open Agent Skills format (G9).
+- **The promise gate:** `PROMISES.json` holds the pilot's lessons, P1 to P4 (G21.14).
+
+Accepted in a one-lane pilot (`docs/PILOT.md`): items 1 and 3 to 8 pass, and item 2 moved to M2a (plan 1.11). Tested on Python 3.10 and 3.13, on Linux and macOS.
+
 ## Plan 1.11 (2026-11-22)
 Skills Boss's rulings of 2026-11-22 before 0.1.0:
 - **Part 8:** M1's acceptance item 2 (the agent records its asks without being reminded, for 2 days) moves to M2a.
