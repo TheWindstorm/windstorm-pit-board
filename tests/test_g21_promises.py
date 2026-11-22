@@ -125,10 +125,12 @@ def test_G21_14_no_version_ships_while_a_promise_due_in_it_is_not_built():
 def test_G21_14_the_version_after_needs_proof_on_a_real_machine():
     w = _world()
     assert unproven_problems(w) == []
+    now = ".".join(str(n) for n in w["version"])        # the planted row is due in the version being built
     after = dict(w, version=(w["version"][0], w["version"][1], w["version"][2] + 1))
-    planted = [x for x in unproven_problems(_planted(after, proven="")) if x.startswith("PX ")]
+    planted = [x for x in unproven_problems(_planted(after, proven="", first_ship_in=now, ship_in=now))
+               if x.startswith("PX ")]
     assert len(planted) == 1                                                     # the next version is refused
-    assert unproven_problems(_planted(w, proven="")) == []                       # its own version is not
+    assert unproven_problems(_planted(w, proven="", first_ship_in=now, ship_in=now)) == []   # its own version is not
 
 
 def test_G21_14_a_date_moves_only_with_a_reason_and_a_persons_row_only_by_their_word():

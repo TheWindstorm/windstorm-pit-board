@@ -1,6 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 (2026-11-22)
+Install Pit Board in one lane's folder, and take it out again.
+
+- **`pitboard setup --folder DIR`** (G18.1 folder mode, plan 1.12): plan first, then `--apply`, and `--undo`.
+  - It never touches the user's own settings, and it refuses the home folder and a folder where more than one session runs. Sessions are counted by their command, so the count is right on macOS too (P6).
+  - It records the folder's settings; the undo puts them back byte for byte, or removes only Pit Board's entries when another tool changed the file since (P5).
+  - A Pit Board home other than the default is written into the folder's own `env`, so a session brought back by any tool keeps it.
+- **Promises:** P1 (the status segment first) is proven on a Linux and a macOS machine; P5 and P6 have their tests.
+
+Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
+
+## Wording (2026-11-22)
 - Wording only: the plan, this changelog, `docs/CONTRACTS.md` and `TODO.md` name roles (the skill's owner, a test machine), not lanes or machines. No rule changes and no test changes.
 
 ## Plan 1.12 (2026-11-22)
