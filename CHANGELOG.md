@@ -17,6 +17,10 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.20 (2026-11-22)
+- G21.14: a promise row's test counts only when the test runner collects it and runs it to a pass in this checkout, never because its name is found as text. A skipped test, one the runner cannot collect, and a name defined twice in one file (only the last definition runs) do not count. A planted test showed the old check passing for all three while the real test never ran. The gate runs the rows' tests and reads the runner's own report. Every row that names a test is checked at every version, not only once the version reaches the row's due version. A test skipped on a condition of the machine, with a written reason, is listed as not run here and is not a pass. A skip with no reason fails, and so does an unconditional skip, whatever its reason, because it runs on no machine. The gate leaves itself out of what it runs, has a time limit, and leaves nothing behind when stopped part-way.
+No codon is renumbered and no existing test changes.
+
 ## Plan 1.19 (2026-11-22)
 - G21.4 step 4: when a hook stops before refreshing the stable copy, its log line says what that hook did and what it read (`this hook left the copy as it was (it read 0.1.1 when it started)`), not that the copy was kept at the old version. Ten hooks at once on a loaded machine showed why: four stopped at the 3 s check after six others had already refreshed the copy, and their lines said `kept at before-0.1.2` about a copy that was new.
 - G21.4: on a very busy machine every hook of a restore may miss the 3 s check, so that start leaves the launcher as it was and the next start tries again. This is stated, not changed: it fails on the safe side, and the limit is not raised, because a session start must not wait longer for Pit Board. The README says it in one sentence.
