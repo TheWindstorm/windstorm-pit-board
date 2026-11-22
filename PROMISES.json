@@ -32,7 +32,7 @@
    "first_ship_in": "0.1.0",
    "ship_in": "0.1.0",
    "test": "test_INV2_cache_can_be_deleted_without_loss",
-   "proven": "The pilot machine, 0.1.0 (the pilot copy), 2026-11-22T04:19Z: reads of the lane log, the asks and the board before the reboot and after it matched.",
+   "proven": "The pilot machine, 0.1.0 (the pilot copy), 2026-11-22T04:19Z: reads of the lane log, the asks and the board before the reboot and after it matched. And an Intel Mac, round 2 of the overnight stress test (a clean reboot), 0.1.0 from the catalog in three sessions' own folders, 2026-11-22T06:45Z: all three lane logs byte-identical, the three open asks still open and shown first on their status lines, and the start-up reminder listed them after the restorer resumed the sessions.",
    "issue": null,
    "moved_why": "",
    "moved_by_person": ""
@@ -91,6 +91,20 @@
    "test": "test_G18_1_folder_counts_sessions_by_their_command_on_macos",
    "proven": "",
    "issue": 38,
+   "moved_why": "",
+   "moved_by_person": ""
+  },
+  {
+   "id": "P7",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.1",
+   "ship_in": "0.1.1",
+   "seen": "2026-11-22, round 2 of the overnight stress test, a clean reboot of an Intel Mac: a session whose Pit Board home was chosen by PITBOARD_HOME in its start environment was brought back by a session restorer without that variable (the restorer carries only the variables it is told to). Its hooks then wrote to the default home, so its start-up reminder said nothing was open while its ask was open, and an answer typed there would have gone to the wrong home. Its status line still showed the ask, because the wrapper names its own home: the two halves disagreed without a word.",
+   "promise": "A Pit Board home other than the default is set in the folder's own settings (env.PITBOARD_HOME, written by setup --folder), not only in a session's start environment, so a session brought back by any tool keeps its home.",
+   "test": "test_G18_1_folder_another_home_rides_in_the_folder_env",
+   "proven": "",
+   "issue": 43,
    "moved_why": "",
    "moved_by_person": ""
   }
