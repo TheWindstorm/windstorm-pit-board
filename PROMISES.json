@@ -107,6 +107,20 @@
    "issue": 43,
    "moved_why": "",
    "moved_by_person": ""
+  },
+  {
+   "id": "P8",
+   "codon": "G21.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.2",
+   "ship_in": "0.1.2",
+   "seen": "2026-11-22, the overnight stress test, an Intel Mac: one test folder had the 0.1.1 candidate installed from its commit with setup --folder and its own Pit Board home, while other test folders on the machine had 0.1.0. The plugin's own bin/pitboard in that folder ran 0.1.1, but the home's stable launcher, which the status line wrapper calls, ran 0.1.0: no version is in update/good-versions before the self-check of G21.3 exists, so G21.4 step 6 took the first entry in installed_plugins.json, whatever its version. No effect in 0.1.1, whose status line and hook code are those of 0.1.0.",
+   "promise": "Before any version has passed a self-check, the stable launcher runs the highest installed version, not the first one listed, so the status line never runs code older than the newest install.",
+   "test": "test_G21_4_launcher_runs_the_newest_install_before_any_self_check",
+   "proven": "",
+   "issue": 44,
+   "moved_why": "",
+   "moved_by_person": ""
   }
  ],
  "declined": [
