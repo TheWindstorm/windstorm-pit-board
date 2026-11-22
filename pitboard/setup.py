@@ -58,14 +58,15 @@ def original_from_wrapper(path):
 
 
 def wrapper_text(original, home):
-    """G10.5: run the operator's status line with the same input, then Pit Board's segment,
-    joined with ' · ' when both print something. Pit Board's part runs under a cap (timeout,
-    or gtimeout on macOS, when either exists); on an error or the cap only the operator's
-    line is printed (G10.4)."""
+    """G10.5: run the operator's status line and Pit Board's segment with the same input, and
+    print the segment first: before a one-line status line, joined with ' · ', or on its own
+    first line above a status line of several lines, so it is never pushed past the right edge.
+    Pit Board's part runs under a cap (timeout, or gtimeout on macOS, when either exists); on an
+    error or the cap only the operator's line is printed (G10.4)."""
     launcher = os.path.join(home, "bin", "pitboard")
     lines = [
         "#!/bin/sh",
-        "# Written by pitboard setup (plan G10.5). Runs your own status line, then Pit Board's segment.",
+        "# Written by pitboard setup (plan G10.5). Runs your own status line and Pit Board's segment; prints the segment first.",
         MARK + json.dumps(original or ""),
         "in=$(cat)",
         "SH=sh; command -v bash >/dev/null 2>&1 && SH=bash",
@@ -79,7 +80,10 @@ def wrapper_text(original, home):
         f"if command -v timeout >/dev/null 2>&1; then CAP='timeout {STATUS_CAP_SECONDS}'; "
         f"elif command -v gtimeout >/dev/null 2>&1; then CAP='gtimeout {STATUS_CAP_SECONDS}'; fi",
         f"pb=$(printf '%s' \"$in\" | PITBOARD_HOME={shlex.quote(home)} $CAP {shlex.quote(launcher)} status 2>/dev/null) || pb=",
-        'if [ -n "$own" ] && [ -n "$pb" ]; then printf \'%s · %s\' "$own" "$pb"; else printf \'%s%s\' "$own" "$pb"; fi',
+        "nl='\n'",
+        'if [ -n "$own" ] && [ -n "$pb" ]; then',
+        '  case "$own" in *"$nl"*) printf \'%s\\n%s\' "$pb" "$own" ;; *) printf \'%s · %s\' "$pb" "$own" ;; esac',
+        "else printf '%s%s' \"$own\" \"$pb\"; fi",
         "",
     ]
     return "\n".join(lines)
