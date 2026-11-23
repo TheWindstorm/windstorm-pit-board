@@ -438,12 +438,11 @@ def home_off(home, census, apply, blocked=""):
             except OSError:
                 pass
         return None
-    census.kept(f"your asks and the log of what Pit Board did, in {_short(home)}", "yours")
+    census.kept(f"{_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')}, and the log of what Pit Board did, "
+                f"in {_short(home)}", "yours")                    # one row with the count; the line below says how
     copy = os.path.join(home, "bin", "pitboard")             # rule 7: only a line run as printed, this computer's way
-    how = ("They are yours. When you are sure, you can delete them yourself, at your own terminal: "  # the person's act
-           + (f"{_shell(copy)} uninstall --apply --delete-asks-and-log" if os.path.isfile(copy) else f"rm -r {_shell(home)}"))
-    return (f"kept: {_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')}, and the log of what Pit Board did, "
-            f"at {_short(home)}. {how}")
+    return ("They are yours. When you are sure, you can delete them yourself, at your own terminal: "  # the person's act
+            + (f"{_shell(copy)} uninstall --apply --delete-asks-and-log" if os.path.isfile(copy) else f"rm -r {_shell(home)}"))
 
 
 def ask_count(homes, stdin, stdout):
@@ -469,6 +468,8 @@ def ask_count(homes, stdin, stdout):
 def delete_kept(home, expected, census):
     """G18.3 point 6: delete the asks and the log the person counted, unless the count changed since."""
     mine = f"your asks and the log of what Pit Board did, in {_short(home)}"
+    counted = f"the log of what Pit Board did, in {_short(home)}"
+    census.rows = [r for r in census.rows if not r[1].endswith(counted)]   # this row replaces the counted one
     try:
         now = count_asks(home)[0]
     except Unread as e:
@@ -487,7 +488,6 @@ def delete_kept(home, expected, census):
         os.rmdir(home)
     except OSError:
         pass
-    census.rows = [r for r in census.rows if r[1] != mine]
     census.gone(mine, "you typed the count")
 
 

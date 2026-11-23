@@ -112,8 +112,10 @@ def test_G18_3_apply_puts_the_setting_back_byte_for_byte_and_keeps_the_persons_t
     assert "  gone: status line setting in ~/.claude/settings.json (put back byte for byte)" in rows
     assert "  gone: ~/.pitboard/bin" in rows and "  gone: ~/.pitboard/statusline.sh" in rows
     assert f"  kept: 1 backup(s) setup made of ~/.claude/settings.json (yours: ~/.claude/settings.json.bak-*)" in rows
-    assert out.splitlines()[-1] == ("kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, at "
-                                    "~/.pitboard. They are yours. When you are sure, you can delete them yourself, at your own "
+    assert "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, in ~/.pitboard (yours)" in rows
+    assert [r for r in rows if "the log of what Pit Board did" in r] == [
+        "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, in ~/.pitboard (yours)"]  # one row
+    assert out.splitlines()[-1] == ("They are yours. When you are sure, you can delete them yourself, at your own "
                                     "terminal: rm -r ~/.pitboard")
 
 
@@ -124,7 +126,8 @@ def test_G18_3_run_twice_says_nothing_of_pit_board_is_here(world):
     code, out, _ = run("--apply")
     assert code == 0 and out.startswith("nothing of Pit Board is here\ncensus:\n") and tree(home) == before
     assert not [r for r in census(out) if r.startswith("  gone")]
-    assert out.splitlines()[-1].startswith("kept: 2 asks (1 open) in 1 lane log")
+    assert "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, in ~/.pitboard (yours)" in census(out)
+    assert out.splitlines()[-1].startswith("They are yours.")
 
 
 def test_G18_3_changed_since_takes_out_only_pit_boards_entry(world):
@@ -235,7 +238,7 @@ def test_G18_3_delete_at_a_terminal_only_when_the_count_is_typed(world):
     code, out, _ = run("--apply", "--delete-asks-and-log", stdin=Tty("2\n"), stdout=Tty())
     assert code == 0 and not pb.exists() and st.read_text() == MINE_TEXT
     assert "  gone: your asks and the log of what Pit Board did, in ~/.pitboard (you typed the count)" in census(out)
-    assert not [r for r in census(out) if r.startswith("  kept: your asks")]
+    assert not [r for r in census(out) if r.startswith("  kept:") and "the log of what Pit Board did" in r]
 
 
 def test_G18_3_delete_keeps_them_when_the_count_changed_since_it_was_typed(world, monkeypatch):
@@ -413,7 +416,8 @@ def test_G18_3_the_stable_copy_alone_takes_itself_off(world):
     assert r.returncode == 0, r.stdout + r.stderr
     assert st.read_text() == MINE_TEXT and sorted(os.listdir(pb)) == ["lanes", "logs", "setup-record.json"]
     assert not (home / "ORPHAN-RAN").exists()                            # no orphaned code ran
-    assert r.stdout.splitlines()[-1].startswith("kept: 2 asks (1 open) in 1 lane log")
+    assert "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, in ~/.pitboard (yours)" in r.stdout
+    assert r.stdout.splitlines()[-1].startswith("They are yours.")
 
 
 def test_G18_3_the_stable_copy_alone_with_no_plugin_folder_and_no_registry_row(world):
