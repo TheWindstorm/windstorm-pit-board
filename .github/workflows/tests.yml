@@ -23,7 +23,13 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install pytest
-      - run: python -m pytest -q tests/
+      # G20.6 (plan 1.22): -v gives every test its own line with its outcome and a skip's reason, so the log shows
+      # each test ran. Never with -q (it cancels -v); -rA is not enough (it folds skips into one line without names).
+      # pytest drops a skip's reason that does not fit the terminal (80 columns on CI, and some test IDs are long):
+      # COLUMNS gives the room, and the classic style has no progress column, so lines are not padded to that width.
+      - run: python -m pytest -v -o console_output_style=classic tests/
+        env:
+          COLUMNS: "4096"
   skills:
     # G9.5: the skill format gate (check C15). A gh without `skill` gets the pinned release.
     runs-on: ubuntu-latest
