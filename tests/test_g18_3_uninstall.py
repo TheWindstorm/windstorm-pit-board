@@ -113,7 +113,8 @@ def test_G18_3_apply_puts_the_setting_back_byte_for_byte_and_keeps_the_persons_t
     assert "  gone: ~/.pitboard/bin" in rows and "  gone: ~/.pitboard/statusline.sh" in rows
     assert f"  kept: 1 backup(s) setup made of ~/.claude/settings.json (yours: ~/.claude/settings.json.bak-*)" in rows
     assert out.splitlines()[-1] == ("kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, at "
-                                    "~/.pitboard. They are yours; to delete them too: rm -r ~/.pitboard")
+                                    "~/.pitboard. They are yours. When you are sure, you can delete them yourself, at your own "
+                                    "terminal: rm -r ~/.pitboard")
 
 
 def test_G18_3_run_twice_says_nothing_of_pit_board_is_here(world):
@@ -509,11 +510,11 @@ def test_G18_3_an_orphaned_folders_own_launcher_never_runs_its_leave(world):
 def test_G18_3_the_kept_line_names_a_command_that_runs_here(world):
     home, pb, st = world
     plan = run()[1].splitlines()[-2]
-    assert plan.endswith("To delete them too, at your own terminal: ~/.pitboard/bin/pitboard uninstall --apply "
-                         "--delete-asks-and-log")                         # the copy is there while it is a plan
+    assert plan.endswith("They are yours. When you are sure, you can delete them yourself, at your own terminal: "
+                         "~/.pitboard/bin/pitboard uninstall --apply --delete-asks-and-log")                         # the copy is there while it is a plan
     after = run("--apply")[1].splitlines()[-1]
-    assert after.endswith("They are yours; to delete them too: rm -r ~/.pitboard") and (pb / "lanes").exists()
-    r = subprocess.run(["bash", "-c", after.split("to delete them too: ", 1)[1]], env={"HOME": str(home),
+    assert after.endswith("at your own terminal: rm -r ~/.pitboard") and (pb / "lanes").exists()
+    r = subprocess.run(["bash", "-c", after.split("at your own terminal: ", 1)[1]], env={"HOME": str(home),
                        "PATH": "/usr/bin:/bin"}, capture_output=True, text=True, timeout=60)
     assert r.returncode == 0 and not pb.exists()                         # run exactly as printed
 

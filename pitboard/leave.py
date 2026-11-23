@@ -440,8 +440,8 @@ def home_off(home, census, apply, blocked=""):
         return None
     census.kept(f"your asks and the log of what Pit Board did, in {_short(home)}", "yours")
     copy = os.path.join(home, "bin", "pitboard")             # rule 7: only a line run as printed, this computer's way
-    how = (f"To delete them too, at your own terminal: {_shell(copy)} uninstall --apply --delete-asks-and-log"
-           if os.path.isfile(copy) else f"They are yours; to delete them too: rm -r {_shell(home)}")
+    how = ("They are yours. When you are sure, you can delete them yourself, at your own terminal: "  # the person's act
+           + (f"{_shell(copy)} uninstall --apply --delete-asks-and-log" if os.path.isfile(copy) else f"rm -r {_shell(home)}"))
     return (f"kept: {_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')}, and the log of what Pit Board did, "
             f"at {_short(home)}. {how}")
 
