@@ -44,10 +44,15 @@ def test_G20_6_python_and_os_matrix_and_triggers():
 
 
 def test_G20_6_ci_log_names_every_test_and_its_outcome():
-    """Plan 1.21: a count cannot show that a given test ran in a job; -rA lists each test with its outcome."""
+    """Plans 1.21 and 1.22: a count cannot show that a given test ran in a job. -v gives each test its own line;
+    -q would cancel it, and -rA alone folds skips into one line without names."""
     text = dict(workflows())["tests.yml"]
     runs = re.findall(r"^\s+- run: (python -m pytest .*)$", text, re.M)
-    assert runs and all(re.search(r"(^| )-rA( |$)", r) for r in runs), runs
+    assert runs, "no pytest run step"
+    for r in runs:
+        flags = r.split()
+        assert "-v" in flags or "--verbose" in flags, r
+        assert not any(f in ("-q", "--quiet") or re.fullmatch(r"-[a-z]*q[a-z]*", f) for f in flags), r
 
 
 def test_G9_5_ci_runs_the_skill_format_gate():

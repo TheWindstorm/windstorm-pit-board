@@ -23,8 +23,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install pytest
-      # G20.6 (plan 1.21): -rA names every test and its outcome after the run, so the log shows each test ran.
-      - run: python -m pytest -q -rA tests/
+      # G20.6 (plan 1.22): -v gives every test its own line with its outcome and a skip's reason, so the log shows
+      # each test ran. Never with -q (it cancels -v); -rA is not enough (it folds skips into one line without names).
+      - run: python -m pytest -v tests/
   skills:
     # G9.5: the skill format gate (check C15). A gh without `skill` gets the pinned release.
     runs-on: ubuntu-latest
