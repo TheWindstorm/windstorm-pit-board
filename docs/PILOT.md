@@ -85,3 +85,22 @@ The sample read only each ending's turn (its prompt's kind, the tools it called,
 Where a lane waited on someone, it was almost always a staff lane, a peer lane or a test run, not the operator: those are not asks for Pit Board. The one ask that was the operator's (the operator's own login step) went to the shared board instead. The skill's owner, who is staff, also reported asks for the operator that two lanes brought to him over the same two days instead of recording them: whether something may be posted under the operator's name, and a decision about another user's install on the machine. The sample did not land on those turns, but they are the same kind.
 
 So the pilot's finding is that **an ask routed through a boss, a staff lane or the shared board is not recorded by the lane that had it.** The reminder says to record an ask "before you ask it", and the lanes read that as a question typed in the chat. Promise P13 (due 0.1.2) is to change the reminder and the skill so they name these asks, and nobody is asked to go back and record the old ones. Because the promise P4 measures was not kept under 0.1.1's words, the skills' department head moved P4 to 0.1.2: its two days count from the day all three lanes run 0.1.2, and they hold back 0.1.3. P13's proof is P4's.
+
+### Release 0.1.2: what the stock machine found before the pin moved
+
+The release list for 0.1.2 had one step it had not had before: before the catalog's pin moves, run the README's update lines on a stock machine, a fresh virtual machine with no GitHub key and no sign-in, against a copy of the catalog with only Pit Board's entry moved to the new tag.
+
+That step failed. The catalog's entry was a GitHub source. Claude Code 2.1.330 installed 0.1.1 through it, falling back to HTTPS, but `claude plugin update` fetched over SSH, failed with "Host key verification failed", and left the install on 0.1.1. Claude Code 2.1.280 could not even install it there.
+
+**Had the pin moved as it was**, every install on a machine without a GitHub key would have stayed on 0.1.1, its update line would have failed, and the README's update lines would have been wrong for exactly the people who most need them. The pilot itself would not have shown it: the pilot machine has GitHub keys, and all three lanes updated there without trouble.
+
+The fix was the entry's form, not Pit Board's code. With only the entry changed to a URL source over HTTPS, on the same kind of machine:
+- an install of 0.1.1 updated to 0.1.2 by the README's lines, on 2.1.330 and 2.1.280;
+- a fresh install worked on both versions;
+- uninstall then install worked, which the README now gives as the way back for an install from before.
+
+The catalog's owner then moved the entry in that form. The same lines, run against the real catalog on another fresh machine, gave the same results, with every file equal to the tag's. On the pilot machine, each of the three lanes ran the two lines in its own folder, which is the case with a key, and each moved from 0.1.1 to 0.1.2 (P14).
+
+One more thing the update showed, which nobody would guess: **one lane's update changed what another lane's status line ran, within a second.** Every lane's status line runs through the Pit Board home's launcher copy. That copy took the first installed entry, the behaviour 0.1.2 changes, and the first entry was the lane that had just updated. The status line writes no log line, so only the code showed it. From 0.1.3, every hook line names the version that ran and the launcher step that picked it, and `pitboard version` names what the status line runs (P15).
+
+The hooks of the three running sessions still run 0.1.1 from their own folders until each lane starts a new session. P4's two days count from the first day all three lanes have started a session on 0.1.2, so that the reminder and the skill text are both the new ones.

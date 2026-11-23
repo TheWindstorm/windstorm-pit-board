@@ -189,6 +189,30 @@
    "proven": "",
    "proof_needed": "P4's proof (ruled by the skills' department head, 2026-11-23): a wording row is not proven by a test of its words. Proven when P4 is: two calendar days, each with a real ask recorded unprompted in a pilot lane, with all three lanes on 0.1.2.",
    "issue": ""
+  },
+  {
+   "id": "P14",
+   "codon": "G21.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-23, the release step for 0.1.2 that runs the README's lines on a stock machine before the catalog's pin moves: a fresh Ubuntu 24.04 virtual machine with no GitHub key and no sign-in, the catalog copied with only Pit Board's entry moved to v0.1.2 in the github form it then had. Claude Code 2.1.330 installed 0.1.1 through its HTTPS fallback, but `claude plugin update` fetched over SSH, failed with 'Host key verification failed' and stayed on 0.1.1. Claude Code 2.1.280 could not install the github form at all. Had the pin moved as it was, every install on a machine without a GitHub key would have stayed on 0.1.1 with an update line that fails, and the README's update lines would have been wrong for them.",
+   "promise": "The README's update lines (`claude plugin marketplace update thewindstorm`, then `claude plugin update windstorm-pit-board@thewindstorm`) move a stock install with no GitHub key and no sign-in to the newest release. The catalog's entry is a URL source over HTTPS, the README names the Claude Code versions the lines were seen to work on, and for an install made before the entry changed form it gives the way back: uninstall, then install again.",
+   "test": "test_G21_2_the_readme_gives_the_update_lines_and_the_way_back",
+   "proven": "2026-11-23. (1) A fresh virtual machine, no GitHub key, no sign-in, the catalog copy with only Pit Board's entry in the URL form at v0.1.2: an install of 0.1.1 updated to 0.1.2 by the README's two lines on Claude Code 2.1.330 and 2.1.280, a fresh install gave 0.1.2 on both, and uninstall then install gave 0.1.2; every install's files equal the tag's. (2) After the catalog's merge at 06:03Z (Pit Stop main e695537f), the same lines against the real catalog on another fresh virtual machine: a fresh install gave 0.1.2 on 2.1.330 and 2.1.280; an install made before the merge (the catalog's clone at the commit before it, the github form, 0.1.1) updated to 0.1.2 on 2.1.330; uninstall then install gave 0.1.2; files equal the tag's every time. (3) The case with a key, across the change of form: on a shared Linux machine with GitHub keys, each of the three pilot lanes ran the two lines in its own folder (Claude Code 2.1.330, local scope) between 06:08Z and 06:09Z; each exited 0 with 'updated from 0.1.1 to 0.1.2', and the installed files equal the tag's.",
+   "issue": ""
+  },
+  {
+   "id": "P15",
+   "codon": "G21.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-23, on a shared Linux machine with three pilot lanes, after one lane's `claude plugin update` moved its folder's install to 0.1.2 at 06:08:06Z: 0.1.2's code was loaded a second later with no hook logged. The cause, found by reading the launcher: every lane's status line runs through the home's launcher copy, which took the first installed entry (G21.4 step 6, the behaviour 0.1.2 changes), and that entry was the updated lane's; `status` writes no log line. So one lane's update changed what the other lanes' status lines ran within a second, and nothing showed it. Which version each lane's hooks ran could only be worked out from code, not read.",
+   "promise": "Every line a hook writes to logs/pitboard.log ends with `v=<version> step=<n>`: the version of the code that ran and the G21.4 step that picked its folder. `pitboard version` has a last line naming what the status line runs: the version the home's launcher copy picks now and its step.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [

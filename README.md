@@ -53,7 +53,14 @@ claude plugin update windstorm-pit-board@thewindstorm
 
 For a one-folder install, run the second line in that folder with `--scope local`. The next session start uses the new version; `pitboard version` shows which one runs.
 
-**Claude Code versions.** The catalog's entry for Pit Board is a GitHub source. Claude Code 2.1.280 fetches that kind of entry over SSH with no fallback, so on 2.1.280 the install line fails on a machine that has no GitHub host key or SSH key (seen). On Claude Code 2.1.330 it works (seen): 2.1.330 is the oldest version this install line was seen to work on. The catalog's next release changes the entry's form.
+**Claude Code versions.** Since 2026-11-23 the catalog's entry for Pit Board is a URL source over HTTPS. With it, the install lines and the update lines above were seen to work on a machine with no GitHub key and no sign-in, on Claude Code 2.1.280 and 2.1.330: a new install on both, and an install made before that day updated from 0.1.1 to 0.1.2 on 2.1.330. They were also seen to update installs on a machine that has GitHub keys (2.1.330).
+
+Before that day the entry was a GitHub source, which Claude Code fetches over SSH when it updates (and, on 2.1.280, when it installs), so on a machine with no GitHub key the update failed. If an install made before 2026-11-23 still fails to update with a host-key message, uninstall it and install it again:
+
+```
+claude plugin uninstall windstorm-pit-board@thewindstorm
+claude plugin install windstorm-pit-board@thewindstorm
+```
 
 ## Built for
 
