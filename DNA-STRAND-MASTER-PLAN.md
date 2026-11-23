@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.30 · 2026-11-23 · The Windstorm**
+**Plan version 1.31 · 2026-11-23 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -915,7 +915,7 @@ Every installation, for every person who installs Pit Board, must find new relea
 7. Nothing found: print `pitboard: no installed version found` to stderr and exit 1 (hooks exit 0, INV6).
 
 **Three answers for the launcher's reads** (plan 1.29, P19). Each read the choice hangs on (`update/bad-versions`, `update/pin`, `update/good-versions` and `installed_plugins.json`) answers yes, no, or could not be read. A missing file is no. A file that exists but cannot be opened, cannot be decoded or (for the registry) is not a JSON object is could not be read. On could not be read, the launcher does not move to another version on this pass. It runs only its own folder (step 5), when that folder is a runnable version folder with no `.orphaned_at` marker. Otherwise (the stable copy has no version folder of its own) it runs nothing:
-- `status` prints nothing and exits 0;
+- `status` prints one short true line and exits 0: `Pit Board cannot read its files · run ~/.pitboard/bin/pitboard version` (the copy's own path; that command names the file and the error). An empty status line would tell the person that nobody is asking them anything, an absence shown for an error, in the one place they look (rule 6; plan 1.31);
 - a hook exits 0;
 - any other command prints `pitboard: could not read <path> (<error>); nothing run` and exits 1.
 
