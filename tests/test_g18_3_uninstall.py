@@ -112,9 +112,8 @@ def test_G18_3_apply_puts_the_setting_back_byte_for_byte_and_keeps_the_persons_t
     assert "  gone: status line setting in ~/.claude/settings.json (put back byte for byte)" in rows
     assert "  gone: ~/.pitboard/bin" in rows and "  gone: ~/.pitboard/statusline.sh" in rows
     assert f"  kept: 1 backup(s) setup made of ~/.claude/settings.json (yours: ~/.claude/settings.json.bak-*)" in rows
-    assert out.splitlines()[-1] == ("kept: 2 asks (1 open) in 1 lane logs, and the log of what Pit Board did, at "
-                                    "~/.pitboard. To delete them yourself, at your own terminal: pitboard uninstall "
-                                    "--apply --delete-asks-and-log")
+    assert out.splitlines()[-1] == ("kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, at "
+                                    "~/.pitboard. They are yours; to delete them too: rm -r ~/.pitboard")
 
 
 def test_G18_3_run_twice_says_nothing_of_pit_board_is_here(world):
@@ -124,7 +123,7 @@ def test_G18_3_run_twice_says_nothing_of_pit_board_is_here(world):
     code, out, _ = run("--apply")
     assert code == 0 and out.startswith("nothing of Pit Board is here\ncensus:\n") and tree(home) == before
     assert not [r for r in census(out) if r.startswith("  gone")]
-    assert out.splitlines()[-1].startswith("kept: 2 asks (1 open) in 1 lane logs")
+    assert out.splitlines()[-1].startswith("kept: 2 asks (1 open) in 1 lane log")
 
 
 def test_G18_3_changed_since_takes_out_only_pit_boards_entry(world):
@@ -395,7 +394,7 @@ def test_G18_3_the_stable_copy_alone_takes_itself_off(world):
     assert r.returncode == 0, r.stdout + r.stderr
     assert st.read_text() == MINE_TEXT and sorted(os.listdir(pb)) == ["lanes", "logs", "setup-record.json"]
     assert not (home / "ORPHAN-RAN").exists()                            # no orphaned code ran
-    assert r.stdout.splitlines()[-1].startswith("kept: 2 asks (1 open) in 1 lane logs")
+    assert r.stdout.splitlines()[-1].startswith("kept: 2 asks (1 open) in 1 lane log")
 
 
 def test_G18_3_the_stable_copy_alone_with_no_plugin_folder_and_no_registry_row(world):
@@ -453,7 +452,7 @@ def test_G18_3_leave_is_standard_library_only_and_imports_no_pit_board_code():
         elif isinstance(node, ast.ImportFrom):
             assert node.level == 0, "a relative import"
             names.add(node.module.split(".")[0])
-    assert names <= {"fcntl", "hashlib", "json", "os", "shutil", "subprocess", "sys", "textwrap", "time"}, names
+    assert names <= {"fcntl", "hashlib", "json", "os", "shlex", "shutil", "subprocess", "sys", "textwrap", "time"}, names
 
 
 def test_G18_3_json_is_one_object(world):
@@ -505,3 +504,21 @@ def test_G18_3_an_orphaned_folders_own_launcher_never_runs_its_leave(world):
     r = _launch(home, ver / "pitboard" / "launch.py", "uninstall")                    # no home copy left: none runs
     assert r.returncode == 1 and not (home / "ORPHAN-RAN").exists()
     assert r.stderr == "pitboard: no installed version found\nPit Board was removed by Claude Code\n"   # no copy to name
+
+
+def test_G18_3_the_kept_line_names_a_command_that_runs_here(world):
+    home, pb, st = world
+    plan = run()[1].splitlines()[-2]
+    assert plan.endswith("To delete them too, at your own terminal: ~/.pitboard/bin/pitboard uninstall --apply "
+                         "--delete-asks-and-log")                         # the copy is there while it is a plan
+    after = run("--apply")[1].splitlines()[-1]
+    assert after.endswith("They are yours; to delete them too: rm -r ~/.pitboard") and (pb / "lanes").exists()
+    r = subprocess.run(["bash", "-c", after.split("to delete them too: ", 1)[1]], env={"HOME": str(home),
+                       "PATH": "/usr/bin:/bin"}, capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0 and not pb.exists()                         # run exactly as printed
+
+
+def test_G18_3_a_path_with_a_space_is_quoted(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    assert L._shell(str(tmp_path / ".pitboard")) == "~/.pitboard"
+    assert L._shell(str(tmp_path / "my home")) == "'" + str(tmp_path / "my home") + "'"

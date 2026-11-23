@@ -14,6 +14,7 @@ count. The last thing printed is a census; a second run is safe.
 import hashlib
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -155,6 +156,16 @@ def _short(path):
     return "~" + path[len(h):] if path == h or path.startswith(h + os.sep) else path
 
 
+def _n(count, word):
+    return f"{count} {word}" + ("" if count == 1 else "s")
+
+
+def _shell(path):
+    """The path as a person types it in a shell: ~/... when it is under the home folder and needs no quoting."""
+    short = _short(path)
+    return short if short.startswith("~/") and shlex.quote(short[2:]) == short[2:] else shlex.quote(path)
+
+
 def default_home():
     return os.path.join(_home_dir(), ".pitboard")
 
@@ -212,7 +223,7 @@ def folder_undo(folder, run=None, envhome=None, census=None, apply=True):
     if ok:
         census.gone(f"plugin {plugin} in {folder}")
     else:
-        census.kept(f"plugin {plugin} in {folder}", "run there: claude plugin uninstall "
+        census.kept(f"plugin {plugin} in {folder}", f"run yourself: cd {_shell(folder)} && claude plugin uninstall "
                     f"{plugin} --scope local" if missing else "Claude Code's uninstall failed; its error is above",
                     INCOMPLETE)
     try:
@@ -428,15 +439,17 @@ def home_off(home, census, apply, blocked=""):
                 pass
         return None
     census.kept(f"your asks and the log of what Pit Board did, in {_short(home)}", "yours")
-    return (f"kept: {asks} asks ({open_} open) in {logs} lane logs, and the log of what Pit Board did, at "
-            f"{_short(home)}. To delete them yourself, at your own terminal: pitboard uninstall --apply "
-            "--delete-asks-and-log")
+    copy = os.path.join(home, "bin", "pitboard")             # rule 7: only a line run as printed, this computer's way
+    how = (f"To delete them too, at your own terminal: {_shell(copy)} uninstall --apply --delete-asks-and-log"
+           if os.path.isfile(copy) else f"They are yours; to delete them too: rm -r {_shell(home)}")
+    return (f"kept: {_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')}, and the log of what Pit Board did, "
+            f"at {_short(home)}. {how}")
 
 
 def delete_kept(home, stdin, stdout, census):
     """G18.3 point 6: delete the asks and the log, only when the person types the count."""
     asks, open_, logs = count_asks(home)
-    stdout.write(f"This deletes {asks} asks ({open_} open) in {logs} lane logs and the log of what Pit Board did, "
+    stdout.write(f"This deletes {_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')} and the log of what Pit Board did, "
                  f"at {_short(home)}.\nType {asks} to delete them, or anything else to keep them: ")
     stdout.flush()
     if stdin.readline().strip() != str(asks):
@@ -556,7 +569,7 @@ def uninstall(apply=True, folder=None, run=None, census=None):
         cmd = f"claude plugin uninstall {name} --scope {scope or 'user'}"
         if scope == "project":
             census.kept(f"plugin {name} in {project} (project scope)", "it lives in that repository's shared "
-                        f"settings; to take it off there: cd {project} && {cmd}")
+                        f"settings; to take it off there: cd {_shell(project)} && {cmd}")
             continue
         if not apply:
             census.gone(f"plugin {name} ({scope or 'user'} scope)", cmd)
