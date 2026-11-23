@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.25 · 2026-11-23 · The Windstorm**
+**Plan version 1.26 · 2026-11-23 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -55,7 +55,7 @@ These rules apply to every agent and person who writes code for Pit Board. They 
 1. **The plan wins.** If the code and this plan disagree, the code is wrong. If the plan itself is wrong, change the plan first, in its own commit, using [Appendix B](#appendix-b-changing-this-plan), and only then change the code.
 2. **Every requirement has an ID** like `G6.4` (gene 6, codon 4). Every codon gets at least one test. The test's name contains the ID: `test_G6_4_add_prints_the_ask_id`. A codon without a test is not done.
 3. **Build genes in the order of [Part 8](#part-8-milestones-and-acceptance).** Do not start a gene before the genes it depends on pass their tests.
-4. **Python 3.10 or newer, standard library only.** No `pip install` for the product. Tests may use `pytest`. The page uses plain HTML, CSS and JavaScript with no build step and no downloaded libraries.
+4. **Python 3.9 or newer, standard library only.** The floor is checked, not only written ([G21.15](#g21-self-update-always-the-newest-pit-board)). No `pip install` for the product. Tests may use `pytest`. The page uses plain HTML, CSS and JavaScript with no build step and no downloaded libraries.
 5. **Never invent a field, a command, a flag or a file path** that is not in this plan. If you need one, change the plan first (rule 1).
 6. **Hooks never break the session.** Every hook catches every exception, exits 0 unless this plan says otherwise, and finishes within its time budget. When unsure, do nothing.
 7. **Never print, log or send a secret.** Every text field goes through masking ([G19](#g19-secret-masking)) before it is written anywhere. Tests build fake secrets at run time from pieces, never as one literal string in the repo.
@@ -405,7 +405,7 @@ Reset after each coloured span: `\x1b[0m`.
 
 ### G6 The pitboard command
 
-**G6.1 Running it.** `bin/pitboard` is a POSIX shell file that runs `python3 -I "$(dirname "$0")/../pitboard/launch.py" "$@"` (the same relative path works in the plugin folder and in the stable copy, G21.4), falling back to `python` when `python3` is not a real interpreter (same trick as Windstorm Pit Stop). `launch.py` picks the version to run ([G21.4](#g21-self-update-always-the-newest-pit-board)), puts that version's folder first on `sys.path` and calls its `pitboard.cli.main()`. Claude Code puts a plugin's `bin/` folder on the agent's `PATH` while the plugin is enabled, so agents type `pitboard`.
+**G6.1 Running it.** `bin/pitboard` is a POSIX shell file that runs `python3 -I "$(dirname "$0")/../pitboard/launch.py" "$@"` (the same relative path works in the plugin folder and in the stable copy, G21.4), falling back to `python` when `python3` is not a real interpreter (same trick as Windstorm Pit Stop). `launch.py` picks the version to run ([G21.4](#g21-self-update-always-the-newest-pit-board)), puts that version's folder first on `sys.path` and calls its `pitboard.cli.main()`. Its first act is the Python floor check (G21.15). Claude Code puts a plugin's `bin/` folder on the agent's `PATH` while the plugin is enabled, so agents type `pitboard`.
 
 **G6.2 Commands.** Every command accepts `--lane KEY` and `--json`. With `--json`, the only thing printed to stdout is one JSON object with exactly these keys: `{"ok": bool, "exit": int, "message": str, "ids": [short IDs written or affected], "asks": [ask objects in the G2.6 shape], "data": {command-specific, or {}}}`. `data` holds: for `version`, `{"running", "installed", "pinned", "generation"}`; for `sync`, `{"sent", "received", "rejected"}`; for `self-update`, the `last-check.json` object; for `lane`, `{"lane", "lane_name"}`; for `doctor`, `{"checks": [{"name", "ok", "detail", "fix"}]}`. Every flag any gene names is listed in this table; a flag not listed here does not exist.
 
@@ -437,7 +437,7 @@ Reset after each coloured span: `\x1b[0m`.
 | `version` | The running version, the newest installed version, the pinned version if any (`self-update --pin`), and the hook generation. When the home's launcher copy came from a version older than the newest installed one that is not in `update/bad-versions` (G21.4), and no pin holds the home, a second line says so (with `self_update` false: `launcher copy from 0.2.0; self_update is off, so no start refreshes it`); the first line never changes. A last line names what the status line runs: the version the home's launcher copy picks now and the G21.4 step that picked it, since the status line writes no log line (plan 1.25, P15). | `0.2.1 (installed 0.2.1, hooks gen 1)`, then perhaps `launcher copy from 0.2.0; the next session start refreshes it`, then `status line runs 0.2.1 (step 3)` |
 | `update [--check] [--now] [--pin VER] [--unpin]` | G21. | `up to date (0.2.1)` / `updated 0.2.0 → 0.2.1` |
 
-**G6.3 Exit codes.** `0` ok · `1` unexpected error · `2` bad usage · `3` lane unknown · `4` ask not found · `5` transition not allowed (G1.11), with the current status in the message · `6` invalid field · `7` lane busy (lock timeout) · `8` hub unreachable (sync only) · `9` update failed (update only; the running version is unchanged).
+**G6.3 Exit codes.** `0` ok · `1` unexpected error · `2` bad usage · `3` lane unknown · `4` ask not found · `5` transition not allowed (G1.11), with the current status in the message · `6` invalid field · `7` lane busy (lock timeout) · `8` hub unreachable (sync only) · `9` update failed (update only; the running version is unchanged) · `10` Python older than the floor (G21.15; nothing was written).
 
 **G6.4** `add` prints the new short ID first on its line, so `pitboard add ... | cut -d' ' -f1` gives `A12`.
 
@@ -583,7 +583,7 @@ If it does not, end your turn now without saying anything more.
 
 **G10.3 Speed.** It must finish in under 50 ms on a warm disk: it reads only `lanes.json` and one state cache, and never folds a log unless G2.7 forces it.
 
-**G10.4 It never fails loudly.** Any error prints nothing and exits 0.
+**G10.4 It never fails loudly.** Any error prints nothing and exits 0. The one exception is a Python older than the floor (G21.15): the segment is one short true line naming the floor and the version found, in place of times that would be wrong.
 
 **G10.5 Joining an existing status line.** A plugin cannot set `statusLine` (the documentation describes only user and project settings, and the plugin manifest has no such key). `pitboard setup` writes `~/.pitboard/statusline.sh`, which saves stdin to a variable, runs the operator's original status line command with that input, then runs `~/.pitboard/bin/pitboard status` (the stable launcher, G21.4) with the same input. When both print something, Pit Board's segment comes first: before a one-line status line, joined with ` · `, or on its own first line above a status line of several lines, so a long status line never pushes it past the right edge. (In the M1 pilot the operator could not find the segment at the end of an 11-line status line.) Pit Board's part runs under a 1 s cap (`timeout`, or `gtimeout` on macOS, when either exists): when it errors, prints nothing or runs past the cap, the operator's own line is printed alone, so a Pit Board fault never costs the operator their status line (G10.4). Setup shows the change and asks before replacing `statusLine.command` in the operator's `settings.json`, and keeps a backup.
 
@@ -846,7 +846,7 @@ Last, it deletes the record, and removes `.claude` if setup made it and it is no
 
 **G20.5** The page gets a smoke test: a script that loads `index.html` with the hub running and checks that `app.js` and `app.css` load and that no inline script or style exists.
 
-**G20.6 CI** runs the tests on Python 3.10 and 3.13, on Linux and macOS, on every pull request and every push to `main` (a push to a pull request's branch runs through the pull request, so each job runs once). Its log names every test and its outcome (`pytest -v`, without `-q`, which cancels it: one line per test with its outcome, and a skip's reason on its own test's line), so a reader can see that a given test ran, and passed, in each job; a count cannot show that. `-rA` is not enough: it folds skips that share a place and a reason into one line with a count and no names. This is a public repository, so CI uses GitHub-hosted runners, the same as Windstorm Pit Stop: public repositories do not use paid minutes, and self-hosted runners must never serve a public repository (anyone's pull request could run code on our machines).
+**G20.6 CI** runs the tests on Python 3.9 (the floor, G21.15), 3.10 and 3.13, on Linux and macOS, on every pull request and every push to `main` (a push to a pull request's branch runs through the pull request, so each job runs once). Its log names every test and its outcome (`pytest -v`, without `-q`, which cancels it: one line per test with its outcome, and a skip's reason on its own test's line), so a reader can see that a given test ran, and passed, in each job; a count cannot show that. `-rA` is not enough: it folds skips that share a place and a reason into one line with a count and no names. This is a public repository, so CI uses GitHub-hosted runners, the same as Windstorm Pit Stop: public repositories do not use paid minutes, and self-hosted runners must never serve a public repository (anyone's pull request could run code on our machines).
 
 **G20.7** `tests/smoke_hooks.sh` feeds every recorded hook input to `pitboard hook` and checks exit code 0 and the expected output shape.
 
@@ -944,6 +944,16 @@ A test replays the fixtures of every earlier release (`tests/fixtures/releases/<
 - once the version is past a row's `ship_in`, while that row has no `proven`;
 - when a row's `ship_in` differs from its `first_ship_in` with no `moved_why`, or, for a `person` row, with no `moved_by_person`: only that person's word moves their row, restated there;
 - when a row is not whole, its codon is not in this plan, two rows share an id, or a declined lesson has no reason.
+
+**G21.15 The Python floor** (plan 1.26, P16). Pit Board runs on Python 3.9 or newer, and that floor is checked, not only written. 3.9 is what a Mac with no Python added has (`/usr/bin/python3`, 3.9.6), and the whole suite passes there unchanged. The floor is one value, `FLOOR = (3, 9)` in `pitboard/launch.py`. Part 0 rule 4, the README and the lowest Python in CI (G20.6) name the same version, and a test fails when one place differs.
+1. **The first act.** Before it reads or writes anything, `launch.py` compares `sys.version_info` with `FLOOR`. Below the floor, Pit Board makes nothing (no folder, no log line, no lock, no launcher refresh) and stops:
+   - `pitboard hook <event>`: one line on stderr, `Pit Board needs Python 3.9 or newer; found <X.Y.Z> at <the interpreter's path>`, nothing on stdout, exit 0. A hook never breaks the session (Part 0 rule 6).
+   - `pitboard status`: the segment is `Pit Board needs Python 3.9 or newer, found <X.Y.Z>`, with no newline at the end, exit 0 (the exception in G10.4).
+   - any other command, `setup` included: the hook's line on stderr, then where Pit Board does run (`install Python 3.9 or newer, or put one first on PATH as python3`), exit code 10, nothing written.
+2. **The older grammar.** `launch.py` stays readable by Python 3.6's grammar, so an older interpreter reaches the check instead of stopping on a syntax error. A test parses it with that grammar. `pitboard.cli.main()` makes the same check first, because a launcher copy from before 0.1.3 calls a newer folder's `main()` without checking.
+3. **Why 3.8 is refused, though most tests pass there.** Python 3.8 has no `zoneinfo`, so G4 falls back without an error and shows wrong times. Seen on 2026-11-23: an ask at 16:00Z on 4 July was shown as `11:00 AM ET`, not `12:00 PM ET`, and the CT, MT, PT and London labels were wrong. Showing what is not true is worse than stopping. A sister skill showed the other way it goes wrong: it named "Python 3.10+" without checking it, and on a stock machine with Python 3.8 it registered and started a service before it crashed on newer grammar.
+4. **Seen, not only tested.** Before 0.1.3 is tagged, the refusal is seen once on a real machine whose own interpreter is 3.8 (a stock Ubuntu 20.04.6). Pit Board is also run once on a Mac with the Mac's own `/usr/bin/python3` named explicitly: `setup`, one hook and the status line, with the times right.
+5. Changing the floor is a plan change. It is looked at again when the Python that macOS ships moves.
 
 ---
 
@@ -1133,6 +1143,7 @@ These are not in the build. Each needs a decision (and a plan change) before any
 6. **Desktop app wrapper** around the page, only if the pop-out falls short in daily use.
 7. **Marketplace catalog:** confirm with the skill's owner, before M5, which repository's `marketplace.json` lists Pit Board (today Part 6 says Windstorm Pit Stop's).
 8. **One harness matrix for the skill family. Answered by the skill's owner on 2026-11-20: yes, one matrix (P6), and it grows by division.** H1 to H10 and the `docs/HARNESSES.md` row shape live in this plan for now. Windstorm Pit Stop's harness verdict table reuses H1 to H10 and adds its own capabilities from H11 up (for example PreCompact, the auto-compact window, its updater). When a third skill needs the matrix, it moves to a shared home, by a plan change.
+9. **A Mac with no developer tools.** There `/usr/bin/python3` only offers to install them (a dialog) and there is no `python`, so the hooks' command line fails before Pit Board runs and the G21.15 check is never reached. Look at it on the Mac test box; what a hook does there is a decision for the skill's owner.
 
 ---
 
