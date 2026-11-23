@@ -77,6 +77,19 @@ def tag_problems(root, tag):
     return out
 
 
+def promise_problems_at_tag(root, tag):
+    """P18 (plan 1.29): the tag is refused while a row due in its version has an empty `proven`, unless the row
+    names why it can only be proven after the release (`proven_after_release`). Returns (problems, listed ids)."""
+    want = TAG.fullmatch(tag).group(1)
+    try:
+        rows = json.loads(_read(root, "PROMISES.json"))["rows"]
+    except (OSError, ValueError, KeyError, TypeError) as e:          # could not be read is not "no rows" (rule 6)
+        return [f"PROMISES.json could not be read: {type(e).__name__}"], []
+    due = [r for r in rows if r.get("ship_in") == want and not r.get("proven")]
+    listed = [r["id"] for r in due if str(r.get("proven_after_release") or "").strip()]
+    return [f"{r['id']} is due in {want} and has no proven line" for r in due if r["id"] not in listed], listed
+
+
 def release_tags_at_head(root):
     """The release tags on the checked-out commit; none on a branch, or where this is not a git checkout."""
     if not shutil.which("git") or not os.path.exists(os.path.join(root, ".git")):
@@ -121,6 +134,9 @@ def test_G21_1_a_tags_clone_is_refused_unless_its_name_is_every_version_label(tm
     """The release step (plan 1.23): run in a fresh clone of a tag, this refuses it unless the tag names every label."""
     for tag in release_tags_at_head(ROOT):                                   # only in a tag's checkout
         assert tag_problems(ROOT, tag) == [], tag
+        problems, listed = promise_problems_at_tag(ROOT, tag)
+        assert problems == [], (tag, problems)
+        print(f"{tag}: rows proven only after the release: {listed or 'none'}")
     assert tag_problems(_tree(tmp_path), "v0.1.2") == []
     shutil.rmtree(tmp_path / "tree")
     old = _tree(tmp_path, manifest="0.1.1", package="0.1.1")                 # the sister skill's fault: an old label
@@ -148,3 +164,25 @@ def test_G21_1_a_fresh_clone_of_a_tag_finds_its_tag(tmp_path):
     subprocess.run(["git", "-C", src, "commit", "-q", "--allow-empty", "-m", "after"], check=True, env=env,
                    capture_output=True, timeout=30)
     assert release_tags_at_head(src) == []                                   # a branch past the tag: nothing to check
+
+
+def _rows(root, *rows):
+    with open(os.path.join(root, "PROMISES.json"), "w", encoding="utf-8") as f:
+        json.dump({"rows": list(rows)}, f)
+
+
+def test_G21_1_a_tag_is_refused_while_a_row_due_in_it_has_no_proven_line(tmp_path):
+    """P18 (plan 1.29): a row that leans on a stand-in is seen on a real machine before its version is tagged."""
+    root = _tree(tmp_path)
+    _rows(root, {"id": "P1", "ship_in": "0.1.2", "proven": "a stock machine, 0.1.2, 2026-11-23"},
+          {"id": "P2", "ship_in": "0.1.3", "proven": ""})
+    assert promise_problems_at_tag(root, "v0.1.2") == ([], [])
+    _rows(root, {"id": "P1", "ship_in": "0.1.2", "proven": ""})
+    assert promise_problems_at_tag(root, "v0.1.2") == (["P1 is due in 0.1.2 and has no proven line"], [])
+    _rows(root, {"id": "P1", "ship_in": "0.1.2", "proven": "", "proven_after_release": "a count over two days"})
+    assert promise_problems_at_tag(root, "v0.1.2") == ([], ["P1"])          # listed, not refused
+    _rows(root, {"id": "P1", "ship_in": "0.1.2", "proven": "", "proven_after_release": "  "})
+    assert promise_problems_at_tag(root, "v0.1.2")[0] == ["P1 is due in 0.1.2 and has no proven line"]
+    with open(os.path.join(root, "PROMISES.json"), "w") as f:
+        f.write("{not json")
+    assert promise_problems_at_tag(root, "v0.1.2") == (["PROMISES.json could not be read: JSONDecodeError"], [])
