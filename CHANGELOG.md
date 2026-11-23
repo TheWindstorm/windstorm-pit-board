@@ -30,6 +30,9 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.31 (2026-11-23)
+- G21.4 (P19), the maintainer's ruling after the stock-VM sighting: when a read the launcher's choice hangs on could not be read, `status` prints one short true line, `Pit Board cannot read its files · run ~/.pitboard/bin/pitboard version`, instead of nothing. An empty status line tells the person nobody is asking them anything: an absence shown for an error, in the one place they look (rule 6). The command it names prints which file could not be read and why. No codon is renumbered. With the code, the P19 tests that read `status` change.
+
 ## Plan 1.30 (2026-11-23)
 - G18.3 (P17), from writing the code and running it on a stock Ubuntu 24.04 VM (Claude Code 2.1.280 and 2.1.330) and on a Mac test account:
   - point 3 (ruled by the skills' department head): Claude Code writes `~/.claude/settings.json` itself on install and rewrites it on its own uninstall, so the promise is the person's status line value back and nothing else changed by Pit Board; byte for byte is claimed only where nothing else wrote the file, and the census says when Claude Code's uninstall changed the file afterwards.
