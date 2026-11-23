@@ -26,6 +26,12 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.29 (2026-11-23)
+- G21.1 and G21.14 (P18): the tag's fresh-clone check also refuses a tag while a row due in that version has an empty `proven`. A row that can only be proven after its release names why in `proven_after_release`; the check lists such rows instead of refusing.
+- G21.4 (P19): each read the launcher's choice of version hangs on (bad-versions, pin, good-versions, the registry) has three answers: yes, no, could not be read. On could not be read, the launcher does not move to another version on this pass: it runs only its own version folder, or nothing, and a hook's log line names the read that failed.
+- G20.8 and G20.6 (P22): every CI job names its runner image (`ubuntu-24.04`, `macos-26`), never `latest`.
+All three are from the skill family's rules, read against this skill on 2026-11-23. No codon is renumbered. With the code, `test_G20_6_python_and_os_matrix_and_triggers` and `test_G20_8_standard_github_hosted_runners_only` change to the named images.
+
 ## Plan 1.28 (2026-11-23)
 - G18.3 (new, P17): `pitboard uninstall` takes Pit Board and everything it made off this computer, however it was set up. It prints its plan first, and `--apply` does it.
   - Folder installs follow G18.1's undo. The user-scope install goes through `claude plugin uninstall`, or the census names the one command when `claude` is missing or fails.
