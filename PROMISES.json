@@ -225,6 +225,102 @@
    "test": "test_G21_15_below_the_floor_nothing_is_made_and_one_true_line_is_said",
    "proven": "2026-11-23, the refusal on a real stock machine: a stock Ubuntu 20.04.6 LTS cloud image (its own /usr/bin/python3 3.8.10, no `python`), in a virtual machine, running main 42918ab, with nothing steered. `bin/pitboard hook session-start` and the real hooks.json SessionStart line exited 0 with one stderr line, 'Pit Board needs Python 3.9 or newer; found 3.8.10 at /usr/bin/python3'; `status` printed 'Pit Board needs Python 3.9 or newer, found 3.8.10'; `setup --minimal --apply` and `version` exited 10; no ~/.pitboard, no ~/.claude, and no new file in the home. CI on the merge's head c810dee7 ran the floor tests PASSED on 3.9, 3.10 and 3.13, Linux and macOS (the real-3.8 test skipped there with its reason). Seen 2026-11-23 on a Mac (an Intel desktop, macOS 13.7.8) in a clean test account, on the interpreter the hooks' own line chose with only the system folders on PATH: Apple's python3 3.9.6, the one that comes with Apple's developer tools, asked from inside the run. No Claude Code session: the proof's script put the plugin's files and one registry entry where an install would. Setup (minimal, applied) made its 6 changes; the real SessionStart line with a real payload exited 0 with nothing on stderr; the status line showed one ask; six instants (one summer, one winter, in Eastern, Central and London time) matched the Mac's own date program to the hour. The account was as found afterwards, removed by the proof's script: Pit Board has no undo yet for a home set up with --minimal (only setup --folder DIR --undo). Not seen: a real Claude Code install on that interpreter; a Mac without Apple's developer tools.",
    "issue": ""
+  },
+  {
+   "id": "P17",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-23. A proof on a clean Mac test account had to take Pit Board off with its own script: Pit Board had an undo only for folder mode, none for a home set up with --minimal. The same day, on a stock Linux virtual machine with Claude Code 2.1.280 and 2.1.330 and Pit Board 0.1.2, Claude Code's own `plugin uninstall` emptied the registry row but left the version folder (marked `.orphaned_at`), the status line setting and the Pit Board home. The status line went silent while its setting stayed, and a hook from a session still running ran the orphaned folder's code in full.",
+   "promise": "`pitboard uninstall` takes Pit Board and everything it made off the computer, however it was set up: plan first, `--apply` does it, three answers for every read, a settings file put back byte for byte or only Pit Board's entry changed or (unreadable) never touched. What is the person's (the asks, the log, the setup record, setup's backups) is kept and counted; `--delete-asks-and-log` deletes it only at a terminal, by typing the count. A census is the last thing printed, and a second run is safe. All of it is one file, `pitboard/leave.py`, which the stable copy carries and runs alone with no plugin folder anywhere. After Claude Code's own uninstall, no orphaned code runs, the status line names `~/.pitboard/bin/pitboard uninstall`, and a live hook logs one line saying Pit Board was removed. Proven on a stock Linux VM, then in a clean Mac test account, then one real Claude Code session's status line seen to come back as it was (or written as not seen); the README's by-hand lines for a copy from before 0.1.3 run once as written on a stock VM.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P18",
+   "codon": "G21.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-23, reading the release step against the family's rule that a row leaning on a stand-in is seen to hold on a real machine before its version is tagged: the tag's fresh-clone check compares version labels only, so 0.1.3 could be tagged while P15, due in it, has no proven line. The promise gate refuses only the next version.",
+   "promise": "The tag's fresh-clone check refuses a tag while a row due in that version has an empty `proven`. A row that can only be proven after its release (a count over days) carries a named exception field with its reason, read by the check; there is no blanket rule that would force a false proven line.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P19",
+   "codon": "G21.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-23, reading the launcher against the family's rule that an error is never an absence: `update/bad-versions`, `update/pin`, `update/good-versions` and Claude Code's plugin registry are read so that a file that exists but cannot be read counts as empty. An unreadable bad-versions could therefore run a version marked bad. The same fault sits in sister skills already released.",
+   "promise": "Each read the launcher's choice of version hangs on (bad-versions, pin, good-versions, the registry) has three answers: yes, no, could not be read. On could not be read the launcher does not move to another version on this pass, and its log line says which read failed. One test fails each read in turn.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P20",
+   "codon": "G6.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-23, reading Pit Board against the family's rule that a tool carries what a person must hear: its stop lines name a next step, but no line is printed as the numbered block an agent pastes whole to the person.",
+   "promise": "Every stop and need-you line names what happened and the one next step, and the words for the person are one numbered block printed by the tool (`tell the person 1 of N`), the last thing before the stop. Every clause in a tell line is something the person must hear; what is only good to know stays in the README. A test reads them all.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P21",
+   "codon": "G9.6",
+   "owner": "maintainer",
+   "first_ship_in": "0.2.0",
+   "ship_in": "0.2.0",
+   "seen": "2026-11-23, reading the repository against the family's standard: the skills have the format gate in CI but no evals in the skill-creator style (G9.6 trigger evals, G9.7 with-skill against without-skill).",
+   "promise": "The skills carry trigger evals and with-skill against without-skill evals in the skill-creator style, and their results are read before a release.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P22",
+   "codon": "G20.8",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-23: `ubuntu-latest` moved to a new Ubuntu under the CI matrix, and setup-python had no 3.9 for it, so a job failed before any test ran. The workflow still names `ubuntu-latest` and `macos-latest`, and the runner test accepts `latest`.",
+   "promise": "Every CI job names its runner image (for example `ubuntu-24.04`), never `latest`, and the runner test refuses a `latest` label.",
+   "test": "test_G20_8_every_job_names_its_runner_image_never_latest",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P23",
+   "codon": "G21.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-23, the rest of P19's reading: outside the launcher's choice of version, other reads a decision hangs on (the stable copy's refresh, setup's and the folder installer's reads of settings and records, lane logs) may also treat a file that cannot be read as absent.",
+   "promise": "Every other read a decision hangs on has three answers (yes, no, could not be read). Nothing is deleted, emptied, started or reported gone on the third, and one test fails each read in turn.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P24",
+   "codon": "G3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-23, reading Pit Board against the family's rule that a tool prints only the names the person chose: with no lane given, a command prints `which lane? Pass --lane KEY. Lanes on this machine: <keys>`, so the names of every other lane on the computer (taken from session names and folders) go into the transcript of whichever agent ran it.",
+   "promise": "With no lane given, a command says how many lanes the computer has. Its one next step leads the agent to its own key first, from where it was told it: the session's first Pit Board line (`you are lane ... (key ...)`), or the `PITBOARD_LANE` the SessionStart hook set for this session. It names `pitboard lanes` only as the person's way to see them all. Lane names are printed only when the person asks with `pitboard lanes`, which the plan names.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [

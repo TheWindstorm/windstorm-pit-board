@@ -37,7 +37,7 @@ Do not record: questions to yourself, questions to other agents that they can an
 
 - Never put a password, key or token in an ask. Name it instead ("the Stripe test key").
 - Never mark an ask answered for the operator unless they answered it.
-- Never run `pitboard uninstall --delete-asks-and-log`: the asks and the log are the operator's, and only they delete them, at their own terminal.
+- Never delete what `pitboard uninstall` kept (the asks and the log), with `--delete-asks-and-log` or by hand, unless the operator asks for it in their own words in this conversation.
 
 ## Showing the list
 

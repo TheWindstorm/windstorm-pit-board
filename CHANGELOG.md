@@ -2,6 +2,7 @@
 
 ## 0.1.3 (not yet released)
 - **A release tag waits for its proofs** (P18, plan 1.29, G21.1). The tag's fresh-clone check refuses a tag while a promise due in that version has no `proven` line. A row that can only be proven after its release says why in `proven_after_release`; the check lists it instead of refusing.
+- **CI names its runner images** (P22, plan 1.29, G20.8): `ubuntu-24.04` and `macos-26`, never `latest`. A `latest` label moved to a new Ubuntu under the matrix, and setup-python had no 3.9 for it, so a job failed before any test ran. The runner test now refuses `latest`. And CI waits less on the Mac runners the skill family shares (family rule 17, plan 1.30): a pull request runs one Mac job, on Python 3.9; a push to `main` or a `release-*` branch runs all three; a newer push to a pull request cancels that pull request's older runs.
 - **Pit Board checks that Python is 3.9 or newer before it does anything** (P16, plan 1.26, G21.15). On an older Python it creates no file and stops with one line naming the version needed and the version found. The status line shows that line, a hook writes it to stderr and exits 0 so the session goes on, and any other command, `setup` included, exits 10. Python 3.8 ran before, but with no zone data it showed wrong times with no error. 3.9 is the `python3` that comes with Apple's developer tools (3.9.6 on macOS 13), and CI now runs on 3.9 too.
 - **Which version ran is read, not worked out** (P15, plan 1.25, G21.4). Every line a hook writes to `logs/pitboard.log` ends with `v=<version> step=<n>`: the version of the code that ran and the launcher step that picked its folder (`step=?` when a launcher from before 0.1.3 picked it). `pitboard version` has a last line naming what the status line runs: the version the home's launcher copy picks now, and its step. Seen when one lane's update changed what the other lanes' status lines ran within a second, with nothing in the log to show it.
 
@@ -26,6 +27,19 @@ Install Pit Board in one lane's folder, and take it out again.
 - **Promises:** P1 (the status segment first) is proven on a Linux and a macOS machine; P5 and P6 have their tests.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
+
+## Plan 1.30 (2026-11-23)
+- G18.3 (P17), from writing the code and running it on a stock Ubuntu 24.04 VM (Claude Code 2.1.280 and 2.1.330) and on a Mac test account:
+  - point 3 (ruled by the skills' department head): Claude Code writes `~/.claude/settings.json` itself on install and rewrites it on its own uninstall, so the promise is the person's status line value back and nothing else changed by Pit Board; byte for byte is claimed only where nothing else wrote the file, and the census says when Claude Code's uninstall changed the file afterwards.
+  - point 5 (the family's rule 7, and ruled by the skills' department head): one census row counts what is kept; the line after it says how to delete them as the person's own act, with a command run exactly as printed on this computer (the home's copy while it is there, `rm -r <home>` after), never a bare `pitboard`.
+  - point 6: the count is typed before anything changes; a wrong count changes nothing at all; a count that changed by the time of the delete deletes nothing.
+  - points 2 and 8: a home's files go only after every read about that home; the home's copy stays when an earlier step was not finished; `would go` in the plan; a lock still held exits 7.
+  - point 9: the README's by-hand lines keep `lanes/`, `lanes.json` and `logs/`.
+  - G21.4: an orphaned folder's launcher runs the home's `leave.py`, never its own; the removed line names the command only while the copy is there; a missing registry is not "removed".
+- G6.2: `uninstall` has its row; the `setup` row names `--folder` and the old spelling `--undo`.
+- G20.6 (the family's rule 17): a pull request runs one macOS job, the floor's Python; `main` and `release-*` run all three; a newer push to a pull request cancels its older runs; the merge gate expects the reports of its event (5 on a pull request, 7 on `main`).
+- Appendix A.5, Never: an agent never deletes what `pitboard uninstall` kept, by the flag or by hand, unless the operator asks in their own words. The skill body changes with it, word for word.
+No codon is renumbered. With the code: `test_G18_1_plan_changes_nothing` and `test_G18_1_apply_writes_everything_with_backups` (one more stable-copy item, `leave.py`), `test_G21_4_same_files_get_the_marker_only` (`leave.py` is one of the copy's files), `test_G20_6_python_and_os_matrix_and_triggers` and `test_G20_6_ci_has_room_for_every_skip_reason` (one pytest step in each test job) change.
 
 ## Plan 1.29 (2026-11-23)
 - G21.1 and G21.14 (P18): the tag's fresh-clone check also refuses a tag while a row due in that version has an empty `proven`. A row that can only be proven after its release names why in `proven_after_release`; the check lists such rows instead of refusing.
