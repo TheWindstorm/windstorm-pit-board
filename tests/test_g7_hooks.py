@@ -173,7 +173,9 @@ def test_G7_7_reminder_with_and_without_asks(home):
     out = ctx_of(start(home))
     assert out.splitlines() == ['Pit Board: you are lane "API Server" (key api-server) on studio-1.',
                                 "Rules: record every new ask with `pitboard add` before you ask it, "
-                                "and start the chat question with its ID."]
+                                "and start the question with its ID. That includes an ask only the operator can "
+                                "answer that you send to another agent (a coordinator, a reviewer) or a shared "
+                                "board instead of the chat."]
     add("api-server")
     add("api-server", title="create a Stripe account", kind="hand", step=["Go to stripe.com"],
         deadline="2026-12-31 17:00")
@@ -183,6 +185,25 @@ def test_G7_7_reminder_with_and_without_asks(home):
     assert any(ln.startswith("- A2 [BLUE, 0m] YOUR HAND: create a Stripe account. Due Dec 31 5:00 PM ET.")
                for ln in lines)
     assert lines[-1].startswith("If the operator has answered one, run `pitboard answer <ID> --by operator")
+
+
+def test_G7_7_an_ask_sent_to_another_agent_or_a_board_is_recorded_too():
+    """P13 (plan 1.24): the reminder and the skill name an operator's ask that leaves the chat. Its proof is P4's
+    (a real ask recorded unprompted on two days); this test holds the words, with and without asks."""
+    now = datetime(2026, 11, 23, 6, 0, tzinfo=timezone.utc)
+    want = ("That includes an ask only Dana can answer that you send to another agent (a coordinator, a reviewer) "
+            "or a shared board instead of the chat.")
+    ask = {"uid": "0" * 32, "ask": "A1", "status": "open", "kind": "question", "severity": "blocking",
+           "title": "Post this under Dana's name?", "asked_at": c.ts_of(now)}
+    for asks in ([], [ask]):
+        text = R.reminder_text("k", "Lane", "m", asks, NY, now, cfg={"operator_name": "Dana"})
+        rules = [ln for ln in text.splitlines() if ln.startswith("Rules:")]
+        assert len(rules) == 1 and rules[0].endswith(want), text
+    with open(os.path.join(ROOT, "skills", "pit-board", "SKILL.md"), encoding="utf-8") as f:
+        skill = f.read()
+    assert "questions to other agents that they can answer themselves" in skill
+    assert "Answer under A12, or say 'not mine to answer' under A12." in skill
+    assert "`pitboard answer A12 --by agent --answer \"<who>: <their answer>\"`" in skill
 
 
 def test_G7_7_operator_name_limit_and_3000_chars():
