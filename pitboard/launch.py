@@ -55,6 +55,7 @@ def _claude_dir():
 
 
 UNREAD = []             # P19 (plan 1.29): the reads the last choose() could not make, as (path, error name)
+REMOVED = "Pit Board was removed by Claude Code"
 
 
 def _lines(path):
@@ -144,9 +145,8 @@ def _cached(claude_dir):
         except OSError:
             continue
         for v in names:
-            folder = os.path.join(base, v)
-            if _vkey(v) and not os.path.exists(os.path.join(folder, ".orphaned_at")):
-                out.setdefault(v, folder)
+            if _vkey(v) and not _orphaned(os.path.join(base, v)):
+                out.setdefault(v, os.path.join(base, v))
     return out
 
 
@@ -214,11 +214,10 @@ def _leave(argv):
     return ns["main"](list(argv[1:]))
 
 
-def _removed_line():
+def _copy_cmd(sub):
     home, user = _home(), os.path.expanduser("~")      # the command only while the copy that runs it is there
     shown = os.path.join("~" + home[len(user):] if home.startswith(user + os.sep) else home, "bin", "pitboard")
-    run = " · run {} uninstall".format(shown) if os.path.isfile(os.path.join(home, "bin", "pitboard")) else ""
-    return "Pit Board was removed by Claude Code" + run
+    return " · run {} {}".format(shown, sub) if os.path.isfile(os.path.join(home, "bin", "pitboard")) else ""
 
 
 def main(argv=None):
@@ -244,7 +243,8 @@ def main(argv=None):
             if is_hook:
                 _log(argv[1] if len(argv) > 1 else "hook", "launcher could not read " + unread + "; nothing run")
                 return 0
-            if argv[:1] == ["status"]:
+            if argv[:1] == ["status"]:                 # plan 1.31: an error is never shown as nothing (rule 6)
+                sys.stdout.write("Pit Board cannot read its files" + _copy_cmd("version"))
                 return 0
             sys.stderr.write("pitboard: could not read {}; nothing run\n".format(unread))
             return 1
@@ -255,9 +255,9 @@ def main(argv=None):
                 _log(argv[1] if len(argv) > 1 else "hook", "Pit Board was removed by Claude Code; nothing done")
             return 0
         if removed and argv[:1] == ["status"]:
-            sys.stdout.write(_removed_line())
+            sys.stdout.write(REMOVED + _copy_cmd("uninstall"))
             return 0
-        sys.stderr.write("pitboard: no installed version found\n" + (_removed_line() + "\n" if removed else ""))
+        sys.stderr.write("pitboard: no installed version found\n" + (REMOVED + _copy_cmd("uninstall") + "\n" if removed else ""))
         return 1
     os.environ["PITBOARD_LAUNCH_STEP"] = str(step)     # P15: each hook log line names the step that picked it
     if unread:
