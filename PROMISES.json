@@ -248,7 +248,7 @@
    "seen": "2026-11-23, reading the release step against the family's rule that a row leaning on a stand-in is seen to hold on a real machine before its version is tagged: the tag's fresh-clone check compares version labels only, so 0.1.3 could be tagged while P15, due in it, has no proven line. The promise gate refuses only the next version.",
    "promise": "The tag's fresh-clone check refuses a tag while a row due in that version has an empty `proven`. A row that can only be proven after its release (a count over days) carries a named exception field with its reason, read by the check; there is no blanket rule that would force a false proven line.",
    "test": "test_G21_1_a_tag_is_refused_while_a_row_due_in_it_has_no_proven_line",
-   "proven": "",
+   "proven": "2026-11-23, on a throwaway tag that existed only in a local clone (its remote removed, never pushed): a fresh clone of main 28a6403e, one local commit setting plugin.json, `__version__` and the CHANGELOG heading to 0.1.3, tagged v0.1.3, then `git clone --branch v0.1.3` of it. In that clone the tag check refused the tag: \"P18 is due in 0.1.3 and has no proven line\", \"P19 is due in 0.1.3 and has no proven line\". After a second local commit that filled those two proven lines with throwaway text and the tag moved to it, a fresh clone of the tag passed the check and listed P15 as proven only after the release. Linux, git 2.43.0, Python 3.12.3.",
    "issue": ""
   },
   {
