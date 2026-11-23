@@ -79,7 +79,7 @@ def test_G21_4_what_each_entry_point_says_when_a_read_fails(world, which, capsys
     assert capsys.readouterr() == ("", "")
     log = (world.pb / "logs" / "pitboard.log").read_text()
     assert f"session-start - launcher could not read {path} (IsADirectoryError" in log and log.endswith("; nothing run\n")
-    assert L.main(["status"]) == 0 and capsys.readouterr() == ("", "")
+    assert L.main(["status"]) == 0 and capsys.readouterr() == ("Pit Board cannot read its files", "")
     assert L.main(["version"]) == 1
     assert capsys.readouterr().err.startswith(f"pitboard: could not read {path} (")
 
@@ -93,3 +93,18 @@ def test_G21_4_a_hook_that_runs_its_own_folder_names_the_failed_read(two, monkey
     hooks.log("session-start", "k", "source=resume")
     line = (two[0].pb / "logs" / "pitboard.log").read_text().splitlines()[-1]
     assert line.endswith(" step=5 unread=/x/update/bad-versions (PermissionError)")
+
+
+@pytest.mark.parametrize("which", READS)
+def test_G21_4_the_status_line_names_a_failed_read_never_nothing(world, which, capsys, monkeypatch):
+    """Plan 1.31 (P19): an empty status line says nobody is asking; on could not be read it says so, in one true line."""
+    world.install(world.version("0.1.0"), "0.1.0")
+    _break(world, which)
+    monkeypatch.setattr(L, "__file__", str(world.pb / "pitboard" / "launch.py"))     # run as the stable copy
+    (world.pb / "bin").mkdir(exist_ok=True)
+    (world.pb / "bin" / "pitboard").write_text("#!/bin/sh\n")
+    assert L.main(["status"]) == 0
+    out, err = capsys.readouterr()
+    assert out == "Pit Board cannot read its files · run {} version".format(world.pb / "bin" / "pitboard") and err == ""
+    assert L.main(["version"]) == 1                                                  # and that command names the file
+    assert "could not read " in capsys.readouterr().err
