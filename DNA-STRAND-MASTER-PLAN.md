@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.27 · 2026-11-23 · The Windstorm**
+**Plan version 1.28 · 2026-11-23 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -437,7 +437,7 @@ Reset after each coloured span: `\x1b[0m`.
 | `version` | The running version, the newest installed version, the pinned version if any (`self-update --pin`), and the hook generation. When the home's launcher copy came from a version older than the newest installed one that is not in `update/bad-versions` (G21.4), and no pin holds the home, a second line says so (with `self_update` false: `launcher copy from 0.2.0; self_update is off, so no start refreshes it`); the first line never changes. A last line names what the status line runs: the version the home's launcher copy picks now and the G21.4 step that picked it, since the status line writes no log line (plan 1.25, P15). | `0.2.1 (installed 0.2.1, hooks gen 1)`, then perhaps `launcher copy from 0.2.0; the next session start refreshes it`, then `status line runs 0.2.1 (step 3)` |
 | `update [--check] [--now] [--pin VER] [--unpin]` | G21. | `up to date (0.2.1)` / `updated 0.2.0 → 0.2.1` |
 
-**G6.3 Exit codes.** `0` ok · `1` unexpected error · `2` bad usage · `3` lane unknown · `4` ask not found · `5` transition not allowed (G1.11), with the current status in the message · `6` invalid field · `7` lane busy (lock timeout) · `8` hub unreachable (sync only) · `9` update failed (update only; the running version is unchanged) · `10` Python older than the floor (G21.15; nothing was written).
+**G6.3 Exit codes.** `0` ok · `1` unexpected error · `2` bad usage · `3` lane unknown · `4` ask not found · `5` transition not allowed (G1.11), with the current status in the message · `6` invalid field · `7` lane busy (lock timeout) · `8` hub unreachable (sync only) · `9` update failed (update only; the running version is unchanged) · `10` Python older than the floor (G21.15; nothing was written) · `11` uninstall incomplete: a read or a removal failed, and the census names it (G18.3).
 
 **G6.4** `add` prints the new short ID first on its line, so `pitboard add ... | cut -d' ' -f1` gives `A12`.
 
@@ -795,7 +795,7 @@ Its Codex provider comes next.
 
 ### G18 Setup and doctor
 
-**G18.1** `pitboard setup` prints a numbered plan of every file it would create or change, with paths, and changes nothing. `pitboard setup --apply` does it, keeping a `.bak-<timestamp>` copy of every file it changes. Items: config file, stable launcher copy (G21.4), marketplace auto-update (G21.2), update timer (G21.3), status line wrapper (G10.5), tmux lines (G12.2, only with `--tmux`), sync timer (G13.3, only when `hub_url` is set), hub service (G14.7, only with `--hub`). Every timer and service it installs calls `$PITBOARD_HOME/bin/pitboard`, never a version folder. `--minimal` limits the plan to the config file, the stable launcher copy and the status line wrapper (what Milestone 1 needs).
+**G18.1** `pitboard setup` prints a numbered plan of every file it would create or change, with paths, and changes nothing. `pitboard setup --apply` does it, keeping a `.bak-<timestamp>` copy of every file it changes. Items: config file, stable launcher copy (G21.4), marketplace auto-update (G21.2), update timer (G21.3), status line wrapper (G10.5), tmux lines (G12.2, only with `--tmux`), sync timer (G13.3, only when `hub_url` is set), hub service (G14.7, only with `--hub`). Every timer and service it installs calls `$PITBOARD_HOME/bin/pitboard`, never a version folder. `--minimal` limits the plan to the config file, the stable launcher copy and the status line wrapper (what Milestone 1 needs). From plan 1.28, `--apply` also writes `$PITBOARD_HOME/setup-record.json`: each settings file it changed, its bytes before (or that there was none), its bytes after, and what was set. `pitboard uninstall` (G18.3) reads it.
 
 **G18.1 folder mode** (for M2a; promises P5, P6, P7 and P9). `pitboard setup --folder DIR` prints the plan for one folder and changes nothing; `--apply` does it. It never touches the user's own settings. Outside a session `pitboard` is not on the PATH. Run the stable launcher of an earlier install (`$PITBOARD_HOME/bin/pitboard`, which runs the newest installed version, G21.4). On a machine with no install, first run `claude plugin install … --scope local` in that folder, then run the plugin's own copy.
 1. Refuses, changing nothing:
@@ -812,10 +812,24 @@ Its Codex provider comes next.
    - otherwise (Claude Code 2.1.280 clones a `github` entry over SSH only): "Claude Code could not clone the plugin from GitHub over SSH; this account is not set up for GitHub over SSH (GitHub accepted no key from it). Update Claude Code (2.1.330 clones over HTTPS when SSH is not set up), or add a GitHub key to this account, then run the same command again."
    - These lines (the plain words and Claude Code's error) are wrapped to G6.8's 100 columns, never cut with `…`; a continued line starts with two spaces.
 
-`pitboard setup --folder DIR --undo` runs `claude plugin uninstall <plugin>@<marketplace> --scope local` in the folder (a failure is shown as in step 6), then puts the folder's settings back:
+`pitboard uninstall --folder DIR` (G18.3; until plan 1.28 `setup --folder DIR --undo`, which stays for 0.1.3 only as the old spelling: it says so on its first line and does the same) runs `claude plugin uninstall <plugin>@<marketplace> --scope local` in the folder (a failure is shown as in step 6), then puts the folder's settings back:
 - byte for byte, when what is left after removing Pit Board's entries equals the recorded file under the same rule;
 - otherwise it removes only Pit Board's entries: `statusLine` when it is the home's wrapper, the plugin's key under `enabledPlugins`, and `env.PITBOARD_HOME` unless the person had set it before.
 Last, it deletes the record, and removes `.claude` if setup made it and it is now empty. Tests: `test_G18_1_folder_*`.
+
+**G18.3 `pitboard uninstall`** (plan 1.28, P17). Leaving is `uninstall`: one word that takes Pit Board, and everything it made, off this computer, however it was set up. `remove` stays free for an object of Pit Board's own. Like `setup`, it prints its numbered plan first and changes nothing; `--apply` does it. A person who wants to leave is never refused.
+1. **What it finds.** Each folder install: Claude Code's registry entries for the plugin with local scope, and each `.claude/pitboard-folder.json` record (G18.1 folder mode). The user-scope install. Each Pit Board home: the default, `$PITBOARD_HOME`, and any home a folder record names. Each settings file a `setup-record.json` names, or, for a home set up before plan 1.28, `~/.claude/settings.json` when its `statusLine` runs that home's wrapper. `--folder DIR` limits all of this to one folder: G18.1's folder undo.
+2. **Three answers.** Every read a step hangs on (the registry, a record, a settings file, the wrapper's recorded command, a lane log) answers yes, no, or could not be read. On the third answer nothing is deleted, emptied or reported gone. The census names what could not be read and the one next step, and the exit code is 11.
+3. **A settings file** that Pit Board changed:
+   - still exactly what setup wrote (its bytes equal the record's bytes after): put back byte for byte, or deleted when there was none before;
+   - changed since: only Pit Board's entry changes. `statusLine.command` goes back to the person's own command, which the record or the wrapper (`# pitboard-original-command:`) holds; with none, the `statusLine` key is removed when its command is the home's wrapper. Every other key stays as it is. In a folder's settings, G18.1's rule (the plugin's key under `enabledPlugins`, and `env.PITBOARD_HOME` unless the person set it);
+   - could not be read, or is not a JSON object: touched in no way. A settings file is never written when it could not be read.
+4. **The plugin.** In each folder, as G18.1 folder mode. The user-scope install: `claude plugin uninstall windstorm-pit-board@<marketplace>` (120 s limit, a failure shown as in G18.1 step 6). When `claude` is not on the PATH, or it fails, the install is kept, and the census names the one command the person runs. A project-scope install lives in a repository's shared settings, so it is kept: the census names it and the command. The catalog (the marketplace) is kept, because it also lists other Windstorm skills.
+5. **The person's asks are theirs.** Every lane log under `lanes/` (open and closed asks, and `lanes.json`) is kept. Everything else Pit Board made in a home goes: the launcher copy and its `.prev` files, the wrapper, `config.json`, `update/`, `state/`, `logs/`, and every timer, service and tmux line setup installed (G21.3, G13.3, G14.7, G12.2). The last lines count what is kept: `kept: N asks (O open) in L lane logs at <path>`, and how to delete them.
+6. **Deleting the asks** is a second, explicit choice: `pitboard uninstall --apply --delete-asks`. It runs only when its standard input and output are both a terminal, and it names the count and waits for the person to type that number. An agent cannot give it for the person: run from an agent's tool, or with any other answer, it deletes nothing and says why. The skill tells agents never to run it.
+7. **The order.** Settings files first, so a running session's status line goes back to the person's own. Then the plugin installs, then each home's files, the running launcher copy last.
+8. **The census** is the last thing printed: one line per thing Pit Board made, `gone`, or `kept` and why. Run again, it is safe: with nothing of Pit Board's left it says `nothing of Pit Board is here`, then the `kept` line for the asks when there are any. Exit code 0 when everything planned is gone or kept on purpose; 11 when a read or a removal failed.
+9. **Seen, not only tested:** on a stock Linux VM first, then in the clean test account on a Mac that carries Apple's developer tools, in place of the proof script's own removal. Then, if a box's own login allows it, one real Claude Code session whose status line is seen to come back as it was; otherwise that is written as not seen.
 
 **G18.2** `pitboard doctor` checks and prints one line per check, `OK` or `PROBLEM: <what> · fix: <how>`: Python version, home folder modes, config valid, every lane log readable and its invalid-line count, state caches fresh, hooks installed (plugin enabled), status line wrapper in place, tmux badge format present (when in tmux), hub reachable and token accepted (when `hub_url` set), outbox size and oldest file, clock within 2 minutes of the hub's, running version vs newest installed vs newest released, marketplace auto-update on, last update check and its result, any pin or bad version, sessions running an older hook generation.
 
@@ -1217,6 +1231,7 @@ Do not record: questions to yourself, questions to other agents that they can an
 
 - Never put a password, key or token in an ask. Name it instead ("the Stripe test key").
 - Never mark an ask answered for the operator unless they answered it.
+- Never run `pitboard uninstall --delete-asks`: the asks are the operator's, and only they delete them, at their own terminal.
 
 ## Showing the list
 

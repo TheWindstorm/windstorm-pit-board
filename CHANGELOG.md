@@ -26,6 +26,18 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.28 (2026-11-23)
+- G18.3 (new, P17): `pitboard uninstall` takes Pit Board and everything it made off this computer, however it was set up. It prints its plan first, and `--apply` does it.
+  - Folder installs follow G18.1's undo. The user-scope install goes through `claude plugin uninstall`, or the census names the one command when `claude` is missing or fails.
+  - A settings file goes back byte for byte when it is still what setup wrote. When it has changed since, only Pit Board's entry changes. When it cannot be read, it is touched in no way (three answers: yes, no, could not be read; on the third nothing is deleted).
+  - The person's asks are kept and counted. Deleting them is `--delete-asks`, confirmed at a terminal by typing the count.
+  - The last thing printed is a census of what is gone and what is kept. Run twice, it is safe.
+  - Found on 2026-11-23: a Mac proof had to remove Pit Board with its own script, because the tool had no way to leave a home set up with `--minimal`.
+- G18.1: `setup --apply` writes `setup-record.json` in the home. The folder undo is spelled `uninstall --folder DIR`; `setup --folder DIR --undo` stays for 0.1.3 as the old spelling.
+- G6.3: new exit code `11`, uninstall incomplete.
+- Appendix A.5 (the skill body), Never: an agent never runs `pitboard uninstall --delete-asks`. The skill body changes with it, word for word (as plan 1.24 did).
+No codon is renumbered. With the code, the folder undo's tests move to the new spelling and keep one test for the old one.
+
 ## Plan 1.27 (2026-11-23)
 - G21.15: the Mac's 3.9 is named for what it is, the `python3` that comes with Apple's developer tools (3.9.6 on macOS 13), not "what a Mac with no Python added has": `/usr/bin/python3` is Apple's shim to it. Seen on the Mac test run, where the interpreter asked from inside was Xcode's.
 - Part 11 question 9: a Mac without Apple's developer tools. What its first `python3` call shows has not been seen, so the plan no longer describes a dialog.
