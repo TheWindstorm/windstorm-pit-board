@@ -46,3 +46,27 @@ Plan [Part 8](../DNA-STRAND-MASTER-PLAN.md#part-8-milestones-and-acceptance) say
 | Lost events (lane logs vs hub) | 0 | Not in M1 (no hub until M3). |
 | Machines on the newest release, `update_check_hours` + 1 hour after it ships | 100% | Not in M1 (the updater comes in M2). The launcher's pick was checked by hand (item 7). |
 | Releases rolled back somewhere by G21.10 | each gets a fix and a test | None. |
+
+## M2a, the skill family's lanes (0.1.1)
+
+Three lanes of the skill family run 0.1.1 from the catalog, put in by `setup --folder` from a clone of the tag; the third since Sun 2026-11-22 9:47 AM ET (14:47Z). From then to Mon 2026-11-23 12:30 AM ET, the shared log shows 11 session starts (one resume, ten after a compaction, each with the reminder of the rules), 280 prompts and 185 turn ends across the three lanes.
+
+The agent's `pitboard` is now the 0.1.1 folder in the plugin cache, the one the catalog installed. Last week's note, that it was the marketplace's source folder instead of the cache, applied to the M1 pilot copy only, which is gone.
+
+### Part 9 measurements, week of 2026-11-23
+
+Started Mon 2026-11-23 12:30 AM ET; updated through the week.
+
+| Measure | Target | This week |
+|---|---|---|
+| Real asks that were recorded (20 lane endings sampled) | ≥ 90% | No ask recorded in the three lanes since 9:47 AM ET Sunday. The 20 lane endings are sampled later this week, to tell "no ask was needed" from "an ask was not recorded". P4's two days have not started. |
+| Needless catcher blocks per lane per day | ≤ 1 | Not in 0.1.1 (the catcher, G8, is not built yet). |
+| Open asks older than 3 days, across all lanes | trending to 0 | 0 (no open ask). |
+| Median time from ask to answer | falling week on week | No ask this week yet. |
+| Time from `pb` typed to the board shown, over remote desktop | < 1 s | Not timed over remote desktop yet. Hook time through the 0.1.1 folder: median 35 ms (32-50 ms, 15 runs). |
+| Status segment time | < 50 ms | Median 29 ms (27-34 ms, 15 runs) through the home's stable copy, as the status line runs it. |
+| Lost events (lane logs vs hub) | 0 | Not in M2a (no hub until M3). |
+| Machines on the newest release, `update_check_hours` + 1 hour after it ships | 100% | 0.1.1 is the newest release and all three lanes run it. 0.1.2 is not released: every promise due in it is built and proven except P4. |
+| Releases rolled back somewhere by G21.10 | each gets a fix and a test | None. |
+
+Both timings were taken on the pilot machine at load 8, against a copy of the lane's Pit Board home, so the runs left nothing in the real one.
