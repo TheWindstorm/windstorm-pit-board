@@ -182,6 +182,8 @@ def whole_problems(w):
         out += [f"{r.get('id')}: '{k}' is empty" for k in WHOLE if not r.get(k)]
         if r.get("owner") not in ("person", "maintainer"):
             out.append(f"{r.get('id')}: owner must be 'person' or 'maintainer'")
+        if "kind" in r and r["kind"] != "guard":                                # plan 1.23
+            out.append(f"{r.get('id')}: kind, when given, must be 'guard'")
         for k in ("first_ship_in", "ship_in"):
             if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", str(r.get(k, ""))):
                 out.append(f"{r.get('id')}: {k} is not MAJOR.MINOR.PATCH")
@@ -263,6 +265,8 @@ def test_G21_14_every_row_is_whole_and_its_codon_is_in_the_plan():
     assert whole_problems(_planted(w, seen="")) == ["PX: 'seen' is empty"]
     assert whole_problems(_planted(w, codon="G99.1")) == ["PX: codon G99.1 is not in the plan"]
     assert whole_problems(_planted(w, id=w["doc"]["rows"][0]["id"])) == ["two rows share an id"]
+    assert whole_problems(_planted(w, kind="guard")) == []
+    assert whole_problems(_planted(w, kind="lesson")) == ["PX: kind, when given, must be 'guard'"]
 
 
 def test_G21_14_a_lesson_not_taken_is_written_down_with_its_reason():

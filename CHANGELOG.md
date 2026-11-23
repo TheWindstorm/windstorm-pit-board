@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.1.2 (not yet released)
+- **One version in every place** (P12, a guard; plan 1.23, G21.1): `plugin.json`, `__version__` and this file's top dated heading must name the same version, and the suite fails when one differs. Run in a fresh clone of a release tag, it refuses the tag unless the tag's name equals every version label in it. Seen in a sister skill, whose old manifest label kept `claude plugin update` from ever updating it.
 - **CI's log names every test and its outcome** (plans 1.21 and 1.22, G20.6): the test step runs `pytest -v`, one line per test with its outcome and a skip's reason, so a reader can see a given test ran and passed in each job, not only a count. A row's `proven` that leans on CI names the run and the test.
 - **A failed `claude plugin` command in `setup --folder` shows Claude Code's error** (P9, plan 1.13), not only its last line: from its first error line, at most 12 lines, without its progress lines, wrapped to 100 columns so nothing is cut. When the clone failed over SSH because GitHub accepted no key from the account, the message says so first, in plain words, with what to do.
 - **The status line runs the newest installed version** (P8, plan G21.4 step 6). Before any version has passed a self-check, the stable launcher took the first entry in `installed_plugins.json`, which on a machine with folders on different versions can be the oldest.

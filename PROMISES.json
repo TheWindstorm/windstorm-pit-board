@@ -163,6 +163,19 @@
    "issue": 65,
    "moved_why": "",
    "moved_by_person": ""
+  },
+  {
+   "id": "P12",
+   "kind": "guard",
+   "codon": "G21.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.2",
+   "ship_in": "0.1.2",
+   "seen": "2026-11-22, in a sister Windstorm skill, not in Pit Board: its plugin manifest named an old version through three releases, so on a stock machine `claude plugin update` said it was already at the latest version and kept the old code, and a person never got the fixes; a control with only the label changed updated at once. Checked here the same night: tag v0.1.1 and main named one version in every place, but a test held only plugin.json against __version__, not the CHANGELOG's heading, and nothing checked a tag's labels against its name.",
+   "promise": "One version in every place: plugin.json, __version__ and CHANGELOG.md's top dated heading name the same version, and a not-yet-released heading above it names a later one; the suite fails when one differs. Run in a fresh clone of a release tag, before the marketplace pin moves, the suite refuses the tag unless its name equals every version label in it.",
+   "test": "test_G21_1_one_version_in_every_place",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [
