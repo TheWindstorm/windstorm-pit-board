@@ -30,7 +30,7 @@ Every release before this one still reads the same: the lane logs, the cache and
 - G18.3 (new, P17): `pitboard uninstall` takes Pit Board and everything it made off this computer, however it was set up. It prints its plan first, and `--apply` does it.
   - Folder installs follow G18.1's undo. The user-scope install goes through `claude plugin uninstall`, or the census names the one command when `claude` is missing or fails.
   - A settings file goes back byte for byte when it is still what setup wrote. When it has changed since, only Pit Board's entry changes. When it cannot be read, it is touched in no way (three answers: yes, no, could not be read; on the third nothing is deleted).
-  - The person's asks are kept and counted. Deleting them is `--delete-asks`, confirmed at a terminal by typing the count.
+  - What is the person's is kept and counted: their asks, and the record of what Pit Board did on the computer (its log, the setup record, and setup's backups of their settings files). Deleting it is `--delete-asks-and-log`, confirmed at a terminal by typing the count. A held lane lock is a wait that names the lane, not a refusal.
   - The last thing printed is a census of what is gone and what is kept. Run twice, it is safe.
   - Found on 2026-11-23: a Mac proof had to remove Pit Board with its own script, because the tool had no way to leave a home set up with `--minimal`.
 - G18.1: `setup --apply` writes `setup-record.json` in the home. The folder undo is spelled `uninstall --folder DIR`; `setup --folder DIR --undo` stays for 0.1.3 as the old spelling.
@@ -42,7 +42,7 @@ Every release before this one still reads the same: the lane logs, the cache and
   - An unreadable registry is not "removed".
   - Seen on 2026-11-23 on a stock Linux machine with 0.1.2 and Claude Code 2.1.280 and 2.1.330: the status line went silent while its setting stayed, and a running session's hook ran the orphaned folder's code.
 - G18.3 point 9, G21.4: what stays can take itself off. `uninstall` is one self-contained file, `pitboard/leave.py`. The stable copy carries it, and `launch.py` runs it for `uninstall`: that is the one exception to "it only picks a folder". So the stable copy alone runs `uninstall` to the end, with no plugin folder anywhere, and a test holds it. After Claude Code's own uninstall, a live session's hook writes one line saying Pit Board was removed and does nothing else.
-- Appendix A.5 (the skill body), Never: an agent never runs `pitboard uninstall --delete-asks`. The skill body changes with it, word for word (as plan 1.24 did).
+- Appendix A.5 (the skill body), Never: an agent never runs `pitboard uninstall --delete-asks-and-log`. The skill body changes with it, word for word (as plan 1.24 did).
 No codon is renumbered. With the code, the folder undo's tests move to the new spelling and keep one test for the old one.
 
 ## Plan 1.27 (2026-11-23)
