@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.21 · 2026-11-22 · The Windstorm**
+**Plan version 1.22 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -846,7 +846,7 @@ Last, it deletes the record, and removes `.claude` if setup made it and it is no
 
 **G20.5** The page gets a smoke test: a script that loads `index.html` with the hub running and checks that `app.js` and `app.css` load and that no inline script or style exists.
 
-**G20.6 CI** runs the tests on Python 3.10 and 3.13, on Linux and macOS, on every pull request and every push to `main` (a push to a pull request's branch runs through the pull request, so each job runs once). Its log names every test and its outcome (`pytest -rA`: one line per test after the run), so a reader can see that a given test ran, and passed, in each job; a count cannot show that. This is a public repository, so CI uses GitHub-hosted runners, the same as Windstorm Pit Stop: public repositories do not use paid minutes, and self-hosted runners must never serve a public repository (anyone's pull request could run code on our machines).
+**G20.6 CI** runs the tests on Python 3.10 and 3.13, on Linux and macOS, on every pull request and every push to `main` (a push to a pull request's branch runs through the pull request, so each job runs once). Its log names every test and its outcome (`pytest -v`, without `-q`, which cancels it: one line per test with its outcome, and a skip's reason on its own test's line), so a reader can see that a given test ran, and passed, in each job; a count cannot show that. `-rA` is not enough: it folds skips that share a place and a reason into one line with a count and no names. This is a public repository, so CI uses GitHub-hosted runners, the same as Windstorm Pit Stop: public repositories do not use paid minutes, and self-hosted runners must never serve a public repository (anyone's pull request could run code on our machines).
 
 **G20.7** `tests/smoke_hooks.sh` feeds every recorded hook input to `pitboard hook` and checks exit code 0 and the expected output shape.
 
