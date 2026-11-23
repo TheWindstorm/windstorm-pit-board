@@ -174,7 +174,7 @@
    "seen": "2026-11-22, in a sister Windstorm skill, not in Pit Board: its plugin manifest named an old version through three releases, so on a stock machine `claude plugin update` said it was already at the latest version and kept the old code, and a person never got the fixes; a control with only the label changed updated at once. Checked here the same night: tag v0.1.1 and main named one version in every place, but a test held only plugin.json against __version__, not the CHANGELOG's heading, and nothing checked a tag's labels against its name.",
    "promise": "One version in every place: plugin.json, __version__ and CHANGELOG.md's top dated heading name the same version, and a not-yet-released heading above it names a later one; the suite fails when one differs. Run in a fresh clone of a release tag, before the marketplace pin moves, the suite refuses the tag unless its name equals every version label in it.",
    "test": "test_G21_1_one_version_in_every_place",
-   "proven": "",
+   "proven": "2026-11-22, CI's own logs on main (GitHub's hosted runners, Linux and macOS, Python 3.10 and 3.13): run 45099512523 on the merge commit a214d865 completed with success, and its log names 'tests/test_g21_versions.py::test_G21_1_one_version_in_every_place PASSED' in all four jobs (Linux '413 passed', macOS '411 passed, 2 skipped', the two skips the G10.5 wrapper cases with their reason). That checkout names 0.1.1 in plugin.json, __version__ and the top dated CHANGELOG heading, under the not-yet-released 0.1.2. The tag check was seen to pass in a fresh clone of the real v0.1.1 and to refuse a v0.1.2 tag put on main's commit in a throwaway clone; it runs for a real release tag first at 0.1.2's fresh-clone step.",
    "issue": ""
   }
  ],
