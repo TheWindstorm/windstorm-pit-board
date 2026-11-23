@@ -27,6 +27,19 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.30 (2026-11-23)
+- G18.3 (P17), from writing the code and running it on a stock Ubuntu 24.04 VM (Claude Code 2.1.280 and 2.1.330) and on a Mac test account:
+  - point 3 (ruled by the skills' department head): Claude Code writes `~/.claude/settings.json` itself on install and rewrites it on its own uninstall, so the promise is the person's status line value back and nothing else changed by Pit Board; byte for byte is claimed only where nothing else wrote the file, and the census says when Claude Code's uninstall changed the file afterwards.
+  - point 5 (the family's rule 7, and ruled by the skills' department head): one census row counts what is kept; the line after it says how to delete them as the person's own act, with a command run exactly as printed on this computer (the home's copy while it is there, `rm -r <home>` after), never a bare `pitboard`.
+  - point 6: the count is typed before anything changes; a wrong count changes nothing at all; a count that changed by the time of the delete deletes nothing.
+  - points 2 and 8: a home's files go only after every read about that home; the home's copy stays when an earlier step was not finished; `would go` in the plan; a lock still held exits 7.
+  - point 9: the README's by-hand lines keep `lanes/`, `lanes.json` and `logs/`.
+  - G21.4: an orphaned folder's launcher runs the home's `leave.py`, never its own; the removed line names the command only while the copy is there; a missing registry is not "removed".
+- G6.2: `uninstall` has its row; the `setup` row names `--folder` and the old spelling `--undo`.
+- G20.6 (the family's rule 17): a pull request runs one macOS job, the floor's Python; `main` and `release-*` run all three; a newer push to a pull request cancels its older runs; the merge gate expects the reports of its event (5 on a pull request, 7 on `main`).
+- Appendix A.5, Never: an agent never deletes what `pitboard uninstall` kept, by the flag or by hand, unless the operator asks in their own words. The skill body changes with it, word for word.
+No codon is renumbered. With the code: `test_G18_1_plan_changes_nothing` and `test_G18_1_apply_writes_everything_with_backups` (one more stable-copy item, `leave.py`), `test_G21_4_same_files_get_the_marker_only` (`leave.py` is one of the copy's files), `test_G20_6_python_and_os_matrix_and_triggers` and `test_G20_6_ci_has_room_for_every_skip_reason` (one pytest step in each test job) change.
+
 ## Plan 1.29 (2026-11-23)
 - G21.1 and G21.14 (P18): the tag's fresh-clone check also refuses a tag while a row due in that version has an empty `proven`. A row that can only be proven after its release names why in `proven_after_release`; the check lists such rows instead of refusing.
 - G21.4 (P19): each read the launcher's choice of version hangs on (bad-versions, pin, good-versions, the registry) has three answers: yes, no, could not be read. On could not be read, the launcher does not move to another version on this pass: it runs only its own version folder, or nothing, and a hook's log line names the read that failed.

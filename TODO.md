@@ -17,6 +17,11 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] 2026-11-23 P4 (holds back 0.1.3): day one is the first day all three lanes have also started a session on 0.1.2 (ruling 2026-11-23), so both the reminder and the skill text are the new ones.
 - [ ] 2026-11-23 P15 (due 0.1.3, plan 1.25): every hook log line ends with `v=<version> step=<n>`; `pitboard version` names what the status line runs. Code PR after plan 1.25, with tests; `version`'s line-count tests change.
 - [x] 2026-11-23 P16 (due 0.1.3, plan 1.26, G21.15; ruling 2026-11-23: floor 3.9): PROVEN both halves (PROMISES.json): a stock Ubuntu 20.04.6 refused on its own python3 3.8.10, and a Mac test account ran on the python3 that comes with Apple's developer tools (3.9.6). Not seen: a real Claude Code install on that interpreter; a Mac without Apple's developer tools (plan Part 11 question 9).
+- [ ] 2026-11-23 P17 (due 0.1.3, plan 1.28, G18.3): `pitboard uninstall`, one self-contained `pitboard/leave.py` the stable copy carries; the person's asks and log kept and counted; after Claude Code's own uninstall no orphaned code runs. Code, then a stock VM, the Mac test account, a real session's status line, and the by-hand README lines for a pre-0.1.3 copy on a stock VM.
+- [ ] 2026-11-23 P18 (due 0.1.3, plan 1.29, G21.1): the tag's fresh-clone check refuses a tag while a row due in it has no `proven`, except a row with `proven_after_release`.
+- [ ] 2026-11-23 P19 (due 0.1.3, plan 1.29, G21.4): three answers for the launcher's four reads; on could not be read it runs only its own version folder or nothing.
+- [ ] 2026-11-23 P22 (due 0.1.3, plan 1.29, G20.8): CI names its runner images, never `latest`.
+- [ ] 2026-11-23 P20 (due 0.1.4, G6.3): the numbered tell-the-person block; every clause must be heard. P23 (due 0.1.4, G21.4): three answers for every other read. P24 (due 0.1.4, G3): no lane names printed unasked; `pitboard lanes`. P21 (due 0.2.0, G9.6): evals in the skill-creator style.
 
 ## Waiting on
 - [ ] 2026-11-17 Plan 1.5: G7.5 ignores PermissionRequest for AskUserQuestion (C7 finding, docs/CONTRACTS.md); before G7.5 is built (M2).
