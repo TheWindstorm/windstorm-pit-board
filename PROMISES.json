@@ -258,7 +258,7 @@
    "ship_in": "0.1.3",
    "seen": "2026-11-23, reading the launcher against the family's rule that an error is never an absence: `update/bad-versions`, `update/pin`, `update/good-versions` and Claude Code's plugin registry are read so that a file that exists but cannot be read counts as empty. An unreadable bad-versions could therefore run a version marked bad. The same fault sits in sister skills already released.",
    "promise": "Each read the launcher's choice of version hangs on (bad-versions, pin, good-versions, the registry) has three answers: yes, no, could not be read. On could not be read the launcher does not move to another version on this pass, and its log line says which read failed. One test fails each read in turn.",
-   "test": "",
+   "test": "test_G21_4_a_read_that_fails_moves_to_no_other_version",
    "proven": "",
    "issue": ""
   },

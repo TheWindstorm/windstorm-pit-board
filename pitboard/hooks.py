@@ -31,7 +31,9 @@ def log(hook, key, what):
         fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
         try:
             step = os.environ.get("PITBOARD_LAUNCH_STEP") or "?"
-            os.write(fd, f"{contract.now_ts()} {hook} {key or '-'} {what} v={__version__} step={step}\n".encode("utf-8"))
+            unread = os.environ.get("PITBOARD_LAUNCH_UNREAD")       # P19: the launcher could not read this
+            tail = f" unread={unread}" if unread else ""
+            os.write(fd, f"{contract.now_ts()} {hook} {key or '-'} {what} v={__version__} step={step}{tail}\n".encode("utf-8"))
         finally:
             os.close(fd)
     except OSError:
