@@ -38,9 +38,10 @@ Every release before this one still reads the same: the lane logs, the cache and
 - G21.4 (P17): no step picks a version folder marked `.orphaned_at`, the launcher's own included. After Claude Code's own `plugin uninstall` (registry read, no row):
   - the status line shows one short true line naming `uninstall`;
   - hooks do nothing;
-  - only `uninstall` may run from the orphaned folder.
+  - no code from an orphaned folder runs; `uninstall` runs from the stable copy.
   - An unreadable registry is not "removed".
   - Seen on 2026-11-23 on a stock Linux machine with 0.1.2 and Claude Code 2.1.280 and 2.1.330: the status line went silent while its setting stayed, and a running session's hook ran the orphaned folder's code.
+- G18.3 point 9, G21.4: what stays can take itself off. `uninstall` is one self-contained file, `pitboard/leave.py`. The stable copy carries it, and `launch.py` runs it for `uninstall`: that is the one exception to "it only picks a folder". So the stable copy alone runs `uninstall` to the end, with no plugin folder anywhere, and a test holds it. After Claude Code's own uninstall, a live session's hook writes one line saying Pit Board was removed and does nothing else.
 - Appendix A.5 (the skill body), Never: an agent never runs `pitboard uninstall --delete-asks`. The skill body changes with it, word for word (as plan 1.24 did).
 No codon is renumbered. With the code, the folder undo's tests move to the new spelling and keep one test for the old one.
 
