@@ -34,6 +34,8 @@ def test_G20_8_standard_github_hosted_runners_only():
                 labels = [value.strip("'\"")]
             for label in labels:
                 assert RUNNER.match(label), (name, label)
+        for label in re.findall(r"^\s*-?\s*os:\s*([^\s\[#]+)\s*$", text, re.M):   # a matrix include's runner
+            assert RUNNER.match(label.strip("'\"")), (name, label)
 
 
 def test_G20_6_python_and_os_matrix_and_triggers():
