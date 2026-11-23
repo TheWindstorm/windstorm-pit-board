@@ -446,14 +446,36 @@ def home_off(home, census, apply, blocked=""):
             f"at {_short(home)}. {how}")
 
 
-def delete_kept(home, stdin, stdout, census):
-    """G18.3 point 6: delete the asks and the log, only when the person types the count."""
-    asks, open_, logs = count_asks(home)
-    stdout.write(f"This deletes {_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')} and the log of what Pit Board did, "
-                 f"at {_short(home)}.\nType {asks} to delete them, or anything else to keep them: ")
+def ask_count(homes, stdin, stdout):
+    """G18.3 point 6, first: the person types the count before anything changes. {home: count} when they typed it,
+    {} when there is nothing to delete, None when they did not (then nothing at all changes)."""
+    found = {}
+    for h in homes:
+        if os.path.isdir(h) and any(os.path.exists(os.path.join(h, n)) for n in PERSON):
+            found[h] = count_asks(h)                          # Unread goes up: nothing changes
+    if not found:
+        return {}
+    total = sum(c[0] for c in found.values())
+    for h, (asks, open_, logs) in found.items():
+        stdout.write(f"This deletes {_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')} and the log of what "
+                     f"Pit Board did, at {_short(h)}, after it takes Pit Board off.\n")
+    stdout.write(f"Type {total} to do both, or anything else to change nothing: ")
     stdout.flush()
-    if stdin.readline().strip() != str(asks):
-        census.kept(f"your asks and the log in {_short(home)}", "you did not type the count; nothing deleted")
+    if stdin.readline().strip() != str(total):
+        return None
+    return {h: c[0] for h, c in found.items()}
+
+
+def delete_kept(home, expected, census):
+    """G18.3 point 6: delete the asks and the log the person counted, unless the count changed since."""
+    mine = f"your asks and the log of what Pit Board did, in {_short(home)}"
+    try:
+        now = count_asks(home)[0]
+    except Unread as e:
+        census.kept(mine, f"{e}; nothing deleted", INCOMPLETE)
+        return
+    if now != expected:
+        census.kept(mine, f"there are {now} asks now, not the {expected} you typed; nothing deleted")
         return
     for n in PERSON:
         p = os.path.join(home, n)
@@ -465,7 +487,6 @@ def delete_kept(home, stdin, stdout, census):
         os.rmdir(home)
     except OSError:
         pass
-    mine = f"your asks and the log of what Pit Board did, in {_short(home)}"
     census.rows = [r for r in census.rows if r[1] != mine]
     census.gone(mine, "you typed the count")
 
@@ -576,6 +597,10 @@ def uninstall(apply=True, folder=None, run=None, census=None):
             continue
         ok, tail, missing = claude(["plugin", "uninstall", name, "--scope", scope or "user"], where, run)
         if ok:
+            user_settings = f"status line setting in {_short(os.path.join(claude_dir(), 'settings.json'))}"
+            census.rows = [(st, w, y + "; then Claude Code's own uninstall changed its entries in that file")
+                           if w == user_settings and st == "gone" and scope in ("", "user") else (st, w, y)
+                           for st, w, y in census.rows]       # P17 ruling: byte for byte only where it is true
             census.gone(f"plugin {name} ({scope or 'user'} scope)")
         else:
             out.append(f"plugin {name} ({scope or 'user'} scope): uninstall said:\n{tail}")
@@ -628,12 +653,22 @@ def main(argv=None, stdin=None, stdout=None, stderr=None, run=None):
                      "yours to delete.\nNothing changed. `pitboard uninstall --apply` takes Pit Board off and keeps "
                      "them.\n")
         return USAGE
+    counted = {}
+    if delete:                                                # the count first: a wrong one changes nothing at all
+        try:
+            counted = ask_count(_homes(), stdin, stdout)
+        except Unread as e:
+            stderr.write(f"pitboard: {e}.\nNothing changed.\n")
+            return INCOMPLETE
+        if counted is None:
+            stdout.write("\nYou did not type the count. Nothing changed.\n")
+            return 0
+        stdout.write("\n")
     out, kept_lines, census, homes = uninstall(apply=apply, folder=folder, run=run)
-    if apply and delete and census.code == 0:
-        for h in homes:
-            if os.path.isdir(h) and any(os.path.exists(os.path.join(h, n)) for n in PERSON):
-                delete_kept(h, stdin, stdout, census)
-                kept_lines = [ln for ln in kept_lines if _short(h) not in ln or os.path.isdir(h)]
+    if counted and census.code == 0:
+        for h, expected in counted.items():
+            delete_kept(h, expected, census)
+            kept_lines = [ln for ln in kept_lines if _short(h) not in ln or os.path.isdir(h)]
     text = list(out)
     if not any(state in ("gone", "would go") for state, _, _ in census.rows) and census.code == 0:
         text.append("nothing of Pit Board is here")

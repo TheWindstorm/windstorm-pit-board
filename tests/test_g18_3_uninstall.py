@@ -227,13 +227,30 @@ def test_G18_3_delete_is_refused_without_a_terminal(world):
 
 def test_G18_3_delete_at_a_terminal_only_when_the_count_is_typed(world):
     home, pb, st = world
+    before = tree(home)
     code, out, _ = run("--apply", "--delete-asks-and-log", stdin=Tty("1\n"), stdout=Tty())
-    assert code == 0 and (pb / "lanes" / "api.jsonl").exists()           # 1 is not the count: nothing deleted
-    assert "Type 2 to delete them" in out and "you did not type the count; nothing deleted" in out
+    assert code == 0 and tree(home) == before                            # a wrong count changes nothing at all
+    assert "Type 2 to do both, or anything else to change nothing: " in out
+    assert out.endswith("You did not type the count. Nothing changed.\n")
     code, out, _ = run("--apply", "--delete-asks-and-log", stdin=Tty("2\n"), stdout=Tty())
-    assert code == 0 and not pb.exists()
+    assert code == 0 and not pb.exists() and st.read_text() == MINE_TEXT
     assert "  gone: your asks and the log of what Pit Board did, in ~/.pitboard (you typed the count)" in census(out)
     assert not [r for r in census(out) if r.startswith("  kept: your asks")]
+
+
+def test_G18_3_delete_keeps_them_when_the_count_changed_since_it_was_typed(world, monkeypatch):
+    home, pb, st = world
+    real = L.uninstall
+
+    def a_hook_adds_an_ask(**kw):
+        with open(pb / "lanes" / "api.jsonl", "a") as f:
+            f.write(json.dumps({"type": "asked", "uid": "u3"}) + "\n")
+        return real(**kw)
+    monkeypatch.setattr(L, "uninstall", a_hook_adds_an_ask)
+    code, out, _ = run("--apply", "--delete-asks-and-log", stdin=Tty("2\n"), stdout=Tty())
+    assert code == 0 and (pb / "lanes" / "api.jsonl").exists() and not (pb / "bin").exists()
+    assert ("  kept: your asks and the log of what Pit Board did, in ~/.pitboard (there are 3 asks now, not the 2 "
+            "you typed; nothing deleted)") in census(out)
 
 
 # ---------------------------------------------------------------- a held lock is a wait
@@ -279,7 +296,8 @@ def test_G18_3_the_user_scope_install_is_uninstalled_after_the_settings(world):
                                      "user"], str(home))]
     rows = census(out)
     assert rows.index("  gone: plugin windstorm-pit-board@thewindstorm (user scope)") > rows.index(
-        "  gone: status line setting in ~/.claude/settings.json (put back byte for byte)")
+        "  gone: status line setting in ~/.claude/settings.json (put back byte for byte; then Claude Code's own "
+        "uninstall changed its entries in that file)")
 
 
 def test_G18_3_when_claude_fails_the_install_and_the_stable_copy_stay_with_the_one_command(world):
@@ -523,3 +541,11 @@ def test_G18_3_a_path_with_a_space_is_quoted(tmp_path, monkeypatch):
     monkeypatch.setenv("HOME", str(tmp_path))
     assert L._shell(str(tmp_path / ".pitboard")) == "~/.pitboard"
     assert L._shell(str(tmp_path / "my home")) == "'" + str(tmp_path / "my home") + "'"
+
+
+def test_G18_3_byte_for_byte_is_said_only_while_nothing_else_wrote_the_file(world):
+    home, pb, st = world
+    registry(home, [{"scope": "user", "version": "0.1.3", "installPath": "/x"}])
+    code, out, _ = run("--apply")
+    assert code == 0 and ("  gone: status line setting in ~/.claude/settings.json (put back byte for byte; then Claude "
+                          "Code's own uninstall changed its entries in that file)") in census(out)
