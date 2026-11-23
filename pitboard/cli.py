@@ -134,6 +134,11 @@ def parser():
     p.add_argument("--undo", action="store_true", help="with --folder: take it out of that folder again")
     p.add_argument("--plugin", default=None, help="with --folder: the plugin@marketplace to install")
 
+    p = sub.add_parser("uninstall", help="take Pit Board off this computer: a plan; --apply does it (G18.3)")
+    _common(p)                                         # main() hands uninstall to leave.py before this parser
+    p.add_argument("--apply", action="store_true")
+    p.add_argument("--folder", metavar="DIR")
+    p.add_argument("--delete-asks-and-log", action="store_true", help="only at your own terminal: you type the count")
     p = sub.add_parser("hook", help="hook entry point (reads the hook JSON on stdin)")
     _common(p)
     p.add_argument("event")
@@ -571,11 +576,9 @@ def cmd_setup(args):
 def _setup_folder(args):
     """G18.1 folder mode: plan (default), --apply, or --undo, for one folder."""
     from . import folder as folder_mod
-    plugin = args.plugin or folder_mod.PLUGIN
+    plugin = args.plugin or folder_mod.PLUGIN           # --undo with --folder: main() hands it to uninstall
     try:
-        if args.undo:
-            lines = folder_mod.undo(args.folder)
-        elif args.apply:
+        if args.apply:
             store.ensure_home()
             lines = folder_mod.apply(args.folder, plugin=plugin)
         else:
@@ -718,7 +721,7 @@ def _status_line(home):
 def _copy_line(home, pin):
     """G6.2 (plan 1.19): the second version line, when the home's launcher copy came from a version older than
     the newest installed one that is not bad, and no pin holds the home (in either case no start refreshes it)."""
-    if pin or not all(os.path.isfile(os.path.join(home, rel)) for rel, _ in stablecopy.FILES):
+    if pin or not all(os.path.isfile(os.path.join(home, rel)) for rel, _ in stablecopy.LAUNCHER):
         return None
     bad = set(launch._lines(os.path.join(home, "update", "bad-versions")))
     good = [v for _, v in launch._installed(launch._claude_dir()) if launch._vkey(v) and v not in bad]
@@ -790,6 +793,20 @@ def main(argv=None, stdout=None, stderr=None):
     refusal = launch.floor_refusal(argv)               # G21.15: also first here, for a launcher copy before 0.1.3
     if refusal:
         return launch.floor_stop(refusal, stdout, stderr)
+    if argv[:1] == ["uninstall"]:                      # G18.3: the one way of leaving, also for a launcher copy
+        from . import leave                            # from before 0.1.3, which calls cli.main() for every command
+        return leave.main(argv[1:], stdout=stdout, stderr=stderr)
+    if argv[:1] == ["setup"] and "--undo" in argv:     # G18.3 point 1: the old spelling, for 0.1.3 only
+        try:
+            a = parser().parse_args(argv)
+        except SystemExit as e:
+            return int(e.code or 0)
+        if a.folder:
+            from . import leave
+            stderr.write("pitboard: `setup --folder DIR --undo` is the old spelling of `pitboard uninstall --folder "
+                         "DIR --apply`; it does the same, and goes after 0.1.3.\n")
+            return leave.main(["--folder", a.folder, "--apply"] + (["--json"] if a.json else []), stdout=stdout,
+                              stderr=stderr)
     as_json = "--json" in argv
     if argv[:1] == ["hook"]:
         try:

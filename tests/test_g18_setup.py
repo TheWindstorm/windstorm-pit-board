@@ -45,7 +45,7 @@ def test_G18_1_plan_changes_nothing(world):
     assert code == 0 and out.startswith("1. config file: ") and "Nothing changed. Run again with --apply" in out
     assert [ln.split(":")[0] for ln in out.splitlines() if ln[:1].isdigit()] == [
         "1. config file", "2. stable launcher copy", "3. stable launcher copy", "4. stable launcher copy",
-        "5. status line wrapper", "6. status line setting"]
+        "5. stable launcher copy", "6. status line wrapper", "7. status line setting"]          # 4: leave.py (G18.3)
     assert not pb.exists() and (home / ".claude" / "settings.json").read_bytes() == before
 
 
@@ -58,7 +58,7 @@ def test_G18_1_apply_writes_everything_with_backups(world):
     home, pb = world
     settings(home, {"statusLine": {"type": "command", "command": "echo mine", "padding": 1}, "model": "x"})
     code, out, _ = run("setup", "--minimal", "--apply")
-    assert code == 0 and out.endswith("Done: 6 change(s).\n")
+    assert code == 0 and out.endswith("Done: 7 change(s).\n")
     assert (pb / "pitboard" / "copied-from").read_text() == __version__ + "\n"     # plan 1.16
     cfg = json.loads((pb / "config.json").read_text())
     assert cfg["self_update"] is True and stat.S_IMODE(os.stat(pb / "config.json").st_mode) == 0o600

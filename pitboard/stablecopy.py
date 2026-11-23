@@ -1,8 +1,8 @@
 """Refreshing the stable launcher copy from a session start (plan G21.4, G7.1 step 5).
 
 Until `pitboard self-update` exists, the session-start hook of an installed version refreshes the
-home's copy of `bin/pitboard` and `pitboard/launch.py` when it came from an older version (or is
-torn), so a launcher fix reaches homes set up by an earlier release. A broken launcher never
+home's copy of `bin/pitboard`, `pitboard/launch.py` and `pitboard/leave.py` when it came from an older
+version (or is torn), so a launcher fix reaches homes set up by an earlier release. A broken launcher never
 replaces a working one: the new files are written whole into a temporary folder in the stable
 copy's layout, that folder's `bin/pitboard version` must answer, and only then are those same files
 renamed over the copy, the old copy kept as one `.prev` backup, `copied-from` written last.
@@ -18,7 +18,8 @@ import time
 
 from . import __version__, launch
 
-FILES = ((os.path.join("bin", "pitboard"), 0o755), (os.path.join("pitboard", "launch.py"), 0o644))
+LAUNCHER = ((os.path.join("bin", "pitboard"), 0o755), (os.path.join("pitboard", "launch.py"), 0o644))
+FILES = LAUNCHER + ((os.path.join("pitboard", "leave.py"), 0o644),)   # leave.py: uninstall with no plugin (G18.3)
 MARKER = os.path.join("pitboard", "copied-from")
 CHECK_SECONDS = 3
 VERSION_LINE = re.compile(r"^\d+\.\d+\.\d+ \(installed ")
@@ -109,8 +110,8 @@ def refresh(home, cfg, root=ROOT, claude_dir=None, version=__version__):
         return None
     new = {rel: _read(os.path.join(root, rel)) for rel, _ in FILES}
     cur = {rel: _read(os.path.join(home, rel)) for rel, _ in FILES}
-    if any(v is None for v in new.values()) or any(v is None for v in cur.values()):
-        return None                                          # never makes a copy; setup does
+    if any(v is None for v in new.values()) or any(cur[rel] is None for rel, _ in LAUNCHER):
+        return None                                          # never makes a copy; setup does (leave.py may be new)
     was = copied_from(home)
     if was is not None and launch._vkey(was) > launch._vkey(version):
         return None                                          # never older over newer

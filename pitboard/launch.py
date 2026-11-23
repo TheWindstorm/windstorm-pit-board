@@ -2,7 +2,8 @@
 
 This file must stay tiny and import nothing from Pit Board: the stable copy in
 $PITBOARD_HOME/pitboard/launch.py runs alone, and an older copy of it must always be
-able to run the newest code. It only picks a folder and calls cli.main().
+able to run the newest code. It only picks a folder and calls cli.main(), with one exception
+(plan 1.28): `uninstall` runs leave.py beside it, so what stays on the computer can take itself off.
 
 Its first act is the Python floor check (G21.15). This file must stay readable by Python 3.6's grammar, so an
 older interpreter reaches that check instead of stopping on a syntax error.
@@ -181,7 +182,7 @@ def choose(home=None, claude_dir=None, own_root=None, skip_pin=False):
     for v in sorted(cached, key=_vkey, reverse=True):                               # 4
         if v in good and v not in bad and _runnable(cached[v]):
             return cached[v], 4
-    if _runnable(own_root) and os.path.basename(own_root) not in bad:               # 5
+    if _runnable(own_root) and os.path.basename(own_root) not in bad and not _orphaned(own_root):   # 5
         return own_root, 5
     for path, v in sorted(installed, key=lambda r: _vkey(r[1]) or (-1,), reverse=True):  # 6
         if v not in bad and _runnable(path):                # the highest version, never the first entry (P8)
@@ -198,11 +199,37 @@ def _log(hook, what):
         pass
 
 
+def _leave(argv):
+    """G18.3 point 9: run leave.py beside this file (the home's, if this folder is orphaned); None if there is none."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(_home(), "pitboard", "leave.py") if _orphaned(os.path.dirname(here)) else \
+        os.path.join(here, "leave.py")
+    try:
+        with open(path, encoding="utf-8") as f:
+            code = compile(f.read(), path, "exec")
+    except FileNotFoundError:
+        return None
+    ns = {"__name__": "pitboard_leave", "__file__": path}
+    exec(code, ns)
+    return ns["main"](list(argv[1:]))
+
+
+def _removed_line():
+    home, user = _home(), os.path.expanduser("~")      # the command only while the copy that runs it is there
+    shown = os.path.join("~" + home[len(user):] if home.startswith(user + os.sep) else home, "bin", "pitboard")
+    run = " · run {} uninstall".format(shown) if os.path.isfile(os.path.join(home, "bin", "pitboard")) else ""
+    return "Pit Board was removed by Claude Code" + run
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     refusal = floor_refusal(argv)                      # G21.15: the first act, before anything is read or written
     if refusal:
         return floor_stop(refusal)
+    if argv[:1] == ["uninstall"]:                      # plan 1.28: the one exception, no orphaned code runs
+        code = _leave(argv)
+        if code is not None:
+            return code
     is_hook = bool(argv) and argv[0] == "hook"
     own = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
@@ -221,9 +248,16 @@ def main(argv=None):
                 return 0
             sys.stderr.write("pitboard: could not read {}; nothing run\n".format(unread))
             return 1
+        reg = os.path.join(_claude_dir(), "plugins", "installed_plugins.json")
+        removed = os.path.isfile(reg) and _registry(_claude_dir()) == []   # read, no row: Claude Code's uninstall
         if is_hook:
+            if removed:
+                _log(argv[1] if len(argv) > 1 else "hook", "Pit Board was removed by Claude Code; nothing done")
             return 0
-        sys.stderr.write("pitboard: no installed version found\n")
+        if removed and argv[:1] == ["status"]:
+            sys.stdout.write(_removed_line())
+            return 0
+        sys.stderr.write("pitboard: no installed version found\n" + (_removed_line() + "\n" if removed else ""))
         return 1
     os.environ["PITBOARD_LAUNCH_STEP"] = str(step)     # P15: each hook log line names the step that picked it
     if unread:

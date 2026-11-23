@@ -95,7 +95,8 @@ def test_G21_4_refresh_never_makes_a_copy(world):
 
 def test_G21_4_same_files_get_the_marker_only(world):
     home, pb, ver = world
-    (pb / "pitboard" / "launch.py").write_bytes((ver / "pitboard" / "launch.py").read_bytes())
+    for rel in ("launch.py", "leave.py"):
+        (pb / "pitboard" / rel).write_bytes((ver / "pitboard" / rel).read_bytes())
     assert go(world) is None and (pb / "pitboard" / "copied-from").read_text() == V + "\n"
     assert not (pb / "pitboard" / "launch.py.prev").exists()
 

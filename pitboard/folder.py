@@ -10,6 +10,7 @@ import subprocess
 import textwrap
 import time
 
+from . import leave
 from . import setup as setup_mod
 from . import store
 
@@ -87,25 +88,7 @@ def _load(ls):
     return text, d
 
 
-def _drop(d, home, plugin, strip_env=True):
-    """d without Pit Board's entries: the home's wrapper as statusLine, the plugin key, the home in env."""
-    d = dict(d)
-    if (d.get("statusLine") or {}).get("command") == setup_mod.wrapper_path(home):
-        d.pop("statusLine")
-    env = dict(d.get("env") or {})
-    if strip_env and env.get("PITBOARD_HOME") == home:
-        env.pop("PITBOARD_HOME")
-        if env:
-            d["env"] = env
-        else:
-            d.pop("env", None)
-    ep = dict(d.get("enabledPlugins") or {})
-    ep.pop(plugin, None)
-    if ep:
-        d["enabledPlugins"] = ep
-    else:
-        d.pop("enabledPlugins", None)
-    return d
+_drop = leave._drop   # one implementation: uninstall's (G18.3)
 
 
 def _write_atomic(path, text, mode=0o600):
@@ -116,37 +99,8 @@ def _write_atomic(path, text, mode=0o600):
     os.replace(tmp, path)
 
 
-PROGRESS = ("SSH not configured, cloning via HTTPS:", "HTTPS clone failed, retrying with SSH:")   # printed last
-NO_KEY = ("Host key verification failed", "Permission denied (publickey)")
-NOT_SET_UP = "this account is not set up for GitHub over SSH (GitHub accepted no key from it)"
-ERROR_LINES = 12
-WRAP = 100   # G6.8's width: these lines are wrapped to it, so the CLI never has to cut one
-
-
-def error_text(stdout, stderr):
-    """G18.1 step 6 (P9): Claude Code's error from its first error line (the first that starts with ✘, or else the
-    first line of its error output) to the end, at most 12 lines, without its progress lines; first, in plain words,
-    when the clone failed over SSH because GitHub accepted no key, with what to do. Every line is wrapped to G6.8's
-    100 columns (a continued line starts with two spaces), so nothing is cut."""
-    out, err = (stdout or "").splitlines(), (stderr or "").splitlines()
-    lines = [l.rstrip() for l in out + err]
-    start = next((i for i, l in enumerate(lines) if l.lstrip().startswith("✘")), None)
-    if start is None:
-        start = len(out) if any(l.strip() for l in err) else 0
-    body = [l for l in lines[start:] if l.strip() and not l.startswith(PROGRESS)][:ERROR_LINES]
-    whole = "\n".join(lines)
-    head = []
-    if any(k in whole for k in NO_KEY):
-        if "HTTPS clone failed, retrying with SSH" in whole:
-            head = [f"Claude Code could not clone the plugin from GitHub over HTTPS, and the retry over SSH failed: "
-                    f"{NOT_SET_UP}.", "Check that this machine reaches github.com over HTTPS, or add a GitHub key to "
-                    "this account, then run the same command again."]
-        else:
-            head = [f"Claude Code could not clone the plugin from GitHub over SSH; {NOT_SET_UP}.",
-                    "Update Claude Code (2.1.330 clones over HTTPS when SSH is not set up), or add a GitHub key to "
-                    "this account, then run the same command again."]
-    return "\n".join(w for l in head + body for w in textwrap.wrap(l, WRAP, subsequent_indent="  ",
-                                                                    break_on_hyphens=False) or [""])
+error_text = leave.error_text   # G18.1 step 6 (P9), shared with uninstall
+NOT_SET_UP, ERROR_LINES, WRAP, PROGRESS = leave.NOT_SET_UP, leave.ERROR_LINES, leave.WRAP, leave.PROGRESS
 
 
 def _claude(args, folder, run=None):
@@ -251,42 +205,17 @@ def apply(folder, home=None, plugin=PLUGIN, sessions=None, root=None, run=None):
         undo(folder, run=run)
         first, _, rest = str(e).partition("\n")   # "; undone" on the first line, the error below it
         raise RuntimeError(f"{first}; undone" + (f"\n{rest}" if rest else ""))
+    setup_mod.note(home, folder=folder)   # so `pitboard uninstall` finds this folder too (G18.3)
     out += [f"Pit Board is on in {folder} only.", "A session started (or resumed) there picks it up."]
     return out
 
 
 def undo(folder, run=None, envhome=None):
-    """Uninstall the plugin from the folder and put its settings back (G18.1 folder mode). Returns the lines to print."""
-    folder = os.path.realpath(folder)
-    cd, ls, rec = _paths(folder)
+    """Uninstall the plugin from the folder and put its settings back: G18.3's `uninstall --folder DIR`, which
+    is leave.folder_undo. Returns the lines to print; raises Refused when the folder has no readable record."""
     try:
-        r = json.loads(setup_mod._read(rec).decode("utf-8"))
-    except (AttributeError, ValueError) as e:
-        raise Refused(f"no readable record at {rec}: setup --folder did not set up here ({e})")
-    plugin, before = r["plugin"], r["settings_local_before"]
-    home = r.get("home") or envhome or store.home()
-    out = []
-    ok, tail = _claude(["plugin", "uninstall", plugin, "--scope", "local"], folder, run)
-    out.append(f"plugin {plugin}: " + ("removed from this folder" if ok else f"uninstall said:\n{tail}"))
-    _, now = _load(ls)
-    old = json.loads(before) if before and before.strip() else {}
-    keep_env = (old.get("env") or {}).get("PITBOARD_HOME") == home   # the person's own, set before setup
-    mine = _drop(now, home, plugin, not keep_env)
-    if mine == _drop(old, home, plugin, not keep_env):
-        if before is None:
-            if os.path.exists(ls):
-                os.remove(ls)
-            how = "removed (there was none before)"
-        else:
-            _write_atomic(ls, before)
-            how = "put back byte for byte"
-    else:
-        _write_atomic(ls, json.dumps(mine, indent=2) + "\n")
-        how = "Pit Board's entries removed; other changes made since setup are kept"
-    os.remove(rec)
-    if not r.get("claude_dir_existed", True) and os.path.isdir(cd) and not os.listdir(cd):
-        os.rmdir(cd)
-    out.append(f"{ls}: {how}")
-    out += [f"Pit Board is off in {folder}.", f"Its asks stay in {home}.",
-            "Restart or resume the session there to drop the hooks."]
-    return out
+        lines, _ = leave.folder_undo(folder, run=run, envhome=envhome or store.home())
+    except (leave.NoRecord, leave.Unread) as e:
+        raise Refused(f"no readable record at {_paths(os.path.realpath(folder))[2]}: setup --folder did not set up "
+                      f"here ({e})")
+    return lines
