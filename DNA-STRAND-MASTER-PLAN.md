@@ -434,7 +434,7 @@ Reset after each coloured span: `\x1b[0m`.
 | `export [--format jsonl\|csv] [--all-lanes]` | Writes every event (jsonl) or every ask's folded state (csv) to stdout. | |
 | `mcp` | G17. | |
 | `self-update [--check] [--now] [--pin VER] [--unpin]` | Pit Board's own updater (G21.3, G21.10). `--pin` and `--unpin` come first (P10). | |
-| `version` | The running version, the newest installed version, the pinned version if any (`self-update --pin`), and the hook generation. When the home's launcher copy came from a version older than the newest installed one that is not in `update/bad-versions` (G21.4), and no pin holds the home, a second line says so (with `self_update` false: `launcher copy from 0.2.0; self_update is off, so no start refreshes it`); the first line never changes. | `0.2.1 (installed 0.2.1, hooks gen 1)`, then perhaps `launcher copy from 0.2.0; the next session start refreshes it` |
+| `version` | The running version, the newest installed version, the pinned version if any (`self-update --pin`), and the hook generation. When the home's launcher copy came from a version older than the newest installed one that is not in `update/bad-versions` (G21.4), and no pin holds the home, a second line says so (with `self_update` false: `launcher copy from 0.2.0; self_update is off, so no start refreshes it`); the first line never changes. A last line names what the status line runs: the version the home's launcher copy picks now and the G21.4 step that picked it, since the status line writes no log line (plan 1.25, P15). | `0.2.1 (installed 0.2.1, hooks gen 1)`, then perhaps `launcher copy from 0.2.0; the next session start refreshes it`, then `status line runs 0.2.1 (step 3)` |
 | `update [--check] [--now] [--pin VER] [--unpin]` | G21. | `up to date (0.2.1)` / `updated 0.2.0 → 0.2.1` |
 
 **G6.3 Exit codes.** `0` ok · `1` unexpected error · `2` bad usage · `3` lane unknown · `4` ask not found · `5` transition not allowed (G1.11), with the current status in the message · `6` invalid field · `7` lane busy (lock timeout) · `8` hub unreachable (sync only) · `9` update failed (update only; the running version is unchanged).
@@ -451,7 +451,7 @@ Reset after each coloured span: `\x1b[0m`.
 
 ### G7 Hooks
 
-All hooks are declared in `hooks/hooks.json`. Each runs `pitboard hook <event>` with the hook JSON on stdin, time limit 5 s (10 s for `session-start`). Every handler is wrapped so that any exception exits 0 with no output (INV6). Each handler appends one line to `logs/pitboard.log` with the event name, lane key and what it did (no ask text).
+All hooks are declared in `hooks/hooks.json`. Each runs `pitboard hook <event>` with the hook JSON on stdin, time limit 5 s (10 s for `session-start`). Every handler is wrapped so that any exception exits 0 with no output (INV6). Each handler appends one line to `logs/pitboard.log` with the event name, lane key and what it did (no ask text), and ends it with `v=<version> step=<n>`: the version of the code that ran and the G21.4 step that picked its folder, so which version ran in which lane is read from the log, never worked out (plan 1.25, P15).
 
 **G7.0 Hook command form.** Every command in `hooks/hooks.json` is exactly this shape (with its own event name), so that a session whose plugin folder has been removed after an update does nothing instead of failing, and so that hooks run the newest installed code (G21.4):
 
