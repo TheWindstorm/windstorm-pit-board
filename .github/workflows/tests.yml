@@ -1,10 +1,16 @@
 name: tests
 on:
   push:
-    branches: [main]
+    branches: [main, "release-*"]
   pull_request:
 permissions:
   contents: read
+# Family rule 17 (2026-11-23): GitHub gives the account a few Mac runners for all its repositories together. A newer
+# push to a pull request cancels that pull request's older runs; a push to main or a release branch is never cancelled
+# (each push is its own group).
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-push-{1}', github.workflow, github.sha) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 # Every run step uses bash with pipefail, so a command piped into another can never hide a failure.
 defaults:
   run:
@@ -15,15 +21,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        # G20.8 (plan 1.29): each job names its runner image, never latest. setup-python builds 3.9 for Ubuntu 24.04,
+        # not 26.04.
+        os: [ubuntu-24.04]
         python: ["3.9", "3.10", "3.13"]
-        # setup-python has no 3.9 for the Ubuntu that ubuntu-latest names now (26.04): 3.9 runs on 24.04 there.
-        exclude:
-          - os: ubuntu-latest
-            python: "3.9"
-        include:
-          - os: ubuntu-24.04
-            python: "3.9"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install pytest
+      # G20.6 (plan 1.22): -v gives every test its own line with its outcome and a skip's reason, so the log shows
+      # each test ran. Never with -q (it cancels -v); -rA is not enough (it folds skips into one line without names).
+      # pytest drops a skip's reason that does not fit the terminal (80 columns on CI, and some test IDs are long):
+      # COLUMNS gives the room, and the classic style has no progress column, so lines are not padded to that width.
+      - run: python -m pytest -v -o console_output_style=classic tests/
+        env:
+          COLUMNS: "4096"
+  test-mac:
+    # Rule 17: a pull request runs ONE Mac job, the floor's Python (G21.15); main and release-* run every Python.
+    # macos-26 is what macos-latest was when 3.9 first passed there (2026-11-23).
+    name: test (macos-26, ${{ matrix.python }})
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ${{ fromJSON(github.event_name == 'pull_request' && '["3.9"]' || '["3.9", "3.10", "3.13"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -39,7 +62,7 @@ jobs:
           COLUMNS: "4096"
   skills:
     # G9.5: the skill format gate (check C15). A gh without `skill` gets the pinned release.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       GH_TOKEN: ${{ github.token }}
       GH_PINNED: "2.104.0"
