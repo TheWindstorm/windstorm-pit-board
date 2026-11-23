@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.22 · 2026-11-22 · The Windstorm**
+**Plan version 1.23 · 2026-11-22 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -868,6 +868,10 @@ Every installation, for every person who installs Pit Board, must find new relea
 
 **G21.1 What a release is.** A release is a commit on `main` that raises `version` in `.claude-plugin/plugin.json` (semantic versioning: `MAJOR.MINOR.PATCH`), with a matching `CHANGELOG.md` entry and a git tag `vMAJOR.MINOR.PATCH`. Releases are made on `main`: a merge that does not raise the version is not shipped to anyone. A release is made only when CI is green on that exact commit, which includes the promise gate (G21.14), and is published with `gh skill publish --tag vMAJOR.MINOR.PATCH`, which validates the skills again, creates the tag and a GitHub release with notes. The repository has the `agent-skills` topic, and GitHub secret scanning and push protection are on. These are repository settings, set once and checked again at each release. The marketplace entry (in `TheWindstorm/windstorm-pit-stop`'s `marketplace.json`) pins the release. Its source is `{"source": "github", "repo": "TheWindstorm/windstorm-pit-board", "ref": "vMAJOR.MINOR.PATCH", "sha": "<the tag's full 40-character commit>"}`, so a machine that installs it later gets that release, not whatever `main` is that day. Each release moves the pin in the same hour as its tag, and Claude Code's marketplace update (G21.2) then brings it to installs (check C11 for how Claude Code decides an update exists: `version` in `plugin.json` comes first).
 
+**One version in every place** (plan 1.23). The version is stated in `.claude-plugin/plugin.json`, in `pitboard/__init__.py` (`__version__`, which `pitboard version` prints) and in `CHANGELOG.md`'s top dated heading, `## X.Y.Z (YYYY-MM-DD)`. The suite fails when one of them differs. Above that heading, the list of changes not yet released has the heading `## X.Y.Z (not yet released)`, and it names a later version than the top dated one. The skill files state no version. A sister skill showed why, on 2026-11-22: its manifest named an old version through three releases, so `claude plugin update` said it was already at the latest version and kept the old code, and a person never got the fixes.
+
+**A release step: the tag's fresh clone.** After the tag is made and before the marketplace pin moves to it, the suite runs in a fresh clone of the tag. It refuses the tag unless the tag's name, without its `v`, equals every version label in it: `plugin.json`, `__version__`, and each `CHANGELOG.md` heading above the previous release's. So a tag that kept an old label, or a not-yet-released heading, is refused, and the pin does not move to it.
+
 **G21.2 Switch on Claude Code's own auto-update.** Claude Code leaves auto-update off for marketplaces other than Anthropic's. `pitboard setup --apply` (and the first SessionStart after install, if `self_update` is true and the operator has not written a choice) sets `"autoUpdate": true` on the marketplace's entry under `extraKnownMarketplaces` in `~/.claude/settings.json`, keeping a backup, exactly as Windstorm Pit Stop does. An explicit `"autoUpdate": false` written by the operator is never changed; `pitboard doctor` reports it.
 
 **G21.3 Our own updater**, because Claude Code checks marketplaces when it starts, and sessions that run for weeks rarely start. `pitboard self-update` (run by a user timer every `update_check_hours`, at a random minute fixed per machine so a fleet does not update all at once):
@@ -931,6 +935,7 @@ A test replays the fixtures of every earlier release (`tests/fixtures/releases/<
   - `owner`: `person` when the person Pit Board is for saw it on their own machine, else `maintainer`.
   - `first_ship_in` and `ship_in` (versions), `test` (the name of a test), `proven` (which machine, which version and when it was seen to work; a proof that leans on CI names the run and the test, as its log shows them) and `issue`.
   - `moved_why` and `moved_by_person`.
+  - `kind` (optional, plan 1.23): `guard` for a promise taken from a fault seen in a sister skill, not in this one. Its `seen` says where it was seen. A guard row is held like any other: test, `ship_in` and `proven`.
 - **A lesson heard and not taken** goes under `declined`, with `heard` and `why`, so nothing is dropped without a word.
 - **A row is never deleted.** A promise that proves wrong is closed by a new row that says why.
 
