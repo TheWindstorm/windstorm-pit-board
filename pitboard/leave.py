@@ -578,7 +578,7 @@ def uninstall(apply=True, folder=None, run=None, census=None):
         if ok:
             census.gone(f"plugin {name} ({scope or 'user'} scope)")
         else:
-            out.append(f"plugin {name}: uninstall said:\n{tail}")
+            out.append(f"plugin {name} ({scope or 'user'} scope): uninstall said:\n{tail}")
             census.kept(f"plugin {name} ({scope or 'user'} scope)", f"run yourself: {cmd}", INCOMPLETE)
     unfinished = census.code != 0                             # a read failed or a step failed above
     for h in homes:                                           # last, each home: the running launcher copy goes last
