@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.3 (not yet released)
+- **Which version ran is read, not worked out** (P15, plan 1.25, G21.4). Every line a hook writes to `logs/pitboard.log` ends with `v=<version> step=<n>`: the version of the code that ran and the launcher step that picked its folder (`step=?` when a launcher from before 0.1.3 picked it). `pitboard version` has a last line naming what the status line runs: the version the home's launcher copy picks now, and its step. Seen when one lane's update changed what the other lanes' status lines ran within a second, with nothing in the log to show it.
+
 ## 0.1.2 (2026-11-23)
 - **The README says how to install and update Pit Board**, and which Claude Code versions the install line was seen to work on.
 - **An ask only the operator can answer is recorded also when it leaves the chat** (P13, plan 1.24, G7.7 and G9.1). The reminder and the skill say so for an ask sent to another agent (a coordinator, a reviewer) or a shared board. The ask's ID and one line travel in the message: answer under the ID, or say "not mine to answer" under it. The skill no longer tells the agent not to record questions to other agents, only those they can answer themselves. The pilot's sample of lane endings found the one real ask of the week on a shared board, not recorded.

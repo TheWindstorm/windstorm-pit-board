@@ -10,7 +10,7 @@ import json
 import os
 import re
 
-from . import contract, lane, render, stablecopy, store, timefmt
+from . import __version__, contract, lane, render, stablecopy, store, timefmt
 
 BOARD_PROMPTS = {"pb": False, "pb all": True, "/board": False, "/board all": True}
 APPROVE = re.compile(r"^\s*(ok|yes|approve|approved)\s+(all|(A\d+)([\s,]+A\d+)*)\s*[.!]?\s*$", re.I)
@@ -23,13 +23,15 @@ STALE_SOURCES = ("permission", "question-box")
 # ---------------------------------------------------------------- plumbing
 
 def log(hook, key, what):
-    """One line per handler run in logs/pitboard.log (no ask text)."""
+    """One line per handler run in logs/pitboard.log (no ask text). It ends with the version of the code that ran
+    and the G21.4 step that picked its folder (P15, plan 1.25); `?` when a launcher before 0.1.3 picked it."""
     try:
         path = os.path.join(store.home(), "logs", "pitboard.log")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
         try:
-            os.write(fd, f"{contract.now_ts()} {hook} {key or '-'} {what}\n".encode("utf-8"))
+            step = os.environ.get("PITBOARD_LAUNCH_STEP") or "?"
+            os.write(fd, f"{contract.now_ts()} {hook} {key or '-'} {what} v={__version__} step={step}\n".encode("utf-8"))
         finally:
             os.close(fd)
     except OSError:

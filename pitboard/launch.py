@@ -129,7 +129,7 @@ def main(argv=None):
     is_hook = bool(argv) and argv[0] == "hook"
     own = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
-        root, _ = choose(own_root=own, skip_pin=argv[:1] == ["self-update"])
+        root, step = choose(own_root=own, skip_pin=argv[:1] == ["self-update"])
     except Exception:  # noqa: BLE001 - a hook never breaks the session (INV6)
         if is_hook:
             return 0
@@ -139,6 +139,7 @@ def main(argv=None):
             return 0
         sys.stderr.write("pitboard: no installed version found\n")
         return 1
+    os.environ["PITBOARD_LAUNCH_STEP"] = str(step)     # P15: each hook log line names the step that picked it
     sys.path.insert(0, root)
     for name in [n for n in sys.modules if n == "pitboard" or n.startswith("pitboard.")]:
         del sys.modules[name]
