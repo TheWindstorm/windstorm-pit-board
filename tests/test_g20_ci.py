@@ -55,6 +55,20 @@ def test_G20_6_ci_log_names_every_test_and_its_outcome():
         assert not any(f in ("-q", "--quiet") or re.fullmatch(r"-[a-z]*q[a-z]*", f) for f in flags), r
 
 
+def test_G20_6_ci_has_room_for_every_skip_reason(request):
+    """pytest drops a skip's reason when its test's line would not fit the terminal; CI's is 80 columns, so the
+    step sets COLUMNS and the classic style (no progress column to pad to). Every collected test's ID, with room
+    for a reason, must fit."""
+    text = dict(workflows())["tests.yml"]
+    step = re.search(r"^( +)- run: python -m pytest (.*)\n((?:\1  .*\n)*)", text, re.M)
+    assert step and "-o console_output_style=classic" in step.group(2), "the pytest step must use the classic style"
+    m = re.search(r'^\s+COLUMNS: "(\d+)"$', step.group(3), re.M)
+    assert m, "the pytest step must set COLUMNS"
+    room = int(m.group(1)) - 200                       # a reason, the outcome word and the indent
+    longest = max(request.session.items, key=lambda i: len(i.nodeid)).nodeid
+    assert len("tests/" + longest) <= room, f"a test ID of {len(longest)} characters leaves no room for a reason"
+
+
 def test_G9_5_ci_runs_the_skill_format_gate():
     text = dict(workflows())["tests.yml"]
     assert "gh skill publish --dry-run" in text
