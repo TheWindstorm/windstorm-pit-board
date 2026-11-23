@@ -15,15 +15,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        # G20.8 (plan 1.29): each job names its runner image, never latest. setup-python builds 3.9 for Ubuntu 24.04,
+        # not 26.04. macos-26 is what macos-latest was when 3.9 first passed there (2026-11-23).
+        os: [ubuntu-24.04, macos-26]
         python: ["3.9", "3.10", "3.13"]
-        # setup-python has no 3.9 for the Ubuntu that ubuntu-latest names now (26.04): 3.9 runs on 24.04 there.
-        exclude:
-          - os: ubuntu-latest
-            python: "3.9"
-        include:
-          - os: ubuntu-24.04
-            python: "3.9"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -39,7 +34,7 @@ jobs:
           COLUMNS: "4096"
   skills:
     # G9.5: the skill format gate (check C15). A gh without `skill` gets the pinned release.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       GH_TOKEN: ${{ github.token }}
       GH_PINNED: "2.104.0"

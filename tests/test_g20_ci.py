@@ -4,7 +4,7 @@ import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 WF = os.path.join(ROOT, ".github", "workflows")
-RUNNER = re.compile(r"^(ubuntu|macos|windows)-(latest|[0-9]+(\.[0-9]+)?)$")
+RUNNER = re.compile(r"^(ubuntu|macos|windows)-[0-9]+(\.[0-9]+)?$")       # G20.8 (plan 1.29, P22): an image, never latest
 
 
 def workflows():
@@ -21,27 +21,41 @@ def test_G20_8_read_only_no_secrets_no_pull_request_target():
         assert "pull_request_target" not in text, name
 
 
+def runner_labels(text):
+    """Every runner label a workflow names: runs-on directly, the matrix list it names, and a matrix include's os."""
+    out = []
+    for value in re.findall(r"runs-on:\s*(.+)", text):
+        value = value.strip()
+        if value.startswith("${{ matrix."):
+            key = value[len("${{ matrix."):].rstrip("} ").strip()
+            m = re.search(rf"^\s+{key}:\s*\[(.*?)\]", text, re.M)
+            out += [x.strip().strip("'\"") for x in m.group(1).split(",")] if m else ["<no matrix " + key + ">"]
+        else:
+            out.append(value.strip("'\""))
+    out += [x.strip("'\"") for x in re.findall(r"^\s*-?\s*os:\s*([^\s\[#]+)\s*$", text, re.M)]
+    return out
+
+
 def test_G20_8_standard_github_hosted_runners_only():
     for name, text in workflows():
-        for value in re.findall(r"runs-on:\s*(.+)", text):
-            value = value.strip()
-            if value.startswith("${{ matrix."):
-                key = value[len("${{ matrix."):].rstrip("} ").strip()
-                m = re.search(rf"^\s+{key}:\s*\[(.*?)\]", text, re.M)
-                assert m, (name, value)
-                labels = [x.strip().strip("'\"") for x in m.group(1).split(",")]
-            else:
-                labels = [value.strip("'\"")]
-            for label in labels:
-                assert RUNNER.match(label), (name, label)
-        for label in re.findall(r"^\s*-?\s*os:\s*([^\s\[#]+)\s*$", text, re.M):   # a matrix include's runner
-            assert RUNNER.match(label.strip("'\"")), (name, label)
+        labels = runner_labels(text)
+        assert labels, name
+        for label in labels:
+            assert RUNNER.match(label), (name, label)
+
+
+def test_G20_8_every_job_names_its_runner_image_never_latest():
+    """P22 (plan 1.29): ubuntu-latest moved to a new Ubuntu under the matrix and setup-python had no 3.9 for it."""
+    for bad in ("runs-on: ubuntu-latest\n", "runs-on: ${{ matrix.os }}\n    strategy:\n      matrix:\n        os: [ubuntu-24.04, macos-latest]\n",
+                "runs-on: ${{ matrix.os }}\n        include:\n          - os: windows-latest\n", "runs-on: ubuntu-24.04-4-cores\n"):
+        assert [x for x in runner_labels(bad) if not RUNNER.match(x)], bad
+    assert all(RUNNER.match(x) for x in runner_labels("runs-on: ${{ matrix.os }}\n      matrix:\n        os: [ubuntu-24.04, macos-26]\n"))
 
 
 def test_G20_6_python_and_os_matrix_and_triggers():
     text = dict(workflows())["tests.yml"]
     assert re.search(r'python: \["3\.9", "3\.10", "3\.13"\]', text)          # 3.9: the floor (G21.15, plan 1.26)
-    assert re.search(r"os: \[ubuntu-latest, macos-latest\]", text)
+    assert re.search(r"os: \[ubuntu-24\.04, macos-26\]", text)
     assert "on:\n  push:\n    branches: [main]\n  pull_request:\n" in text
 
 
