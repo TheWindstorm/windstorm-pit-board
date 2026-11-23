@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.26 · 2026-11-23 · The Windstorm**
+**Plan version 1.27 · 2026-11-23 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -945,14 +945,14 @@ A test replays the fixtures of every earlier release (`tests/fixtures/releases/<
 - when a row's `ship_in` differs from its `first_ship_in` with no `moved_why`, or, for a `person` row, with no `moved_by_person`: only that person's word moves their row, restated there;
 - when a row is not whole, its codon is not in this plan, two rows share an id, or a declined lesson has no reason.
 
-**G21.15 The Python floor** (plan 1.26, P16). Pit Board runs on Python 3.9 or newer, and that floor is checked, not only written. 3.9 is what a Mac with no Python added has (`/usr/bin/python3`, 3.9.6), and the whole suite passes there unchanged. The floor is one value, `FLOOR = (3, 9)` in `pitboard/launch.py`. Part 0 rule 4, the README and the lowest Python in CI (G20.6) name the same version, and a test fails when one place differs.
+**G21.15 The Python floor** (plan 1.26, P16). Pit Board runs on Python 3.9 or newer, and that floor is checked, not only written. 3.9 is the `python3` that comes with Apple's developer tools (3.9.6 on macOS 13; `/usr/bin/python3` is Apple's shim to it), and the whole suite passes there unchanged. The floor is one value, `FLOOR = (3, 9)` in `pitboard/launch.py`. Part 0 rule 4, the README and the lowest Python in CI (G20.6) name the same version, and a test fails when one place differs.
 1. **The first act.** Before it reads or writes anything, `launch.py` compares `sys.version_info` with `FLOOR`. Below the floor, Pit Board makes nothing (no folder, no log line, no lock, no launcher refresh) and stops:
    - `pitboard hook <event>`: one line on stderr, `Pit Board needs Python 3.9 or newer; found <X.Y.Z> at <the interpreter's path>`, nothing on stdout, exit 0. A hook never breaks the session (Part 0 rule 6).
    - `pitboard status`: the segment is `Pit Board needs Python 3.9 or newer, found <X.Y.Z>`, with no newline at the end, exit 0 (the exception in G10.4).
    - any other command, `setup` included: the hook's line on stderr, then where Pit Board does run (`install Python 3.9 or newer, or put one first on PATH as python3`), exit code 10, nothing written.
 2. **The older grammar.** `launch.py` stays readable by Python 3.6's grammar, so an older interpreter reaches the check instead of stopping on a syntax error. A test parses it with that grammar. `pitboard.cli.main()` makes the same check first, because a launcher copy from before 0.1.3 calls a newer folder's `main()` without checking.
 3. **Why 3.8 is refused, though most tests pass there.** Python 3.8 has no `zoneinfo`, so G4 falls back without an error and shows wrong times. Seen on 2026-11-23: an ask at 16:00Z on 4 July was shown as `11:00 AM ET`, not `12:00 PM ET`, and the CT, MT, PT and London labels were wrong. Showing what is not true is worse than stopping. A sister skill showed the other way it goes wrong: it named "Python 3.10+" without checking it, and on a stock machine with Python 3.8 it registered and started a service before it crashed on newer grammar.
-4. **Seen, not only tested.** Before 0.1.3 is tagged, the refusal is seen once on a real machine whose own interpreter is 3.8 (a stock Ubuntu 20.04.6). Pit Board is also run once on a Mac with the Mac's own `/usr/bin/python3` named explicitly: `setup`, one hook and the status line, with the times right.
+4. **Seen, not only tested.** Before 0.1.3 is tagged, the refusal is seen once on a real machine whose own interpreter is 3.8 (a stock Ubuntu 20.04.6). Pit Board is also run once on a Mac with the `python3` that comes with Apple's developer tools named explicitly: `setup`, one hook and the status line, with the times right.
 5. Changing the floor is a plan change. It is looked at again when the Python that macOS ships moves.
 
 ---
@@ -1143,7 +1143,7 @@ These are not in the build. Each needs a decision (and a plan change) before any
 6. **Desktop app wrapper** around the page, only if the pop-out falls short in daily use.
 7. **Marketplace catalog:** confirm with the skill's owner, before M5, which repository's `marketplace.json` lists Pit Board (today Part 6 says Windstorm Pit Stop's).
 8. **One harness matrix for the skill family. Answered by the skill's owner on 2026-11-20: yes, one matrix (P6), and it grows by division.** H1 to H10 and the `docs/HARNESSES.md` row shape live in this plan for now. Windstorm Pit Stop's harness verdict table reuses H1 to H10 and adds its own capabilities from H11 up (for example PreCompact, the auto-compact window, its updater). When a third skill needs the matrix, it moves to a shared home, by a plan change.
-9. **A Mac with no developer tools.** There `/usr/bin/python3` only offers to install them (a dialog) and there is no `python`, so the hooks' command line fails before Pit Board runs and the G21.15 check is never reached. Look at it on the Mac test box; what a hook does there is a decision for the skill's owner.
+9. **A Mac without Apple's developer tools.** There `/usr/bin/python3` is a shim with no interpreter behind it, and there is no `python`. What the first `python3` call shows there has not been seen, so this plan does not describe it. Whether the hooks' command line reaches the G21.15 check there is not known either. Look at it on a Mac test machine without those tools; what a hook does there is a decision for the skill's owner.
 
 ---
 
