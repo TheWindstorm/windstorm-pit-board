@@ -22,6 +22,10 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.25 (2026-11-23)
+- G21.1: the catalog's entry for Pit Board is a URL source over HTTPS (`"source": "url"`), not a `github` source. Claude Code fetches a `github` source over SSH when it updates, so `claude plugin update` failed on a machine with no GitHub key (seen on 2.1.330; 2.1.280 could not even install it there). The URL form installs and updates there on both versions.
+- G21.2 (P14): the README's two update lines must move a stock install with no GitHub key and no sign-in to the newest release, and the README names the versions they were seen to work on and the way back for an install from before the change (uninstall, then install again).
+
 ## Plan 1.24 (2026-11-23)
 - G7.7 and G9.1 (P13): an ask only the operator can answer is recorded also when it is sent to another agent (a coordinator, a reviewer) or a shared board instead of the chat. The reminder's Rules line says so. The skill's new step 4 puts the ask's ID and one line into that message: answer under the ID, or say "not mine to answer" under it. An answer given under the ID is written with who gave it; otherwise the operator is asked in chat under the same ID. The skill's "Do not record" line now covers only questions to other agents that they can answer themselves. Found by the week's sample of lane endings: the one real ask went to a shared board and was not recorded.
 
