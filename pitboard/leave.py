@@ -579,10 +579,20 @@ def uninstall(apply=True, folder=None, run=None, census=None):
         files = {e["path"]: e for e in rec.get("files", []) if isinstance(e, dict) and isinstance(e.get("path"), str)}
         files.setdefault(os.path.join(claude_dir(), "settings.json"), None)
         settings_ok[h] = all([settings_back(p, h, e, census, apply) for p, e in files.items()])
-        for p in files:
-            baks = _backups(p)
-            if baks:
-                census.kept(f"{len(baks)} backup(s) setup made of {_short(p)}", f"yours: {_short(p)}.bak-*")
+        for p, e in files.items():                           # only the backups setup's record lists (P29)
+            listed = e.get("backups") if isinstance(e, dict) else None
+            if isinstance(listed, list):
+                d = os.path.dirname(p)
+                baks = [b for b in listed if isinstance(b, str) and os.path.exists(os.path.join(d, b))]
+                if baks:
+                    census.kept(f"{_n(len(baks), 'backup')} setup made of {_short(p)}",
+                                "yours: " + ", ".join(_short(os.path.join(d, b)) for b in baks))
+            elif e is not None or not rec:                    # no list then; a file setup never changed has none
+                others = _backups(p)
+                if others:
+                    census.kept(f"{_n(len(others), 'file')} named {_short(p)}.bak-*",
+                                "setup kept no list of its backups then, so Pit Board cannot tell which are its own; "
+                                "yours to keep or delete")
     for name, scope, project in rows or []:                   # then the plugin installs
         if scope == "local" and os.path.realpath(project) in seen_folders:
             continue

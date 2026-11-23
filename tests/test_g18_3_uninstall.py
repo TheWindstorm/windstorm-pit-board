@@ -111,7 +111,7 @@ def test_G18_3_apply_puts_the_setting_back_byte_for_byte_and_keeps_the_persons_t
     rows = census(out)
     assert "  gone: status line setting in ~/.claude/settings.json (put back byte for byte)" in rows
     assert "  gone: ~/.pitboard/bin" in rows and "  gone: ~/.pitboard/statusline.sh" in rows
-    assert f"  kept: 1 backup(s) setup made of ~/.claude/settings.json (yours: ~/.claude/settings.json.bak-*)" in rows
+    assert f"  kept: 1 backup setup made of ~/.claude/settings.json (yours: ~/.claude/{backups[0]})" in rows
     assert "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, in ~/.pitboard (yours)" in rows
     assert [r for r in rows if "the log of what Pit Board did" in r] == [
         "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, in ~/.pitboard (yours)"]  # one row
@@ -463,6 +463,43 @@ def test_G18_3_setup_copies_leave_and_writes_the_record(world):
     assert entry["after_sha256"] == hashlib.sha256(st.read_bytes()).hexdigest()
     assert run_cli("setup", "--minimal", "--apply")[0] == 0                # again: the first before stays
     assert json.loads((pb / "setup-record.json").read_text())["files"][0]["before"] == MINE_TEXT
+
+
+def test_G18_3_the_census_counts_only_the_backups_setups_record_lists(world):
+    """P29 (plan 1.32): other tools name their backups the same way; only the record says which are setup's."""
+    home, pb, st = world
+    mine = [n for n in os.listdir(home / ".claude") if n.startswith("settings.json.bak-")]
+    assert json.loads((pb / "setup-record.json").read_text())["files"][0]["backups"] == mine and len(mine) == 1
+    (home / ".claude" / "settings.json.bak-20261114-statusline").write_text("{}")     # a stranger's, same form
+    (home / ".claude" / "settings.json.bak-20991231-235959").write_text("{}")         # even setup's own stamp form
+    code, out, _ = run("--apply")
+    assert code == 0, out
+    rows = census(out)
+    assert [r for r in rows if ".bak-" in r] == [
+        f"  kept: 1 backup setup made of ~/.claude/settings.json (yours: ~/.claude/{mine[0]})"]
+    assert (home / ".claude" / "settings.json.bak-20261114-statusline").exists()       # never touched
+
+
+def test_G18_3_a_home_from_before_the_list_says_it_cannot_tell_which_backups_are_setups(world):
+    """P29: set up before the record listed backups (0.1.2 wrote no record): no count is called setup's."""
+    home, pb, st = world
+    os.remove(pb / "setup-record.json")
+    (home / ".claude" / "settings.json.bak-20261114-statusline").write_text("{}")
+    code, out, _ = run("--apply")
+    assert code == 0, out
+    assert [r for r in census(out) if ".bak-" in r] == [
+        "  kept: 2 files named ~/.claude/settings.json.bak-* (setup kept no list of its backups then, so Pit Board "
+        "cannot tell which are its own; yours to keep or delete)"]
+
+
+def test_G18_3_an_unreadable_record_gives_no_backup_count(world):
+    """P29 and rule 6: a record that could not be read is not "no backups": it says so and counts nothing."""
+    home, pb, st = world
+    (pb / "setup-record.json").write_text("[1, 2]")
+    code, out, _ = run("--apply")
+    rows = census(out)
+    assert not [r for r in rows if ".bak-" in r]
+    assert any(r.startswith("  kept: the setup record in ~/.pitboard") for r in rows), rows
 
 
 def test_G18_3_leave_is_standard_library_only_and_imports_no_pit_board_code():
