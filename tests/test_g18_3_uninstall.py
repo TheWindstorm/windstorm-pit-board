@@ -493,3 +493,15 @@ def test_G18_3_the_readmes_by_hand_lines_for_a_home_from_before_0_1_3(world, own
     r = subprocess.run(["bash", "-c", lines[0]], env={"HOME": str(home), "PATH": "/usr/bin:/bin"},
                        capture_output=True, text=True, timeout=60)
     assert r.returncode == 0 and json.loads(st.read_text()) == want                 # run again: nothing changes
+
+
+def test_G18_3_an_orphaned_folders_own_launcher_never_runs_its_leave(world):
+    home, pb, st = world
+    ver = _orphan(home)
+    (ver / "pitboard" / "leave.py").write_text(f"open({str(home / 'ORPHAN-RAN')!r}, 'a').write('x')\n"
+                                               "def main(argv):\n    return 0\n")
+    r = _launch(home, ver / "pitboard" / "launch.py", "uninstall", "--apply")        # the home's leave.py runs
+    assert r.returncode == 0 and st.read_text() == MINE_TEXT and not (home / "ORPHAN-RAN").exists(), r.stderr
+    r = _launch(home, ver / "pitboard" / "launch.py", "uninstall")                    # no home copy left: none runs
+    assert r.returncode == 1 and not (home / "ORPHAN-RAN").exists()
+    assert r.stderr == "pitboard: no installed version found\nPit Board was removed by Claude Code\n"   # no copy to name

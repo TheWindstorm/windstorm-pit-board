@@ -200,8 +200,10 @@ def _log(hook, what):
 
 
 def _leave(argv):
-    """G18.3 point 9: run leave.py beside this file, without importing any Pit Board code; None when there is none."""
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "leave.py")
+    """G18.3 point 9: run leave.py beside this file (the home's, if this folder is orphaned); None if there is none."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(_home(), "pitboard", "leave.py") if _orphaned(os.path.dirname(here)) else \
+        os.path.join(here, "leave.py")
     try:
         with open(path, encoding="utf-8") as f:
             code = compile(f.read(), path, "exec")
@@ -213,9 +215,10 @@ def _leave(argv):
 
 
 def _removed_line():
-    home, user = _home(), os.path.expanduser("~")
-    shown = "~" + home[len(user):] if home.startswith(user + os.sep) else home
-    return "Pit Board was removed by Claude Code · run {} uninstall".format(os.path.join(shown, "bin", "pitboard"))
+    home, user = _home(), os.path.expanduser("~")      # the command only while the copy that runs it is there
+    shown = os.path.join("~" + home[len(user):] if home.startswith(user + os.sep) else home, "bin", "pitboard")
+    run = " · run {} uninstall".format(shown) if os.path.isfile(os.path.join(home, "bin", "pitboard")) else ""
+    return "Pit Board was removed by Claude Code" + run
 
 
 def main(argv=None):
