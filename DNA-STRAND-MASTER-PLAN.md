@@ -829,7 +829,8 @@ Last, it deletes the record, and removes `.claude` if setup made it and it is no
 6. **Deleting the asks** is a second, explicit choice: `pitboard uninstall --apply --delete-asks`. It runs only when its standard input and output are both a terminal, and it names the count and waits for the person to type that number. An agent cannot give it for the person: run from an agent's tool, or with any other answer, it deletes nothing and says why. The skill tells agents never to run it.
 7. **The order.** Settings files first, so a running session's status line goes back to the person's own. Then the plugin installs, then each home's files, the running launcher copy last.
 8. **The census** is the last thing printed: one line per thing Pit Board made, `gone`, or `kept` and why. Run again, it is safe: with nothing of Pit Board's left it says `nothing of Pit Board is here`, then the `kept` line for the asks when there are any. Exit code 0 when everything planned is gone or kept on purpose; 11 when a read or a removal failed.
-9. **Seen, not only tested:** on a stock Linux VM first, then in the clean test account on a Mac that carries Apple's developer tools, in place of the proof script's own removal. Then, if a box's own login allows it, one real Claude Code session whose status line is seen to come back as it was; otherwise that is written as not seen.
+9. **After Claude Code's own uninstall** (G21.4): `pitboard uninstall` still runs, from the orphaned version folder, and takes off what is left. When no version folder is left at all, the README's one line installs the plugin again and runs `uninstall` through it.
+10. **Seen, not only tested:** on a stock Linux VM first, including a home left behind by Claude Code's own uninstall, then in the clean test account on a Mac that carries Apple's developer tools, in place of the proof script's own removal. Then, if a box's own login allows it, one real Claude Code session whose status line is seen to come back as it was; otherwise that is written as not seen.
 
 **G18.2** `pitboard doctor` checks and prints one line per check, `OK` or `PROBLEM: <what> · fix: <how>`: Python version, home folder modes, config valid, every lane log readable and its invalid-line count, state caches fresh, hooks installed (plugin enabled), status line wrapper in place, tmux badge format present (when in tmux), hub reachable and token accepted (when `hub_url` set), outbox size and oldest file, clock within 2 minutes of the hub's, running version vs newest installed vs newest released, marketplace auto-update on, last update check and its result, any pin or bad version, sessions running an older hook generation.
 
@@ -903,9 +904,22 @@ Every installation, for every person who installs Pit Board, must find new relea
 2. If `self_update` is false: the install path recorded for `windstorm-pit-board` in `~/.claude/plugins/installed_plugins.json` (the user-scope install first), whatever its version.
 3. The install path recorded in `installed_plugins.json`, if its version is in `update/good-versions`.
 4. The highest version folder in the plugin cache that is in `update/good-versions`, has no `.orphaned_at` marker, and contains `pitboard/cli.py`.
-5. Its own plugin folder, if `launch.py` is running from a plugin version folder (it has `pitboard/cli.py` beside it).
+5. Its own plugin folder, if `launch.py` is running from a plugin version folder (it has `pitboard/cli.py` beside it) and that folder has no `.orphaned_at` marker. No step picks a folder that carries that marker (plan 1.28, P17).
 6. Of the install paths recorded in `installed_plugins.json`, the one with the highest version, whatever `update/good-versions` holds (this is how the stable copy runs before any version has passed a self-check). Never the first one listed: on a machine where folders have different versions, the first entry can be the oldest (P8).
 7. Nothing found: print `pitboard: no installed version found` to stderr and exit 1 (hooks exit 0, INV6).
+
+**After Claude Code's own uninstall** (plan 1.28, P17). `claude plugin uninstall` removes the plugin's row from `installed_plugins.json`, but it leaves the version folder, marked `.orphaned_at`, and it leaves the status line setting and the Pit Board home. Seen on 2026-11-23 on a stock Linux machine with Claude Code 2.1.280 and 2.1.330, with 0.1.2:
+- the stable copy's `status` and `version` exited 1 with `no installed version found`, which the wrapper hides, so the status line showed nothing of Pit Board;
+- the person's `statusLine` still ran the wrapper;
+- a SessionStart hook from a session still running ran the orphaned folder's code in full (step 5): the reminder and a log line.
+
+So, when the registry was read and has no row for the plugin, and step 1 to 6 pick nothing:
+- `status` prints one short true line, `Pit Board was removed by Claude Code · run ~/.pitboard/bin/pitboard uninstall`, and exits 0;
+- a hook does nothing and exits 0;
+- `uninstall` alone may run from the highest orphaned version folder, because that is the person asking to leave;
+- any other command prints step 7's line and adds the same `uninstall` line.
+
+When the registry could not be read, that is not "removed": nothing of this paragraph applies (G18.3 point 2). The README says what still shows after Claude Code's own uninstall, and the one command that takes it off.
 
 A version that is installed but not yet in `update/good-versions` is self-checked by the next `pitboard self-update` run (G21.3), so new releases are used within `update_check_hours`. It then puts the chosen folder first on `sys.path` and calls that version's `pitboard.cli.main()`. `launch.py` itself must stay tiny and must never change in a way that an older copy of it cannot still run the newest code (it only picks a folder and calls `cli.main()`).
 

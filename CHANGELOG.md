@@ -35,6 +35,12 @@ Every release before this one still reads the same: the lane logs, the cache and
   - Found on 2026-11-23: a Mac proof had to remove Pit Board with its own script, because the tool had no way to leave a home set up with `--minimal`.
 - G18.1: `setup --apply` writes `setup-record.json` in the home. The folder undo is spelled `uninstall --folder DIR`; `setup --folder DIR --undo` stays for 0.1.3 as the old spelling.
 - G6.3: new exit code `11`, uninstall incomplete.
+- G21.4 (P17): no step picks a version folder marked `.orphaned_at`, the launcher's own included. After Claude Code's own `plugin uninstall` (registry read, no row):
+  - the status line shows one short true line naming `uninstall`;
+  - hooks do nothing;
+  - only `uninstall` may run from the orphaned folder.
+  - An unreadable registry is not "removed".
+  - Seen on 2026-11-23 on a stock Linux machine with 0.1.2 and Claude Code 2.1.280 and 2.1.330: the status line went silent while its setting stayed, and a running session's hook ran the orphaned folder's code.
 - Appendix A.5 (the skill body), Never: an agent never runs `pitboard uninstall --delete-asks`. The skill body changes with it, word for word (as plan 1.24 did).
 No codon is renumbered. With the code, the folder undo's tests move to the new spelling and keep one test for the old one.
 
