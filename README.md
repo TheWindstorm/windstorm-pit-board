@@ -44,7 +44,7 @@ git clone --depth 1 --branch vX.Y.Z https://github.com/TheWindstorm/windstorm-pi
 windstorm-pit-board/bin/pitboard setup --folder /path/to/your/project --apply
 ```
 
-`--undo` in place of `--apply` takes it out of that folder again.
+`pitboard uninstall --folder /path/to/your/project --apply` takes it out of that folder again.
 
 **To update:**
 
@@ -62,6 +62,32 @@ Before that day the entry was a GitHub source, which Claude Code fetches over SS
 ```
 claude plugin uninstall windstorm-pit-board@thewindstorm
 claude plugin install windstorm-pit-board@thewindstorm
+```
+
+## Uninstall
+
+```
+pitboard uninstall
+pitboard uninstall --apply
+```
+
+The first line shows what it would take off; the second does it, however Pit Board was set up: each folder install, the install for every project, and what setup changed in your settings, which goes back byte for byte when you have not changed it since (or, when you have, loses only Pit Board's entry). Your asks, and the log of what Pit Board did on this computer (`logs/`, `setup-record.json`, and the `.bak-` copies setup kept of your settings files), stay where they are and are counted. The last thing it prints is a census of what went and what stayed, and why. Run it again and it says `nothing of Pit Board is here`.
+
+When a session is writing to a lane at that moment, it waits a moment as every command does; if the lane is still busy, it names the lane and changes nothing in that home: run it again. When it cannot read a file it needs, it changes nothing in that place, says which file, and exits 11.
+
+To delete your asks and the log too, at your own terminal (it asks you to type their count; an agent cannot do it for you):
+
+```
+pitboard uninstall --apply --delete-asks-and-log
+```
+
+**After Claude Code's own `claude plugin uninstall`**, Pit Board's code is gone from the plugin list, but your status line setting and your Pit Board home stay. The status line then shows `Pit Board was removed by Claude Code · run ~/.pitboard/bin/pitboard uninstall`, and that one command takes the rest off; it needs no plugin.
+
+**A home set up before 0.1.3** has no uninstall of its own until a session on 0.1.3 or newer starts in it. If the plugin is already gone, these lines do the same by hand. The first puts back your own status line (the command the wrapper recorded), and touches nothing else in the file; the second removes everything Pit Board made in its home, and keeps your asks and the log:
+
+```
+python3 -c 'import json,os; h=os.environ.get("PITBOARD_HOME") or os.path.expanduser("~/.pitboard"); w=os.path.join(h,"statusline.sh"); p=os.path.expanduser("~/.claude/settings.json"); s=json.load(open(p)); m="# pitboard-original-command: "; c=[json.loads(l[len(m):]) for l in open(w) if l.startswith(m)] if (s.get("statusLine") or {}).get("command")==w else None; c is None or (s["statusLine"].update(command=c[0]) if c and c[0] else s.pop("statusLine")); c is None or json.dump(s,open(p+".tmp","w"),indent=2); c is None or os.replace(p+".tmp",p)'
+cd "${PITBOARD_HOME:-$HOME/.pitboard}" && find . -mindepth 1 -maxdepth 1 ! -name lanes ! -name lanes.json ! -name logs -exec rm -rf {} +
 ```
 
 ## Built for

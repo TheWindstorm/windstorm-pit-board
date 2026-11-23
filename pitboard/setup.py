@@ -10,7 +10,7 @@ import shlex
 import shutil
 import time
 
-from . import __version__, stablecopy, store
+from . import __version__, leave, stablecopy, store
 
 MARK = "# pitboard-original-command: "
 WRAPPER_NAME = "statusline.sh"
@@ -123,7 +123,7 @@ def plan_minimal(home=None, settings_path=None, root=None):
         body = (json.dumps(store.DEFAULTS, indent=2) + "\n").encode("utf-8")
         items.append(Item("config file", cfg_path, "create with the defaults", body, 0o600))
 
-    for rel, mode in ((os.path.join("bin", "pitboard"), 0o755), (os.path.join("pitboard", "launch.py"), 0o644)):
+    for rel, mode in stablecopy.FILES:                  # the launcher and leave.py (G21.4, G18.3)
         src = _read(os.path.join(root, rel))
         if src is None:
             raise FileNotFoundError(f"the running version has no {rel}: {root}")
@@ -160,14 +160,47 @@ def plan_minimal(home=None, settings_path=None, root=None):
     return items
 
 
-def apply(items):
-    """Do the plan. Every file that exists and changes keeps a .bak-<timestamp> copy."""
+def note(home, settings=None, folder=None):
+    """G18.3: the record of what setup did, `setup-record.json` in the home, for `pitboard uninstall`.
+    settings = (path, bytes before or None, mode before or None, bytes after): the earliest `before` stays while the
+    file is still what Pit Board last wrote. A record that cannot be read is never written over."""
+    path = os.path.join(home, leave.SETUP_RECORD)
+    try:
+        rec = leave.read_object(path) or {}
+    except leave.Unread:
+        return
+    rec["version"] = __version__
+    if settings:
+        spath, before, mode, after = settings
+        files = [e for e in rec.get("files") or [] if isinstance(e, dict)]
+        old = next((e for e in files if e.get("path") == spath), None)
+        if old and before is not None and old.get("after_sha256") == leave.sha256(before):
+            entry = dict(old)                           # unchanged since Pit Board wrote it: the first before stays
+        else:
+            entry = {"path": spath, "before": None if before is None else before.decode("utf-8"),
+                     "before_mode": mode}
+        entry["after_sha256"] = leave.sha256(after)
+        rec["files"] = [e for e in files if e.get("path") != spath] + [entry]
+    if folder:
+        folders = [f for f in rec.get("folders") or [] if isinstance(f, str)]
+        rec["folders"] = folders + ([folder] if folder not in folders else [])
+    os.makedirs(home, exist_ok=True)
+    leave.write_atomic(path, json.dumps(rec, indent=1, ensure_ascii=False) + "\n")
+
+
+def apply(items, home=None):
+    """Do the plan. Every file that exists and changes keeps a .bak-<timestamp> copy. A changed settings file is
+    noted in the home's setup record (G18.3)."""
     stamp = _stamp()
     done = []
+    wrapper = next((it.path for it in items if it.name == "status line wrapper"), None)
+    home = home or (os.path.dirname(wrapper) if wrapper else None)
     for it in items:
         if it.action.startswith("keep"):
             continue
         os.makedirs(os.path.dirname(it.path), exist_ok=True)
+        before = leave.read_bytes(it.path) if it.json_obj is not None else None
+        before_mode = os.stat(it.path).st_mode & 0o777 if before is not None else None
         if os.path.exists(it.path):
             shutil.copy2(it.path, f"{it.path}.bak-{stamp}")
         if it.json_obj is not None:
@@ -182,6 +215,8 @@ def apply(items):
         os.chmod(tmp, mode)
         os.replace(tmp, it.path)
         done.append(it)
+        if it.json_obj is not None and home:
+            note(home, settings=(it.path, before, before_mode, content))
     return done
 
 
