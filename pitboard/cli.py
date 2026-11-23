@@ -787,6 +787,9 @@ def _emit(out, as_json, code, stdout, stderr):
 def main(argv=None, stdout=None, stderr=None):
     argv = sys.argv[1:] if argv is None else list(argv)
     stdout, stderr = stdout or sys.stdout, stderr or sys.stderr
+    refusal = launch.floor_refusal(argv)               # G21.15: also first here, for a launcher copy before 0.1.3
+    if refusal:
+        return launch.floor_stop(refusal, stdout, stderr)
     as_json = "--json" in argv
     if argv[:1] == ["hook"]:
         try:

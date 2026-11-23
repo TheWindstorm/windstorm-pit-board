@@ -3,6 +3,9 @@
 This file must stay tiny and import nothing from Pit Board: the stable copy in
 $PITBOARD_HOME/pitboard/launch.py runs alone, and an older copy of it must always be
 able to run the newest code. It only picks a folder and calls cli.main().
+
+Its first act is the Python floor check (G21.15). This file must stay readable by Python 3.6's grammar, so an
+older interpreter reaches that check instead of stopping on a syntax error.
 """
 import json
 import os
@@ -11,6 +14,34 @@ import sys
 
 PLUGIN = "windstorm-pit-board"
 VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
+FLOOR = (3, 9)          # G21.15: the oldest Python Pit Board runs on; rule 4, the README and CI name the same
+
+
+def _found():
+    return tuple(sys.version_info[:3])
+
+
+def floor_refusal(argv):
+    """G21.15: None when this Python is new enough. Otherwise (exit code, stdout text, stderr text), so the caller
+    stops before it reads or writes anything. 3.8 is refused: no zoneinfo, so it showed wrong times with no error."""
+    found = _found()
+    if found[:2] >= FLOOR:
+        return None
+    want, got = "{}.{}".format(*FLOOR), ".".join(str(n) for n in found)
+    cmd = argv[0] if argv else ""
+    if cmd == "status":                                   # G10.4's one exception: a short true line
+        return 0, "Pit Board needs Python {} or newer, found {}".format(want, got), ""
+    line = "Pit Board needs Python {} or newer; found {} at {}\n".format(want, got, sys.executable or "python")
+    if cmd == "hook":                                     # a hook never breaks the session (rule 6)
+        return 0, "", line
+    return 10, "", line + "pitboard: install Python {} or newer, or put one first on PATH as python3\n".format(want)
+
+
+def floor_stop(refusal, stdout=None, stderr=None):
+    code, out, err = refusal
+    (stdout or sys.stdout).write(out)
+    (stderr or sys.stderr).write(err)
+    return code
 
 
 def _home():
@@ -126,6 +157,9 @@ def choose(home=None, claude_dir=None, own_root=None, skip_pin=False):
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
+    refusal = floor_refusal(argv)                      # G21.15: the first act, before anything is read or written
+    if refusal:
+        return floor_stop(refusal)
     is_hook = bool(argv) and argv[0] == "hook"
     own = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:

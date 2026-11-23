@@ -16,7 +16,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python: ["3.10", "3.13"]
+        python: ["3.9", "3.10", "3.13"]
+        # setup-python has no 3.9 for the Ubuntu that ubuntu-latest names now (26.04): 3.9 runs on 24.04 there.
+        exclude:
+          - os: ubuntu-latest
+            python: "3.9"
+        include:
+          - os: ubuntu-24.04
+            python: "3.9"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

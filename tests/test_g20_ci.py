@@ -34,11 +34,13 @@ def test_G20_8_standard_github_hosted_runners_only():
                 labels = [value.strip("'\"")]
             for label in labels:
                 assert RUNNER.match(label), (name, label)
+        for label in re.findall(r"^\s*-?\s*os:\s*([^\s\[#]+)\s*$", text, re.M):   # a matrix include's runner
+            assert RUNNER.match(label.strip("'\"")), (name, label)
 
 
 def test_G20_6_python_and_os_matrix_and_triggers():
     text = dict(workflows())["tests.yml"]
-    assert re.search(r'python: \["3\.10", "3\.13"\]', text)
+    assert re.search(r'python: \["3\.9", "3\.10", "3\.13"\]', text)          # 3.9: the floor (G21.15, plan 1.26)
     assert re.search(r"os: \[ubuntu-latest, macos-latest\]", text)
     assert "on:\n  push:\n    branches: [main]\n  pull_request:\n" in text
 

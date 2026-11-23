@@ -26,6 +26,8 @@ Colours: blinking red (urgent), red (blocking you), blue (only you can do it: pa
 
 Pit Board is installed from The Windstorm's plugin catalog, which lives in the Windstorm Pit Stop repository.
 
+It needs Python 3.9 or newer (a Mac's own `python3` is enough) and nothing else: no `pip install`. On an older Python it changes nothing and says what it found, in the status line and when you run `pitboard`.
+
 **For every project** (your user settings):
 
 ```

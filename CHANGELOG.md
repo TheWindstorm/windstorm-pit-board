@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.1.3 (not yet released)
+- **Pit Board checks that Python is 3.9 or newer before it does anything** (P16, plan 1.26, G21.15). On an older Python it creates no file and stops with one line naming the version needed and the version found. The status line shows that line, a hook writes it to stderr and exits 0 so the session goes on, and any other command, `setup` included, exits 10. Python 3.8 ran before, but with no zone data it showed wrong times with no error. 3.9 is a Mac's own `python3`, and CI now runs on 3.9 too.
 - **Which version ran is read, not worked out** (P15, plan 1.25, G21.4). Every line a hook writes to `logs/pitboard.log` ends with `v=<version> step=<n>`: the version of the code that ran and the launcher step that picked its folder (`step=?` when a launcher from before 0.1.3 picked it). `pitboard version` has a last line naming what the status line runs: the version the home's launcher copy picks now, and its step. Seen when one lane's update changed what the other lanes' status lines ran within a second, with nothing in the log to show it.
 
 ## 0.1.2 (2026-11-23)
