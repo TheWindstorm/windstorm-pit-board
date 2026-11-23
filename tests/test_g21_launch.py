@@ -199,7 +199,7 @@ def test_G21_4_launcher_stays_tiny_and_imports_no_pit_board_code():
             top |= {a.name.split(".")[0] for a in node.names}
         elif isinstance(node, ast.ImportFrom) and node.level == 0:
             top.add(node.module.split(".")[0])
-    assert top <= {"json", "os", "re", "sys", "pitboard"}
+    assert top <= {"json", "os", "re", "sys", "time", "pitboard"}        # time: P19's log line when no folder runs
     # the only Pit Board import is the chosen version's cli, inside main()
     assert src.count("from pitboard import cli") == 1 and "from ." not in src
-    assert len(src.splitlines()) < 200
+    assert len(src.splitlines()) < 280      # 200 until plan 1.29: the floor check (P16) and three answers (P19)

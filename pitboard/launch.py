@@ -11,6 +11,7 @@ import json
 import os
 import re
 import sys
+import time
 
 PLUGIN = "windstorm-pit-board"
 VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
@@ -52,12 +53,27 @@ def _claude_dir():
     return os.path.join(os.path.expanduser("~"), ".claude")
 
 
+UNREAD = []             # P19 (plan 1.29): the reads the last choose() could not make, as (path, error name)
+
+
 def _lines(path):
+    return _read(path) or []
+
+
+def _read(path):
+    """Three answers (P19): the lines (yes), [] when the file is missing (no), None when it could not be read."""
     try:
         with open(path, encoding="utf-8") as f:
             return [ln.strip() for ln in f if ln.strip()]
-    except OSError:
+    except FileNotFoundError:
         return []
+    except (OSError, UnicodeDecodeError) as e:
+        UNREAD.append((path, type(e).__name__))
+        return None
+
+
+def _orphaned(folder):
+    return os.path.exists(os.path.join(folder, ".orphaned_at"))
 
 
 def _self_update(home):
@@ -82,14 +98,27 @@ def _vkey(v):
 
 
 def _installed(claude_dir):
-    """installed_plugins.json entries for Pit Board, the user-scope install first: [(path, version)]."""
+    return _registry(claude_dir) or []
+
+
+def _registry(claude_dir):
+    """installed_plugins.json entries for Pit Board, the user-scope install first: [(path, version)]. Three answers
+    (P19): [] when the registry is missing, None when it cannot be opened, decoded or is not an object of plugins."""
+    path = os.path.join(claude_dir, "plugins", "installed_plugins.json")
     try:
-        with open(os.path.join(claude_dir, "plugins", "installed_plugins.json"), encoding="utf-8") as f:
-            plugins = json.load(f).get("plugins", {})
-    except (OSError, ValueError, AttributeError):
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except FileNotFoundError:
         return []
+    except (OSError, ValueError) as e:
+        UNREAD.append((path, type(e).__name__))
+        return None
+    plugins = data.get("plugins", {}) if isinstance(data, dict) else None
+    if not isinstance(plugins, dict):
+        UNREAD.append((path, "not a JSON object with plugins"))
+        return None
     rows = []
-    for name, entries in plugins.items() if isinstance(plugins, dict) else ():
+    for name, entries in plugins.items():
         if name.split("@", 1)[0] != PLUGIN or not isinstance(entries, list):
             continue
         for e in entries:
@@ -130,9 +159,14 @@ def choose(home=None, claude_dir=None, own_root=None, skip_pin=False):
     home = home or _home()
     claude_dir = claude_dir or _claude_dir()
     upd = os.path.join(home, "update")
-    good, bad = set(_lines(os.path.join(upd, "good-versions"))), set(_lines(os.path.join(upd, "bad-versions")))
-    pin = (_lines(os.path.join(upd, "pin")) or [None])[0]
-    installed = _installed(claude_dir)
+    del UNREAD[:]
+    good, bad, pins = (_read(os.path.join(upd, n)) for n in ("good-versions", "bad-versions", "pin"))
+    installed = _registry(claude_dir)
+    if UNREAD:      # P19: could not be read is not "none": do not move to another version on this pass
+        if _runnable(own_root) and not _orphaned(own_root):
+            return own_root, 5
+        return None, 7
+    good, bad, pin = set(good), set(bad), (pins or [None])[0]
     cached = _cached(claude_dir)
 
     if pin and not skip_pin and pin not in bad and _runnable(cached.get(pin)):      # 1
@@ -155,6 +189,15 @@ def choose(home=None, claude_dir=None, own_root=None, skip_pin=False):
     return None, 7
 
 
+def _log(hook, what):
+    """One line in logs/pitboard.log when no folder runs to write it (P19). Best effort: never fails a hook."""
+    try:
+        with open(os.path.join(_home(), "logs", "pitboard.log"), "a", encoding="utf-8") as f:
+            f.write("{} {} - {}\n".format(time.strftime("%Y-%m-%dT%H:%M:%S.000Z", time.gmtime()), hook, what))
+    except OSError:
+        pass
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     refusal = floor_refusal(argv)                      # G21.15: the first act, before anything is read or written
@@ -168,12 +211,23 @@ def main(argv=None):
         if is_hook:
             return 0
         raise
+    unread = "; ".join("{} ({})".format(p, e) for p, e in UNREAD)
     if root is None:
+        if unread:                                     # P19: nothing run, and say which read failed
+            if is_hook:
+                _log(argv[1] if len(argv) > 1 else "hook", "launcher could not read " + unread + "; nothing run")
+                return 0
+            if argv[:1] == ["status"]:
+                return 0
+            sys.stderr.write("pitboard: could not read {}; nothing run\n".format(unread))
+            return 1
         if is_hook:
             return 0
         sys.stderr.write("pitboard: no installed version found\n")
         return 1
     os.environ["PITBOARD_LAUNCH_STEP"] = str(step)     # P15: each hook log line names the step that picked it
+    if unread:
+        os.environ["PITBOARD_LAUNCH_UNREAD"] = unread  # P19: the hook's log line names the read that failed
     sys.path.insert(0, root)
     for name in [n for n in sys.modules if n == "pitboard" or n.startswith("pitboard.")]:
         del sys.modules[name]
