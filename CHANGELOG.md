@@ -1,6 +1,7 @@
 # Changelog
 
-## 0.1.2 (not yet released)
+## 0.1.2 (2026-11-23)
+- **The README says how to install and update Pit Board**, and which Claude Code versions the install line was seen to work on.
 - **An ask only the operator can answer is recorded also when it leaves the chat** (P13, plan 1.24, G7.7 and G9.1). The reminder and the skill say so for an ask sent to another agent (a coordinator, a reviewer) or a shared board. The ask's ID and one line travel in the message: answer under the ID, or say "not mine to answer" under it. The skill no longer tells the agent not to record questions to other agents, only those they can answer themselves. The pilot's sample of lane endings found the one real ask of the week on a shared board, not recorded.
 - **One version in every place** (P12, a guard; plan 1.23, G21.1): `plugin.json`, `__version__` and this file's top dated heading must name the same version, and the suite fails when one differs. Run in a fresh clone of a release tag, it refuses the tag unless the tag's name equals every version label in it. Seen in a sister skill, whose old manifest label kept `claude plugin update` from ever updating it.
 - **CI's log names every test and its outcome** (plans 1.21 and 1.22, G20.6): the test step runs `pytest -v`, one line per test with its outcome and a skip's reason, so a reader can see a given test ran and passed in each job, not only a count. A row's `proven` that leans on CI names the run and the test.
