@@ -212,6 +212,7 @@
    "promise": "Every line a hook writes to logs/pitboard.log ends with `v=<version> step=<n>`: the version of the code that ran and the G21.4 step that picked its folder. `pitboard version` has a last line naming what the status line runs: the version the home's launcher copy picks now and its step.",
    "test": "test_G21_4_every_hook_line_names_the_version_and_the_step",
    "proven": "",
+   "proven_after_release": "The maintainer's ruling (2026-11-23): its proof is a real session's hook log on 0.1.3, which can exist only once 0.1.3 runs on a real machine; a stand-in's log would not be the proof. Within a day of the release, the version and the step are read in a pilot session's own hook log and this row's `proven` is filled.",
    "issue": ""
   },
   {
@@ -295,7 +296,7 @@
    "seen": "2026-11-23: `ubuntu-latest` moved to a new Ubuntu under the CI matrix, and setup-python had no 3.9 for it, so a job failed before any test ran. The workflow still names `ubuntu-latest` and `macos-latest`, and the runner test accepts `latest`.",
    "promise": "Every CI job names its runner image (for example `ubuntu-24.04`), never `latest`, and the runner test refuses a `latest` label.",
    "test": "test_G20_8_every_job_names_its_runner_image_never_latest",
-   "proven": "",
+   "proven": "Seen 2026-11-23 in CI on main: the run for the merge that brought this in (run 45257088917, head a65b53f6) ran all seven jobs on the images they name, as each job's log reports them: three test jobs and the skill gate on `ubuntu-24.04`, three test jobs on `macos-26` (reported as macos-26-arm64), each image at version 20261111.635; all seven passed, and in each of the six test jobs `test_G20_8_every_job_names_its_runner_image_never_latest` PASSED. The pull requests after it (#91 to #94) each ran five jobs, one of them on macOS, as plan 1.30's G20.6 says.",
    "issue": ""
   },
   {
