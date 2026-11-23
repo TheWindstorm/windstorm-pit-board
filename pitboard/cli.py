@@ -5,8 +5,10 @@ Exit codes (G6.3): 0 ok, 1 unexpected error, 2 bad usage, 3 lane unknown, 4 ask 
 Standard library only.
 """
 import argparse
+import importlib.util
 import json
 import os
+import re
 import sys
 
 from . import __version__, contract, flags, lane, launch, render, stablecopy, store, timefmt
@@ -686,7 +688,31 @@ def cmd_version(args):
         copy = _copy_line(store.home(), pin)
     except Exception:  # noqa: BLE001
         copy = None
-    return Out(f"{__version__} ({', '.join(parts)})" + (f"\n{copy}" if copy else ""), data=data)
+    status = _status_line(store.home())
+    return Out(f"{__version__} ({', '.join(parts)})" + (f"\n{copy}" if copy else "") + f"\n{status}", data=data)
+
+
+def _status_line(home):
+    """P15 (plan 1.25): what the status line runs. It calls the home's launcher copy, which writes no log line, so
+    this asks that copy's own choose() which folder it picks now and by which G21.4 step. Never fails `version`."""
+    path = os.path.join(home, "pitboard", "launch.py")
+    if not os.path.isfile(path):
+        return "status line runs: no launcher copy in this home"
+    try:
+        spec = importlib.util.spec_from_file_location("_pitboard_home_launch_copy", path)
+        copy = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(copy)
+        root, step = copy.choose(home=home, own_root=home)
+    except (Exception, SystemExit) as e:  # noqa: BLE001 - an old or broken copy
+        return f"status line runs: unknown ({type(e).__name__})"
+    if root is None:
+        return "status line runs nothing: the launcher copy finds no installed version"
+    try:
+        with open(os.path.join(root, "pitboard", "__init__.py"), encoding="utf-8") as f:
+            m = re.search(r'^__version__ = "([^"]*)"$', f.read(), re.M)
+    except OSError:
+        m = None
+    return f"status line runs {m.group(1) if m else '?'} (step {step})"
 
 
 def _copy_line(home, pin):

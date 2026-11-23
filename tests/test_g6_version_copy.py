@@ -33,7 +33,10 @@ def home(tmp_path, monkeypatch):
 
 
 def lines(out):
-    return out.message.split("\n")
+    """The version lines without the last one, which always names what the status line runs (P15)."""
+    *rest, last = out.message.split("\n")
+    assert last.startswith("status line runs"), last
+    return rest
 
 
 def test_G6_2_version_says_when_the_launcher_copy_is_older(home):
