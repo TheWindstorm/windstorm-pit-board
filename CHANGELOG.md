@@ -30,6 +30,12 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.32 (2026-11-23)
+- G18.1, from setup at user scope on a shared Linux workstation and on a cloud server, where the person's settings file went from mode 664 to 600 and nothing said so first: 0.1.3's plan item and README name the mode change, what the backup keeps and what uninstall puts back (P25); 0.1.4 keeps the file's mode (P26).
+- G18.1 and G18.3, the family's rule 7 (the person's own eyes): `setup --apply` and `uninstall --apply` print what the person must hear and wait for a key at their own terminal (P28, due 0.1.4). The case with no terminal is ruled before it is built.
+- G18.3, the family's rule 8, both due in 0.1.3 by the maintainer's ruling (no release ships a count known to be wrong): the census counts as setup's only the backups setup's record lists (P29); and it names the version folder Claude Code leaves in its cache and the kept Windstorm catalog, in words seen on a stock VM (P30). The 0.1.4 mode row (P26) also says what uninstall does with a mode an earlier setup set; own eyes (P28) waits only at a real terminal and never hangs without one.
+- G6 hook log (the family's rule 24, installed is not running): from 0.1.4 the `session-start` log line names the session, so which version runs in which session is read from the log even when two sessions share a lane key (P27). Until 0.1.3, the only way to tell which release a session runs is the wording of the SessionStart reminder; from 0.1.3 it is P15's `v=` field.
+
 ## Plan 1.31 (2026-11-23)
 - G21.4 (P19), the maintainer's ruling after the stock-VM sighting: when a read the launcher's choice hangs on could not be read, `status` prints one short true line, `Pit Board cannot read its files · run ~/.pitboard/bin/pitboard version`, instead of nothing. An empty status line tells the person nobody is asking them anything: an absence shown for an error, in the one place they look (rule 6). The command it names prints which file could not be read and why. No codon is renumbered. With the code, the P19 tests that read `status` change.
 
