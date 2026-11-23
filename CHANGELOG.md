@@ -20,6 +20,9 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.24 (2026-11-23)
+- G7.7 and G9.1 (P13): an ask only the operator can answer is recorded also when it is sent to another agent (a coordinator, a reviewer) or a shared board instead of the chat. The reminder's Rules line says so. The skill's new step 4 puts the ask's ID and one line into that message: answer under the ID, or say "not mine to answer" under it. An answer given under the ID is written with who gave it; otherwise the operator is asked in chat under the same ID. The skill's "Do not record" line now covers only questions to other agents that they can answer themselves. Found by the week's sample of lane endings: the one real ask went to a shared board and was not recorded.
+
 ## Plan 1.23 (2026-11-22)
 - G21.1: one version in every place. `plugin.json`, `__version__` and `CHANGELOG.md`'s top dated heading name the same version, and a not-yet-released heading above it names a later one; the suite fails when one differs. A release step: before the marketplace pin moves, the suite runs in a fresh clone of the tag and refuses it unless the tag's name equals every version label in it. Seen in a sister skill: an old manifest label kept `claude plugin update` from ever updating it.
 - G21.14: a row may carry `kind: guard`, a promise taken from a fault seen in a sister skill, held like any other row.

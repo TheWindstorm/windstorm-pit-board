@@ -20,8 +20,11 @@ Before you ask the operator anything that you need an answer or an action for (a
    - A real deadline: `--deadline "YYYY-MM-DD HH:MM"` or `--deadline +2d`.
 2. Ask in chat, starting with the ID it printed: "A12: Merge #651 now? I suggest merging now because ..."
 3. One ask per decision. Do not bundle three questions into one.
+4. If the answer is the operator's to give but you send the ask somewhere else instead of the chat (another agent, such as a coordinator or a reviewer, or a shared board), record it first all the same, and put its ID and this line in your message: "A12 is recorded on the Pit Board for the operator. Answer under A12, or say 'not mine to answer' under A12."
+   - They answer under the ID: `pitboard answer A12 --by agent --answer "<who>: <their answer>"`.
+   - They say it is not theirs to answer: the ask stays open for the operator. Ask the operator in chat, starting with A12.
 
-Do not record: questions to yourself, questions to other agents, rhetorical questions, status updates.
+Do not record: questions to yourself, questions to other agents that they can answer themselves, rhetorical questions, status updates.
 
 ## When it is answered or no longer needed
 

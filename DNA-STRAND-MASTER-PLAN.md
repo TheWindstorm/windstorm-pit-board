@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.23 · 2026-11-22 · The Windstorm**
+**Plan version 1.24 · 2026-11-23 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -515,7 +515,7 @@ Each handler writes at most one JSON object to stdout. Context for the model goe
 Pit Board: you are lane "<lane_name>" (key <key>) on <machine>. <n> ask(s) wait on <operator_name>:
 - A12 [RED, 2d] Merge #651 now or wait for review? Suggested: merge now.
 - A14 [BLUE, 5h] YOUR HAND: create a Stripe account. Due Thu 5:00 PM ET.
-Rules: record every new ask with `pitboard add` before you ask it, and start the chat question with its ID.
+Rules: record every new ask with `pitboard add` before you ask it, and start the question with its ID. That includes an ask only <operator_name> can answer that you send to another agent (a coordinator, a reviewer) or a shared board instead of the chat.
 If <operator_name> has answered one, run `pitboard answer <ID> --by operator --answer "..."`. If it no longer matters, `pitboard withdraw <ID> --reason "..."`. Do not ask again in chat unless it still blocks your next step.
 ```
 
@@ -557,7 +557,7 @@ If it does not, end your turn now without saying anything more.
 
 ### G9 Skill and command files
 
-**G9.1 `skills/pit-board/SKILL.md`** has frontmatter `name: pit-board` and a quoted description (G9.4) that triggers on: needing the operator's decision, approval, login, payment, signature or account; "pit board", "pb", "asks", "action items", "what's waiting on me". The body is the text in [Appendix A.5](#a5-the-skill-body), word for word. The skill is a fixed file and says "the operator"; the configured `operator_name` is used only in text Pit Board generates (G7.7, G8.4).
+**G9.1 `skills/pit-board/SKILL.md`** has frontmatter `name: pit-board` and a quoted description (G9.4) that triggers on: needing the operator's decision, approval, login, payment, signature or account; "pit board", "pb", "asks", "action items", "what's waiting on me". The body is the text in [Appendix A.5](#a5-the-skill-body), word for word. The skill is a fixed file and says "the operator"; the configured `operator_name` is used only in text Pit Board generates (G7.7, G8.4). When an ask leaves the chat (step 4 of the body), the line that travels with its ID tells whoever receives it what to do, with or without Pit Board, so the ask ends with an answer under its ID, with who gave it, or back with the operator in chat, never as a line on a shared board alone (plan 1.24, P13).
 
 **G9.2** `pitboard` is on the agent's `PATH` through the plugin's `bin/` folder (documented; check C14). If `command -v pitboard` finds nothing, the skill says to use `~/.pitboard/bin/pitboard` (the stable launcher copy, G21.4).
 
@@ -1189,8 +1189,11 @@ Before you ask the operator anything that you need an answer or an action for (a
    - A real deadline: `--deadline "YYYY-MM-DD HH:MM"` or `--deadline +2d`.
 2. Ask in chat, starting with the ID it printed: "A12: Merge #651 now? I suggest merging now because ..."
 3. One ask per decision. Do not bundle three questions into one.
+4. If the answer is the operator's to give but you send the ask somewhere else instead of the chat (another agent, such as a coordinator or a reviewer, or a shared board), record it first all the same, and put its ID and this line in your message: "A12 is recorded on the Pit Board for the operator. Answer under A12, or say 'not mine to answer' under A12."
+   - They answer under the ID: `pitboard answer A12 --by agent --answer "<who>: <their answer>"`.
+   - They say it is not theirs to answer: the ask stays open for the operator. Ask the operator in chat, starting with A12.
 
-Do not record: questions to yourself, questions to other agents, rhetorical questions, status updates.
+Do not record: questions to yourself, questions to other agents that they can answer themselves, rhetorical questions, status updates.
 
 ## When it is answered or no longer needed
 
