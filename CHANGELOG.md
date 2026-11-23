@@ -26,6 +26,11 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.27 (2026-11-23)
+- G21.15: the Mac's 3.9 is named for what it is, the `python3` that comes with Apple's developer tools (3.9.6 on macOS 13), not "what a Mac with no Python added has": `/usr/bin/python3` is Apple's shim to it. Seen on the Mac test run, where the interpreter asked from inside was Xcode's.
+- Part 11 question 9: a Mac without Apple's developer tools. What its first `python3` call shows has not been seen, so the plan no longer describes a dialog.
+No codon is renumbered and no existing test changes.
+
 ## Plan 1.26 (2026-11-23)
 - G21.15 (new, P16): the Python floor is 3.9, and it is checked as `launch.py`'s first act (and again first in `cli.main()`, for a launcher copy from before 0.1.3). Below the floor, nothing is made: a hook writes one stderr line and exits 0; the status line shows one short true line naming the floor and the version found; any other command, `setup` included, says where Pit Board does run and exits 10. `launch.py` stays readable by 3.6's grammar so the check is reached. 3.9 is the Mac's own `/usr/bin/python3` (3.9.6), and the suite passes there unchanged. 3.8 is refused because it has no `zoneinfo`: it showed wrong times with no error (seen 2026-11-23). A sister skill named a floor without checking it and started a service on 3.8 before it crashed. Before 0.1.3 is tagged, the refusal is seen once on a real 3.8 machine and the Mac run once on its own interpreter.
 - Part 0 rule 4 names 3.9 (was 3.10). G6.1: the floor check is the launcher's first act. G6.3: new exit code `10`. G10.4: one exception, the floor line. G20.6: CI adds Python 3.9.
