@@ -89,7 +89,7 @@ def test_G2_5_concurrent_writers_get_unique_ids(tmp_home):
         " machine='m', session_id=None, by='agent', data={'kind':'decision','severity':'blocking',"
         "'title':'t','suggested':'y','source':'agent'})\n"
         "for _ in range(15): s.append('api', b, lock_timeout=10)\n" % ROOT)
-    env = dict(os.environ, PITBOARD_HOME=str(tmp_home))
+    env = dict(os.environ, PITBOARD_HOME=str(tmp_home), HOME=str(tmp_home) + "-home")   # P51: never the real home
     procs = [subprocess.Popen([sys.executable, "-c", code], env=env) for _ in range(3)]
     assert all(p.wait(timeout=60) == 0 for p in procs)
     events, bad = s.read_log("api")

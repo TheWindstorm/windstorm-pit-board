@@ -634,6 +634,42 @@
    "test": "test_G18_3_P50_the_readmes_by_hand_line_runs_as_printed_and_keeps_the_mode",
    "proven": "",
    "issue": ""
+  },
+  {
+   "id": "P51",
+   "codon": "G20",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 17 (A TEST THAT PASSES HERE AND FAILS ON A STOCK RUNNER LEANS ON THIS MACHINE) read against the suite: run whole with HOME set to a canary home and an audit hook, one of 531 tests reached the account's real files (test_G6_2_json_shape_for_every_command: its fixture set PITBOARD_HOME but not HOME, so `version` read the real plugin registry, 4 opens, read only); with children counted, eight more started a child that inherited the real HOME (git, the promise gate's timing children, concurrent writers, a hook). No test reached the real Pit Board home or settings file. The suite had no guard.",
+   "promise": "Every test that loads or starts the tool gives it the test's own temporary home. One guard in the suite (tests/conftest.py) fails a test that, in the test's process, opens, lists, writes or removes anything under the real home's Pit Board home, settings file or plugin registry; starts a child whose HOME is the real home, or that has no HOME; or starts the real `claude` program. The suite's own pytest started again by the promise gate is not counted: it loads the same guard. Not seen by the guard: a read by stat alone (no audit event), and what a child does inside itself beyond the HOME it was given. Seen to fail: the test above as it was, a test that swallows the error, each child case and the real `claude`.",
+   "test": "test_G20_P51_the_suites_guard_fails_a_test_that_reaches_the_real_home",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P52",
+   "codon": "G10.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the v0.1.2 tag on a real Mac with a real Claude Code: the status line wrapper caps Pit Board's part only with `timeout` or `gtimeout`. macOS 27 has /usr/bin/timeout (capped at 1 s, seen 1.1 s); with neither on the PATH, as on macOS 13 as it comes, a stand-in that hangs 8 s held the wrapper 8.1 s.",
+   "promise": "Pit Board's part of the status line is bounded with no program the machine may lack: with PATH=/bin and a stand-in that hangs, the wrapper returns within its bound and prints the person's own line. Proven on a macOS 13 test account.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P53",
+   "codon": "G10.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the v0.1.2 tag on a real Mac, case C (the real account's shape): the wrapper reads Claude Code's JSON with `in=$(cat)`, which drops a trailing newline: 163 bytes in gave 162 to the person's status script. Harmless for JSON, but the wrapper says it hands on the same input.",
+   "promise": "The wrapper hands the person's own status line command exactly the bytes Claude Code gave it: 163 in, 163 out, a trailing newline included.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [

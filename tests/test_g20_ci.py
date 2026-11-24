@@ -116,3 +116,62 @@ def test_G20_6_ci_has_room_for_every_skip_reason(request):
 def test_G9_5_ci_runs_the_skill_format_gate():
     text = dict(workflows())["tests.yml"]
     assert "gh skill publish --dry-run" in text
+
+
+def test_G20_P51_the_suites_guard_fails_a_test_that_reaches_the_real_home(tmp_path):
+    """P51 (the family's rule 17): the suite's guard (tests/conftest.py) is seen to fail each way a test can lean on
+    the account running it: it opens the real plugin registry; it does so and swallows the error; it starts a child
+    with the real HOME, or with none; it starts the real `claude` program. The same file's test that gives its own
+    home passes. Run in a child pytest whose real home is a fake one and whose `claude` is a stand-in, so nothing of
+    the account running this suite is read or started."""
+    import shutil
+    import site
+    import subprocess
+    import sys
+    here = os.path.dirname(os.path.abspath(__file__))
+    fake = tmp_path / "fake-home"
+    (fake / ".claude" / "plugins").mkdir(parents=True)
+    (fake / ".claude" / "plugins" / "installed_plugins.json").write_text('{"version": 2, "plugins": {}}')
+    tools = tmp_path / "tools"
+    tools.mkdir()
+    (tools / "claude").write_text("#!/bin/sh\necho stand-in\n")
+    os.chmod(tools / "claude", 0o755)
+    run = tmp_path / "run"
+    run.mkdir()
+    shutil.copy(os.path.join(here, "conftest.py"), run / "conftest.py")
+    (run / "test_leans.py").write_text(
+        "import os, subprocess\n"
+        "REG = os.path.expanduser('~/.claude/plugins/installed_plugins.json')\n"
+        "def test_forgets():\n"
+        "    open(REG).read()\n"
+        "def test_swallows():\n"
+        "    try:\n"
+        "        open(os.path.expanduser('~/.pitboard/nothing-here'))\n"
+        "    except OSError:\n"
+        "        pass\n"
+        "def test_child_with_the_real_home():\n"
+        "    subprocess.run(['true'])\n"
+        "def test_child_with_no_home():\n"
+        "    subprocess.run(['true'], env={'PATH': '/usr/bin:/bin'})\n"
+        "def test_the_real_claude(tmp_path):\n"
+        "    subprocess.run(['claude', '--version'], env=dict(os.environ, HOME=str(tmp_path)), capture_output=True)\n"
+        "def test_remembers(tmp_path, monkeypatch):\n"
+        "    monkeypatch.setenv('HOME', str(tmp_path))\n"
+        "    os.makedirs(os.path.expanduser('~/.claude/plugins'))\n"
+        "    open(os.path.expanduser('~/.claude/plugins/installed_plugins.json'), 'w').write('{}')\n"
+        "    subprocess.run(['true'])\n")
+    env = dict(os.environ, HOME=str(fake), PYTHONUSERBASE=site.getuserbase(), PYTHONDONTWRITEBYTECODE="1",
+               PATH=f"{tools}:/usr/bin:/bin")
+    env.pop("PITBOARD_HOME", None)
+    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "--rootdir", str(run),
+                        "-c", os.devnull, str(run)], env=env, capture_output=True, text=True, timeout=120,
+                       stdin=subprocess.DEVNULL)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "6 passed, 5 errors" in r.stdout, r.stdout
+    for name in ("test_forgets", "test_swallows", "test_child_with_the_real_home", "test_child_with_no_home",
+                 "test_the_real_claude"):
+        assert f"ERROR at teardown of {name}" in r.stdout, (name, r.stdout)
+    assert "test_remembers" not in r.stdout, r.stdout
+    for said in ("open " + str(fake), "pitboard/nothing-here", f"a child whose HOME is the real home: {fake}",
+                 "a child with no HOME", "the real claude program"):
+        assert said in r.stdout, (said, r.stdout)
