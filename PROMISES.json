@@ -802,6 +802,18 @@
    "test": "",
    "proven": "",
    "issue": 128
+  },
+  {
+   "id": "P65",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, in scratch homes on Linux (the code of 0.1.2 and of main that day), the family's rule 11 (WHAT WILL REFUSE IS ASKED BEFORE THE FIRST WRITE): `setup --minimal --apply` writes config.json first (making ~/.pitboard), then the launcher copies and the wrapper, and the settings file last. A settings file that cannot be read is refused at the plan, before any write, but in a bare system error (\"pitboard: setup: [Errno 13] Permission denied: <path>\", exit 6) with no next step. A settings file that cannot be written (the file 444 in a 555 ~/.claude) is found only at the last step: everything else was already written, including setup's record, and setup says \"pitboard: unexpected error: PermissionError: [Errno 13] Permission denied: <path>\", exit 1, naming nothing it left and no next step. The settings file is untouched; `version` then says \"installed none\" and \"status line runs nothing\", which is true there.",
+   "promise": "Setup asks before its first write whether the settings file and its folder can be read and written, read from the thing itself, and on a seen no stops having made nothing, saying what it found and the one next step. A setup that stops after a write names what it left on disk and the one next step (uninstall clears it, or fix the mode and run setup again). Every stop line, the unreadable case included, names what happened and the one next step, never a bare system error. A test for each case takes the permission away and reads the words and the home. Due 0.1.4, not 0.1.3, by the maintainer's ruling: the words are bare, not untrue; nothing is lost (the settings file is untouched); and the case is rare.",
+   "test": "",
+   "proven": "",
+   "issue": 132
   }
  ],
  "declined": [
