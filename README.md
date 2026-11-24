@@ -35,7 +35,7 @@ claude plugin marketplace add TheWindstorm/windstorm-pit-stop
 claude plugin install windstorm-pit-board@thewindstorm
 ```
 
-Then, in a new Claude Code session, `pitboard setup --minimal` shows what it would change (the status line segment, the launcher copy in your Pit Board home) and `pitboard setup --minimal --apply` does it. (0.1.2's README left out `--minimal`, and setup refuses the line without it.) Setup writes `~/.claude/settings.json` private (mode 600). When the file has another mode, the plan says so first: the backup setup keeps has the old mode, and uninstall puts the old mode back only when it puts the file back byte for byte.
+Then, in a new Claude Code session, `pitboard setup --minimal` shows what it would change (the status line segment, the launcher copy in your Pit Board home) and `pitboard setup --minimal --apply` does it. (0.1.2's README left out `--minimal`, and setup refuses the line without it.) Setup writes `~/.claude/settings.json` private (mode 600). When the file has another mode, the plan says so first: the backup setup keeps (the file as setup found it, after the install line added the plugin) has the old mode, and uninstall puts the old mode back only when it puts the file back byte for byte.
 
 The status line then runs your own status line command as before, with the same input and environment, and puts Pit Board's segment in front of it. When nothing Pit Board shows can have changed, a redraw starts no Python: it shows what Pit Board kept for that session in its home's `state` folder (one small file per session, mode 600, holding the count and the age it shows, never an ask's words; a file goes after a week or when a new version runs). The first redraw of a session, and the first after an ask or a setting changes, runs Pit Board.
 
@@ -43,7 +43,7 @@ The status line then runs your own status line command as before, with the same 
 
 ```
 claude plugin marketplace add TheWindstorm/windstorm-pit-stop
-git clone --depth 1 --branch v0.1.2 https://github.com/TheWindstorm/windstorm-pit-board
+git clone --depth 1 --branch v0.1.3 https://github.com/TheWindstorm/windstorm-pit-board
 windstorm-pit-board/bin/pitboard setup --folder /path/to/your/project --apply
 ```
 
@@ -103,6 +103,8 @@ python3 -c 'import json,os; h=os.environ.get("PITBOARD_HOME") or os.path.expandu
 ```
 
 What is left is Pit Board's home: the folder `~/.pitboard`, or the folder `PITBOARD_HOME` names, which may hold other things of yours. Deleting it is yours to do, after you have looked inside it. From 0.1.3, `pitboard uninstall` removes what Pit Board made there.
+
+**Known in 0.1.3, fixed in 0.1.4.** A status line run that Claude Code cuts at the wrong moment can leave a small `.tmp` file in Pit Board's home; nothing reads it, and uninstall takes it away (0.1.4 clears it by itself). After `pitboard uninstall`, setup run from the version folder Claude Code keeps says `Pit Board was removed by Claude Code`, which is not what happened: to set Pit Board up again, run the install line above first (0.1.4 says so itself).
 
 ## Built for
 

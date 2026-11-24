@@ -1,0 +1,7 @@
+{
+  "operator_name": "Sam",
+  "escalate_after_hours": 12,
+  "urgent_deadline_hours": 6,
+  "reminder_max_items": 5,
+  "display_tz": "America/New_York"
+}
