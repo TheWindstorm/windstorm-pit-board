@@ -170,3 +170,32 @@ def test_G10_5_wrapper_fails_soft_slow_or_broken_segment(world, fault):
                          text=True, env=env, timeout=30).stdout
     assert out == "MINE"                                         # the operator's line alone
     assert time.monotonic() - t < S.STATUS_CAP_SECONDS + 2       # the cap held (the slow one sleeps 5 s)
+
+
+@pytest.mark.parametrize("before, words", [
+    (0o664, ["set statusLine.command to the wrapper (no status line before; backup kept)",
+             "the file is 664 now and is written private (600); the backup keeps 664",
+             "uninstall puts 664 back only when it puts the file back byte for byte"]),
+    (0o600, ["set statusLine.command to the wrapper (no status line before; backup kept)"]),
+    (None, ["set statusLine.command to the wrapper (no status line before; no settings file before)",
+            "the file is made private (600); there is nothing to back up"]),
+])
+def test_G18_1_the_plan_says_what_happens_to_the_settings_files_mode(world, before, words):
+    """P25: seen on two machines and a stock virtual machine, a settings file went from 664 to 600 and the plan said only
+    that statusLine.command would be set. Now the plan says it first, whole (no line cut at the width), and a missing
+    file is not said to be backed up."""
+    home, pb = world
+    p = home / ".claude" / "settings.json"
+    if before is not None:
+        settings(home, {"model": "x"})
+        os.chmod(p, before)
+    code, out, _ = run("setup", "--minimal")
+    lines = [ln.strip() for ln in out.splitlines()]
+    at = lines.index(words[0])
+    assert code == 0 and lines[at:at + len(words)] == words, out     # whole lines: none cut at the width
+    nxt = lines[at + len(words)] if at + len(words) < len(lines) else ""
+    assert not nxt.startswith(("the file is", "uninstall puts")), out   # nothing more said for this item
+    run("setup", "--minimal", "--apply")
+    assert stat.S_IMODE(p.stat().st_mode) == 0o600
+    baks = sorted((home / ".claude").glob("settings.json.bak-*"))
+    assert [stat.S_IMODE(b.stat().st_mode) for b in baks] == ([] if before is None else [before])

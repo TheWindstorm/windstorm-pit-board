@@ -109,6 +109,19 @@ def _file_item(name, path, content, mode):
     return Item(name, path, action, content, mode)
 
 
+def mode_text(path):
+    """P25: what setup does to the settings file's mode and its backup, said before it is done (setup writes it 600).
+    Returns (words for the action line, more lines): short lines, so the CLI's width cut never hides them."""
+    try:
+        now = os.stat(path).st_mode & 0o777
+    except FileNotFoundError:
+        return "no settings file before", ["the file is made private (600); there is nothing to back up"]
+    if now == 0o600:
+        return "backup kept", []
+    return "backup kept", [f"the file is {now:o} now and is written private (600); the backup keeps {now:o}",
+                           f"uninstall puts {now:o} back only when it puts the file back byte for byte"]
+
+
 def plan_minimal(home=None, settings_path=None, root=None):
     """The --minimal items, in order (G18.1)."""
     home = home or store.home()
@@ -155,8 +168,9 @@ def plan_minimal(home=None, settings_path=None, root=None):
         new_sl.update({"type": "command", "command": wpath})
         new["statusLine"] = new_sl
         was = f"was {json.dumps(current)}" if current else "no status line before"
+        said, more = mode_text(settings_path)
         items.append(Item("status line setting", settings_path,
-                          f"set statusLine.command to the wrapper ({was}; backup kept)", json_obj=new))
+                          "\n".join([f"set statusLine.command to the wrapper ({was}; {said})"] + more), json_obj=new))
     return items
 
 
@@ -236,7 +250,7 @@ def describe(items, applied=None):
     lines = []
     for n, it in enumerate(items, 1):
         lines.append(f"{n}. {it.name}: {it.path}")
-        lines.append(f"   {it.action}")
+        lines.extend(f"   {ln}" for ln in it.action.split("\n"))
     if applied is None:
         lines.append("Nothing changed. Run again with --apply to do it.")
     else:
