@@ -584,6 +584,18 @@
    "seen": "2026-11-24 05:22Z, the first apply on a real Mac (macOS 27.2.1, a clean test account with no Claude Code): setup --apply made `~/.claude` for the settings file; uninstall --apply removed the file (\"there was none before\") but left the empty `~/.claude`, named nowhere in the census. The same run kept an empty `lanes/` and said \"0 asks (0 open) in 0 lane logs\".",
    "promise": "Setup records each folder it makes on the way to a settings file. Uninstall removes those folders, deepest first, when nothing else is in them, and names each one it leaves with what is in it. An empty `lanes/` goes like an empty `logs/`, and the kept line names asks only when there are lane logs.",
    "test": "test_G18_3_a_folder_setup_made_for_the_settings_file_goes_when_empty",
+   "proven": "2026-11-24 05:29Z, a real Mac (macOS 27.2.1, arm64, Apple's Python 3.9.6), a clean test account with no Claude Code, main at 0e006461, run by a script by hand: setup --apply (made `~/.claude` and `~/.pitboard`), then the home's own uninstall --apply, exit 0. The census said `~/.claude` went (\"made by setup when there was none; empty\"), and empty `lanes/` and `logs/` went; it kept and named only setup's record. The whole home listed with the family's listing tool before setup and after uninstall: the only difference was `~/.pitboard/setup-record.json` with its folder; after the census's own printed line (`rm -r ~/.pitboard`) the home was as found, but for macOS's own Photos database files.",
+   "issue": ""
+  },
+  {
+   "id": "P47",
+   "codon": "G2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 28 (WHAT RUNS INCLUDES WHAT DECIDES WHAT RUNS) read against P41's walk: it started from the folder above the settings file and above a non-default home, but not from the installed version folder in Claude Code's plugin cache, where every hook runs from, nor from the folders between the person's home folder and it, and it never looked at a file (the settings file, whose status line entry names what runs, or the code in the version folder).",
+   "promise": "The walk also starts from everything outside Pit Board's own home whose content decides what Pit Board runs: the settings file and its folder, the folder above a home that is not the default, and every installed version folder in Claude Code's plugin cache with every folder and file in it, and every folder from the person's home folder down to each. A file there is named when another account can reach it and write it, like a folder; none is changed. A plugin registry that cannot be read is said so.",
+   "test": "test_G2_the_walk_covers_what_decides_what_runs",
    "proven": "",
    "issue": ""
   }

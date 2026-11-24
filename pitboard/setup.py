@@ -10,7 +10,7 @@ import shlex
 import stat
 import time
 
-from . import __version__, leave, stablecopy, store
+from . import __version__, launch, leave, stablecopy, store
 
 MARK = "# pitboard-original-command: "
 WRAPPER_NAME = "statusline.sh"
@@ -190,10 +190,12 @@ def who_can_write(path):
     the owner. Reach: every folder above lets that account pass. A link is never followed."""
     try:
         st = os.lstat(path)
-        if stat.S_ISLNK(st.st_mode) or not stat.S_ISDIR(st.st_mode) or not st.st_mode & 0o022:
+        if stat.S_ISLNK(st.st_mode) or not (stat.S_ISDIR(st.st_mode) or stat.S_ISREG(st.st_mode)) \
+                or not st.st_mode & 0o022:
             return None
-        if st.st_mode & stat.S_ISVTX:                     # sticky (/tmp): no other account removes or replaces ours
+        if stat.S_ISDIR(st.st_mode) and st.st_mode & stat.S_ISVTX:   # sticky (/tmp): no other account replaces ours
             return None
+        bits = 3 if stat.S_ISDIR(st.st_mode) else 2       # P47: a file is written with w alone
         above, p = [], os.path.dirname(os.path.abspath(path))
         while True:
             above.append(os.stat(p))
@@ -202,9 +204,9 @@ def who_can_write(path):
             p = os.path.dirname(p)
     except OSError:
         return None
-    if _passes(None, set(), st, 3) and all(_passes(None, set(), a, 1) for a in above):
+    if _passes(None, set(), st, bits) and all(_passes(None, set(), a, 1) for a in above):
         return "any account can reach and write it"
-    if st.st_mode & 0o030 == 0o030:
+    if st.st_mode & 0o020 and (bits == 2 or st.st_mode & 0o010):
         members = _other_members(st.st_gid, st.st_uid)
         if members is None:
             return "its group's members could not be read"
@@ -214,7 +216,7 @@ def who_can_write(path):
             if groups is None:                            # said for that account; the walk goes on (P44)
                 unread.append(_name(uid))
                 continue
-            if _passes(uid, groups, st, 3) and all(_passes(uid, groups, a, 1) for a in above):
+            if _passes(uid, groups, st, bits) and all(_passes(uid, groups, a, 1) for a in above):
                 return f"account {_name(uid)} of its group can reach and write it"
         if unread:
             return f"the groups of account {', '.join(unread[:3])} in its group could not be read"
@@ -251,16 +253,49 @@ def owned_by_another(path):
     return out
 
 
+def runs_from(home, settings_path):
+    """P47 (the family's rule 28, WHAT RUNS INCLUDES WHAT DECIDES WHAT RUNS): outside Pit Board's own home, every
+    folder and file whose content decides what Pit Board runs: the settings file (its status line entry) and its
+    folder; the folder above a home that is not the default; every installed version folder in Claude Code's plugin
+    cache with everything in it (the hooks run from there); and every folder from the person's home folder down to
+    each. ([paths], the registry's read when it could not be read, else None)."""
+    top = os.path.expanduser("~")
+    home = os.path.abspath(home)
+    targets = [os.path.abspath(settings_path), os.path.dirname(os.path.abspath(settings_path))]
+    if home != os.path.join(top, ".pitboard"):
+        targets.append(os.path.dirname(home))
+    installs = launch._registry(os.path.dirname(os.path.abspath(settings_path)))
+    for path, _ in installs or []:
+        if os.path.isdir(path) and not os.path.islink(path):
+            targets.append(os.path.abspath(path))
+            for d, dirs, files in os.walk(path):
+                targets += [os.path.join(d, n) for n in sorted(dirs) + sorted(files)]
+    out = []
+    for t in targets:
+        if t == home or t.startswith(home + os.sep):
+            continue                                      # Pit Board's own: closed by own_open
+        chain, p = [], t
+        while p.startswith(top + os.sep) and p != top:
+            chain.append(p)
+            p = os.path.dirname(p)
+        chain.append(top) if t.startswith(top + os.sep) or t == top else None
+        out += [c for c in reversed(chain) if c not in out]
+        if t not in out:
+            out.append(t)
+    return out, ("Claude Code's plugin registry" if installs is None else None)
+
+
 def way_open(home, settings_path):
     """P41: folders on the way that are not Pit Board's and that it cannot know it made: the folder above the settings
     file, and the folder above a home that is not the default one. Never changed; named only when another account can
     really reach and write it, with the one command; and (P42) any folder on their way up that another account (not
     root) owns and can reach, with no command: only an administrator can hand it back. (path, mode, why, command)."""
-    way = [os.path.dirname(os.path.abspath(settings_path))]
-    if os.path.abspath(home) != os.path.join(os.path.expanduser("~"), ".pitboard"):
-        way.append(os.path.dirname(os.path.abspath(home)))
+    way, unread = runs_from(home, settings_path)
     out, seen = [], set()
-    for w in dict.fromkeys(way):
+    if unread:
+        out.append((os.path.join(os.path.dirname(os.path.abspath(settings_path)), "plugins"), 0, f"{unread} could not "
+                    "be read, so the installed copy's folders were not walked", None))   # mode 0: nothing read
+    for w in way:
         for p, m, owner in owned_by_another(w):
             if p not in seen:
                 seen.add(p)
@@ -289,8 +324,9 @@ def closing_items(home, settings_path):
         items.append(Item("Pit Board's own, open to other accounts", home,
                           "\n".join(["would close: group and other write taken off"] + rel), close=own))
     for w, m, why, fix in way_open(home, settings_path):
-        items.append(Item("a folder on the way, not Pit Board's", w,
-                          "\n".join([f"{m:o}: {why}; setup does not change it", READ_FROM]
+        kind = "a file that decides what runs" if os.path.isfile(w) else "a folder on the way"
+        items.append(Item(f"{kind}, not Pit Board's", w,
+                          "\n".join([(f"{m:o}: " if m else "") + f"{why}; setup does not change it", READ_FROM]
                                     + ([f"to close it: {fix}"] if fix else [])), name_only=True))
     return items
 

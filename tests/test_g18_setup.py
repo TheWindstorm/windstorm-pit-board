@@ -507,3 +507,47 @@ def test_G2_root_in_the_folders_group_is_never_another_account(short_tmp, monkey
     other = type("Pw", (), {"pw_name": "other", "pw_uid": os.getuid() + 1, "pw_gid": gid})()
     monkeypatch.setattr(pwd, "getpwall", lambda: [root, other])
     assert str(claude) in {w for w, _, _, _ in S.way_open(str(pb), str(claude / "settings.json"))}
+
+
+def test_G2_the_walk_covers_what_decides_what_runs(short_tmp, monkeypatch):
+    """P47 (the family's rule 28, WHAT RUNS INCLUDES WHAT DECIDES WHAT RUNS): the hooks run from the installed version
+    folder in Claude Code's plugin cache, and the settings file's status line entry names what runs. Both, with every
+    folder from the person's home folder down to them, are walked: a cache folder or a file there that another
+    account can write is named (never changed), as is a settings file another account can write. A registry that
+    cannot be read is said so."""
+    home, pb = short_tmp / "home", short_tmp / "pb"
+    claude = home / ".claude"
+    ver = claude / "plugins" / "cache" / "thewindstorm" / "windstorm-pit-board" / "0.1.3"
+    (ver / "bin").mkdir(parents=True)
+    (ver / "hooks").mkdir()
+    (ver / "bin" / "pitboard").write_text("#!/bin/sh\n")
+    reg = claude / "plugins" / "installed_plugins.json"
+    reg.write_text(json.dumps({"plugins": {"windstorm-pit-board@thewindstorm": [
+        {"scope": "user", "version": "0.1.3", "installPath": str(ver)}]}}))
+    settings_file = claude / "settings.json"
+    settings_file.write_text("{}")
+    for d in [short_tmp, home] + [p for p in home.rglob("*") if p.is_dir()]:
+        os.chmod(d, 0o755)
+    for f in (reg, settings_file, ver / "bin" / "pitboard"):
+        os.chmod(f, 0o644)
+    monkeypatch.setenv("HOME", str(home))
+    assert S.way_open(str(home / ".pitboard"), str(settings_file)) == []             # all closed: nothing named
+    os.chmod(ver / "hooks", 0o777)
+    os.chmod(ver / "bin" / "pitboard", 0o666)
+    os.chmod(settings_file, 0o666)
+    named = {w: (why, fix) for w, _, why, fix in S.way_open(str(home / ".pitboard"), str(settings_file))}
+    assert set(named) == {str(ver / "hooks"), str(ver / "bin" / "pitboard"), str(settings_file)}, named
+    assert named[str(ver / "hooks")] == ("any account can reach and write it", f"chmod go-w {ver / 'hooks'}")
+    text = S.describe(S.closing_items(str(home / ".pitboard"), str(settings_file)))
+    assert f"a file that decides what runs, not Pit Board's: {settings_file}\n" in text
+    assert f"a folder on the way, not Pit Board's: {ver / 'hooks'}\n" in text
+    os.chmod(home, 0o700)                                                             # a 700 home keeps everyone out
+    assert S.way_open(str(home / ".pitboard"), str(settings_file)) == []
+    os.chmod(home, 0o755)
+    os.chmod(reg, 0o000)
+    try:
+        out = S.way_open(str(home / ".pitboard"), str(settings_file))
+    finally:
+        os.chmod(reg, 0o644)
+    assert out[0][2] == ("Claude Code's plugin registry could not be read, so the installed copy's folders were not "
+                         "walked") and out[0][3] is None
