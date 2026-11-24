@@ -54,11 +54,16 @@ os.environ["PATH"] = _STUBS + os.pathsep + os.environ.get("PATH", "")
 # A child that must find no `claude` is handed NO_CLAUDE_PATH, never /usr/bin:/bin (the family's rule 17, a child's own
 # PATH is watched too): the stand-ins for the other programs above, then the system folders' programs linked one by
 # one into a folder of this run, leaving out every name above, so no child reaches this machine's own copy of one.
+# A name that is a link to one of them is left out by what it resolves to as well as by its name.
 _SYSBIN = os.path.join(_SESSION_TMP, "sysbin")
 os.makedirs(_SYSBIN)
+_REAL_SYSTEM = {os.path.realpath(os.path.join(_d, _n)) for _d in ("/usr/bin", "/bin") for _n in _SYSTEM
+                if os.path.lexists(os.path.join(_d, _n))}
 for _d in ("/usr/bin", "/bin"):
     for _n in (sorted(os.listdir(_d)) if os.path.isdir(_d) else []):
-        if _n not in _SYSTEM and not os.path.lexists(os.path.join(_SYSBIN, _n)):
+        _r = os.path.realpath(os.path.join(_d, _n))
+        if (_n not in _SYSTEM and _r not in _REAL_SYSTEM and os.path.basename(_r) not in _SYSTEM
+                and not os.path.lexists(os.path.join(_SYSBIN, _n))):
             os.symlink(os.path.join(_d, _n), os.path.join(_SYSBIN, _n))
 _NOCLAUDE = os.path.join(_SESSION_TMP, "stubs-no-claude")
 os.makedirs(_NOCLAUDE)
