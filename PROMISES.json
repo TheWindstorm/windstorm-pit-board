@@ -826,6 +826,30 @@
    "test": "",
    "proven": "",
    "issue": 133
+  },
+  {
+   "id": "P69",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, the family's rule 30 (A PROGRAM IS ASKED IN ONE LANGUAGE), read in the code of the 0.1.3 release head: the one place Pit Board matches another program's words is the error text of a failed `claude plugin` call (setup --folder, uninstall): the first line that starts with ✘, Claude Code's two clone progress lines, and two of ssh's lines (\"Host key verification failed\", \"Permission denied (publickey)\"). That call runs with the person's own language settings. What is decided (done or failed) is the exit code alone, so on a computer set to another language only the plain-words line put above the error would be lost; the error itself is still shown whole. Pit Board runs no git; ps, lsof and tmux are read in their fields made for programs (`-o pid=,args=`, `-Fn`, a format string), never by words. Not seen: a run on a computer set to another language.",
+   "promise": "Every call whose words Pit Board matches runs in the C language: the `claude plugin` call gets LC_ALL set and LANGUAGE removed on that one call, never in Pit Board's own environment or a session's, and the repo holds the list of every phrase Pit Board matches (program, phrase, version seen), held against the code by a test. A test makes the call with the person's settings in another language and reads the environment the call got. Before it is built: which C name keeps ✘ readable (C.UTF-8 where the machine has one) is read on Linux and on a Mac.",
+   "test": "",
+   "proven": "",
+   "issue": 136
+  },
+  {
+   "id": "P70",
+   "codon": "G2.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, the family's rule 7 (THE SAME STOP MUST NOT COME BACK), read in the code of the 0.1.3 release head: `pitboard add` and the other writes print \"pitboard: lane busy: <lane> (try again)\" (exit 7) when another Pit Board process holds the lane's lock past the wait, and the line does not say what will be different at the next run. Uninstall's busy line says it (\"a session is writing to lane X now; run uninstall again in a moment\"). Every other \"again\" Pit Board prints names the change first (a GitHub key added or Claude Code updated; `claude` put on the PATH) or is a different command (`--apply`).",
+   "promise": "A stop that says to run again names what is different at the next run: the lane-busy stop says that another Pit Board command is writing this lane's log now and that the next run waits for it again. A test takes the step of every stop that says to run again twice in the unchanged world, and reads that the same stop comes back only where the stop named a change the person makes first.",
+   "test": "",
+   "proven": "",
+   "issue": 137
   }
  ],
  "declined": [
