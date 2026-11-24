@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.32 · 2026-11-23 · The Windstorm**
+**Plan version 1.33 · 2026-11-24 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 

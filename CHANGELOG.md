@@ -31,6 +31,9 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.33 (2026-11-24)
+- Tests only, the family's rule 25 (no test leans on the real calendar), by the maintainer's ruling: the suite runs whole with the wall clock shifted by an outside library that every child process inherits. The uninstall tests that start a program in a clean environment now hand on the shift's two variables, and still give no `PITBOARD_HOME` and no `claude` on the PATH, so those programs are reached too. Pit Board gets no test-only clock offset of its own.
+
 ## Plan 1.32 (2026-11-23)
 - G18.1, from setup at user scope on a shared Linux workstation and on a cloud server, where the person's settings file went from mode 664 to 600 and nothing said so first: 0.1.3's plan item and README name the mode change, what the backup keeps and what uninstall puts back (P25); 0.1.4 keeps the file's mode (P26).
 - G18.1 and G18.3, the family's rule 7 (the person's own eyes): `setup --apply` and `uninstall --apply` print what the person must hear and wait for a key at their own terminal (P28, due 0.1.4). The case with no terminal is ruled before it is built.

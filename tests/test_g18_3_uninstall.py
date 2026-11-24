@@ -389,8 +389,16 @@ def test_G18_3_folder_alone_leaves_the_rest(world, folder):
 
 # ---------------------------------------------------------------- the stable copy alone (point 9)
 
-def _launch(home, script, *args, stdin=""):
+def _scrubbed(home):
+    """A clean environment: no PITBOARD_HOME, no `claude` on the PATH. A shifted-clock run (the family's rule 25)
+    hands on its two variables, so the programs started here read the shifted clock too."""
     env = {"HOME": str(home), "PATH": "/usr/bin:/bin"}
+    env.update({k: os.environ[k] for k in ("LD_PRELOAD", "SHIFT_SECONDS") if k in os.environ})
+    return env
+
+
+def _launch(home, script, *args, stdin=""):
+    env = _scrubbed(home)
     return subprocess.run([sys.executable, "-I", str(script), *args], input=stdin, capture_output=True, text=True,
                           env=env, timeout=60)
 
@@ -543,13 +551,13 @@ def test_G18_3_the_readmes_by_hand_lines_for_a_home_from_before_0_1_3(world, own
     lines = _by_hand_lines()
     assert len(lines) == 2
     for line in lines:
-        r = subprocess.run(["bash", "-c", line], env={"HOME": str(home), "PATH": "/usr/bin:/bin"},
+        r = subprocess.run(["bash", "-c", line], env=_scrubbed(home),
                            capture_output=True, text=True, timeout=60)
         assert r.returncode == 0, r.stderr
     want = dict(MINE) if own else {"model": "x"}
     assert json.loads(st.read_text()) == want
     assert sorted(os.listdir(pb)) == ["lanes", "logs"]
-    r = subprocess.run(["bash", "-c", lines[0]], env={"HOME": str(home), "PATH": "/usr/bin:/bin"},
+    r = subprocess.run(["bash", "-c", lines[0]], env=_scrubbed(home),
                        capture_output=True, text=True, timeout=60)
     assert r.returncode == 0 and json.loads(st.read_text()) == want                 # run again: nothing changes
 
@@ -573,8 +581,8 @@ def test_G18_3_the_kept_line_names_a_command_that_runs_here(world):
                          "~/.pitboard/bin/pitboard uninstall --apply --delete-asks-and-log")                         # the copy is there while it is a plan
     after = run("--apply")[1].splitlines()[-1]
     assert after.endswith("at your own terminal: rm -r ~/.pitboard") and (pb / "lanes").exists()
-    r = subprocess.run(["bash", "-c", after.split("at your own terminal: ", 1)[1]], env={"HOME": str(home),
-                       "PATH": "/usr/bin:/bin"}, capture_output=True, text=True, timeout=60)
+    r = subprocess.run(["bash", "-c", after.split("at your own terminal: ", 1)[1]], env=_scrubbed(home),
+                       capture_output=True, text=True, timeout=60)
     assert r.returncode == 0 and not pb.exists()                         # run exactly as printed
 
 
