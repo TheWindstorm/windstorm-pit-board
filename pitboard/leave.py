@@ -154,12 +154,38 @@ def read_object(path):
     return d
 
 
+def write_new(path, data, mode=0o600):
+    """P41 (the family's rule 28): a file is OPENED NEW at its final mode (O_EXCL, never a file that was already there:
+    a leftover is removed first), so it is never written at a wider mode and narrowed after. The mode is set on the open
+    file before any byte goes in (the umask may have taken bits the mode keeps, as a backup's 664). A file already at
+    `path` is never removed or written here: the open fails (FileExistsError)."""
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, mode)
+    try:
+        if os.fstat(fd).st_mode & 0o777 != mode:
+            os.fchmod(fd, mode)
+        with os.fdopen(fd, "wb") as f:
+            fd = None
+            f.write(data if isinstance(data, bytes) else data.encode("utf-8"))
+            f.flush()
+            os.fsync(f.fileno())
+    except BaseException:
+        if fd is not None:
+            os.close(fd)
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+        raise
+
+
 def write_atomic(path, data, mode=0o600):
-    tmp = path + ".tmp"
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
-    with os.fdopen(fd, "wb") as f:
-        f.write(data if isinstance(data, bytes) else data.encode("utf-8"))
-    os.chmod(tmp, mode)
+    """Write whole or not at all: a new temporary file of this process beside it (write_new), then a rename."""
+    tmp = f"{path}.{os.getpid()}.tmp"
+    try:
+        os.unlink(tmp)                                   # one this process id left before: never reused
+    except FileNotFoundError:
+        pass
+    write_new(tmp, data, mode)
     os.replace(tmp, path)
 
 

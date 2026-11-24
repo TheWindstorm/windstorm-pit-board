@@ -331,7 +331,7 @@
    "ship_in": "0.1.3",
    "seen": "2026-11-23, `setup --minimal --apply` at user scope on a shared Linux workstation and on a cloud server: the person's settings file went from mode 664 to 600. The plan said only that `statusLine.command` would be set. The backup kept 664, and uninstall puts 664 back only on its byte-for-byte path.",
    "promise": "Before setup changes a settings file whose mode is not 600, its plan item says that the file is written private (600), the mode it has now, that its backup keeps that mode, and that uninstall puts that mode back only when it puts the file back byte for byte. The README says the same.",
-   "test": "",
+   "test": "test_G18_1_the_plan_says_what_happens_to_the_settings_files_mode",
    "proven": "",
    "issue": ""
   },
@@ -512,6 +512,18 @@
    "seen": "2026-11-24, run in scratch homes after the family's maintainer read the README against the family's rule 27: with `PITBOARD_HOME` set to a person's own home folder that already held `bin/`, `logs/`, `state/` and `lanes/` of theirs, setup accepted it without a word; uninstall, which was not yet released, removed Pit Board's top-level names as whole folders and so deleted the person's scripts and files under them, then offered `rm -r` on their home folder; `--delete-asks-and-log` deleted their `logs/` and `lanes/`; and the README's by-hand line removed everything but three names (taken off the front page the same night). Released 0.1.2's setup, run in a folder already holding a person's `config.json`, `statusline.sh` and `bin/pitboard`: it accepted it silently, read their `config.json` as its own, and replaced `statusline.sh` and `bin/pitboard`, keeping each original beside it as `<name>.bak-<time>`; 0.1.2 has no uninstall.",
    "promise": "Setup refuses, before any write, a home that is the person's home folder or holds anything Pit Board does not make. Uninstall never stops because of the person's things (the family's rule 8): everything outside the home comes off; inside it, a file goes only when it carries Pit Board's mark or setup's record lists it, or when it is in a folder of Pit Board's that holds nothing but Pit Board's own names; a folder goes only when it is empty; anything left is named with why and whose it is, and no command is offered for it. `--delete-asks-and-log` deletes nothing from such a home and says why. Each case has a test that leaves the person's files where they were, including a home that was fine at setup and gained a file of the person's later.",
    "test": "test_G18_3_a_file_of_yours_put_in_the_home_after_setup_never_stops_the_leave",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P41",
+   "codon": "G2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 28 after a wrapper started another skill under umask 000; Pit Board run the same way in a scratch home: setup made `bin/` and `pitboard/` in its home 777, and a session's hooks wrote `state/<key>.activity` 666 (664 under umask 002). The home itself stayed 700, and a second setup was not refused. And every private write reused a fixed `<name>.tmp` if one was left: a leftover 666 `lanes.json.tmp` made the lane map 666; the settings file was written into it and narrowed to 600 only after the bytes were in; a backup was copied at the umask's mode and its mode set after.",
+   "promise": "Whatever umask Pit Board is started with, the launcher, the first thing every command, hook and status line run, adds 022 to it before anything is read or written, so nothing Pit Board makes is writable by another account; what holds the person's data stays 600 by name. A home that an older start left with 777 folders does not make setup refuse its own home. Every file Pit Board writes is opened new at its final mode (O_EXCL) under a temporary name of its own process, any such name left before removed first, and renamed into place; a backup is opened new at the mode the file had and never written over an earlier backup.",
+   "test": "test_G2_nothing_pit_board_makes_is_writable_by_another_account_whatever_the_umask",
    "proven": "",
    "issue": ""
   }

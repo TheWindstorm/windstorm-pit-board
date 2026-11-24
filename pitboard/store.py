@@ -91,13 +91,8 @@ def read_json(path, default=None):
 
 
 def write_json_atomic(path, obj):
-    tmp = path + ".tmp"
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        json.dump(obj, f, ensure_ascii=False, separators=(",", ":"))
-        f.flush()
-        os.fsync(f.fileno())
-    os.replace(tmp, path)
+    from . import leave                                  # P41: one way to write a private file (opened new, 600)
+    leave.write_atomic(path, json.dumps(obj, ensure_ascii=False, separators=(",", ":")), 0o600)
 
 
 def config():

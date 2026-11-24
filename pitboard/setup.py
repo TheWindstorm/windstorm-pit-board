@@ -7,7 +7,6 @@ Standard library only.
 import json
 import os
 import shlex
-import shutil
 import time
 
 from . import __version__, leave, stablecopy, store
@@ -225,19 +224,19 @@ def apply(items, home=None):
         before_mode = os.stat(it.path).st_mode & 0o777 if before is not None else None
         bak = None
         if os.path.exists(it.path):
-            bak = f"{it.path}.bak-{stamp}"
-            shutil.copy2(it.path, bak)
+            bak, n = f"{it.path}.bak-{stamp}", 1
+            while os.path.lexists(bak):                  # never over an earlier backup
+                n += 1
+                bak = f"{it.path}.bak-{stamp}-{n}"
+            st = os.stat(it.path)                        # P41: opened new at the mode the file had (P25), times kept
+            leave.write_new(bak, leave.read_bytes(it.path), st.st_mode & 0o777)
+            os.utime(bak, ns=(st.st_atime_ns, st.st_mtime_ns))
         if it.json_obj is not None:
             content = (json.dumps(it.json_obj, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
             mode = 0o600
         else:
             content, mode = it.content, it.mode
-        tmp = it.path + ".tmp"
-        fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
-        with os.fdopen(fd, "wb") as f:
-            f.write(content)
-        os.chmod(tmp, mode)
-        os.replace(tmp, it.path)
+        leave.write_atomic(it.path, content, mode)       # P41: opened new at its mode, never narrowed after
         done.append(it)
         if new_here and home and it.json_obj is None and os.path.dirname(it.path) == home:
             note(home, made=[os.path.basename(it.path)])       # P40: config.json and the wrapper, by record

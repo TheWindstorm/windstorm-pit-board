@@ -746,10 +746,8 @@ def _copy_line(home, pin):
 
 def _write_whole(path, text):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = f"{path}.{os.getpid()}.tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        f.write(text)
-    os.replace(tmp, path)
+    from . import leave                                  # P41: opened new at its mode
+    leave.write_atomic(path, text, 0o600)
 
 
 def cmd_self_update(args):
