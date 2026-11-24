@@ -9,6 +9,7 @@ import importlib.util
 import json
 import os
 import re
+import shlex
 import sys
 
 from . import __version__, contract, flags, lane, launch, render, stablecopy, store, timefmt
@@ -700,7 +701,21 @@ def cmd_version(args):
     except Exception:  # noqa: BLE001
         copy = None
     status = _status_line(store.home())
-    return Out(f"{__version__} ({', '.join(parts)})" + (f"\n{copy}" if copy else "") + f"\n{status}", data=data)
+    return Out(f"{__version__} ({', '.join(parts)})" + (f"\n{copy}" if copy else "")
+               + "".join(f"\n{ln}" for ln in _open_lines(store.home())) + f"\n{status}", data=data)  # P15: status last
+
+
+def _open_lines(home):
+    """P41: said again while it stays open: a folder on the way (with its command), Pit Board's own entries."""
+    from . import setup as setup_mod
+    try:
+        lines = [ln for w, m in setup_mod.way_open(home, setup_mod.claude_settings_path())
+                 for ln in (f"open to other accounts: {w} ({m:o})", f"  to close it: chmod go-w {shlex.quote(w)}")]
+        own = setup_mod.own_open(home)
+    except Exception:  # noqa: BLE001                  # never fails `version`
+        return []
+    return lines + ([f"Pit Board's own, open to other accounts: {len(own)} · run pitboard setup --apply to close"]
+                    if own else [])
 
 
 def _status_line(home):
