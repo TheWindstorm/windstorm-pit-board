@@ -619,3 +619,73 @@ def test_G10_5_P53_the_wrapper_hands_on_the_same_bytes(world, tail):
     out = subprocess.run([str(pb / "statusline.sh")], input=given.encode(), capture_output=True,
                          env=dict(os.environ, HOME=str(home)), timeout=30).stdout.decode()
     assert out.rsplit(" · ", 1)[-1] == str(len(given.encode())), (out, len(given.encode()))
+
+
+def test_G18_1_P68_nothing_setup_writes_names_the_plugin_cache_version_folder(tmp_path):
+    """P68 (the family's rule 29 (a)): Claude Code removes a replaced version folder of its plugin cache 14 days
+    after the update, so nothing Pit Board writes or prints may name one. A copy of the plugin sits in a made-up
+    <home>/.claude/plugins/cache/thewindstorm/windstorm-pit-board/<version>/ folder, recorded in Claude Code's list
+    as a real install is, and everything runs from there as a session runs it: `setup --minimal --apply` twice in a
+    row, `setup --folder DIR --apply`, a SessionStart hook line exactly as hooks.json holds it, `pitboard add` and
+    the status line. Then every byte of every file in the home and the folder (all but Claude Code's own cache and
+    list) and every printed line are read for the version folder, the plugin's cache folder and "plugins/cache"."""
+    home, proj, own = tmp_path / "home", tmp_path / "proj", tmp_path / "own"
+    claude = home / ".claude"
+    plug = claude / "plugins" / "cache" / "thewindstorm" / "windstorm-pit-board"
+    ver = plug / __version__
+    shutil.copytree(ROOT, ver, ignore=shutil.ignore_patterns(".git", "tests", "__pycache__", "report.xml"))
+    reg = claude / "plugins" / "installed_plugins.json"
+    reg.write_text(json.dumps({"version": 2, "plugins": {"windstorm-pit-board@thewindstorm": [
+        {"scope": "user", "version": __version__, "installPath": str(ver)}]}}))
+    (claude / "settings.json").write_text("{}")
+    proj.mkdir()
+    own.mkdir()
+    (own / "claude").write_text("#!/bin/sh\nexit 0\n")              # `claude plugin install` for the folder mode
+    os.chmod(own / "claude", 0o755)
+    env = {"HOME": str(home), "CLAUDE_PLUGIN_ROOT": str(ver), "PITBOARD_MACHINE": "studio-1",
+           "PATH": os.pathsep.join([str(ver / "bin"), str(own), NO_CLAUDE_PATH])}
+    printed = []
+
+    def sh(argv, cwd=home, given=None, **more):
+        r = subprocess.run(argv, env=dict(env, **more), cwd=str(cwd), input=given, capture_output=True, text=True,
+                           timeout=60)
+        printed.append(r.stdout + r.stderr)
+        assert r.returncode == 0, (argv, r.stdout, r.stderr)
+        return r.stdout
+
+    pb = str(ver / "bin" / "pitboard")
+    sh([pb, "setup", "--minimal", "--apply"])
+    sh([pb, "setup", "--minimal", "--apply"])
+    sh([pb, "setup", "--folder", str(proj), "--apply"])
+    hook = json.loads((ver / "hooks" / "hooks.json").read_text())["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+    event = {"session_id": "s-p68", "cwd": str(proj), "hook_event_name": "SessionStart", "source": "startup"}
+    sh(["bash", "-c", hook], cwd=proj, given=json.dumps(event))
+    sh([pb, "add", "--title", "Pick a name", "--suggested", "api"], cwd=proj, PITBOARD_LANE="api")
+    sh([str(home / ".pitboard" / "statusline.sh")], cwd=proj,
+       given=json.dumps({"session_id": "s-p68", "cwd": str(proj), "session_name": "api"}))
+
+    needles = {str(ver), os.path.realpath(ver), str(plug), os.path.realpath(plug), "plugins/cache"}
+    hits, read = [], set()
+    for top in (home, proj):
+        for d, dirs, files in os.walk(top):
+            dirs[:] = [n for n in dirs if os.path.join(d, n) != str(claude / "plugins" / "cache")]
+            for n in files:
+                p = os.path.join(d, n)
+                if p == str(reg):
+                    continue
+                if os.path.islink(p):                              # a link is read for where it points
+                    data = os.readlink(p).encode()
+                else:
+                    with open(p, "rb") as f:
+                        data = f.read()
+                read.add(os.path.relpath(p, tmp_path))
+                hits += [(os.path.relpath(p, tmp_path), x) for x in needles if x.encode() in data]
+    hits += [("printed", x) for x in needles for text in printed if x in text]
+    assert hits == [], hits
+    for must in ("home/.claude/settings.json", "proj/.claude/settings.local.json", "proj/.claude/pitboard-folder.json",
+                 "home/.pitboard/setup-record.json", "home/.pitboard/config.json", "home/.pitboard/lanes.json",
+                 "home/.pitboard/statusline.sh", "home/.pitboard/bin/pitboard"):
+        assert must in read, (must, sorted(read))
+    for event_hooks in json.loads((ver / "hooks" / "hooks.json").read_text())["hooks"].values():
+        for h in event_hooks[0]["hooks"]:                          # Claude Code names the folder at each run
+            assert h["command"].startswith('R="${CLAUDE_PLUGIN_ROOT}"; '), h["command"]

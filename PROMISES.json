@@ -814,6 +814,18 @@
    "test": "test_G20_6_P67_a_run_that_ends_early_fails_the_job",
    "proven": "",
    "issue": 134
+  },
+  {
+   "id": "P68",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 29 (a), a test before the release: from a copy of the plugin in a made-up plugin cache version folder (recorded in Claude Code's list), `setup --minimal --apply` of v0.1.0, v0.1.1, v0.1.2 and the 0.1.3 release head wrote no path into that folder (one run each on Linux, every file of the home read). A SessionStart hook, `pitboard add` and the status line run from the same copy wrote none either. So the test could not be seen red on the code as it was. It was seen red three ways, each planted by hand and taken out again: setup's record given the folder's path, the status line setting pointed into the folder, and a link into it.",
+   "promise": "Nothing Pit Board writes or prints names a version folder of Claude Code's plugin cache, which Claude Code removes 14 days after the update that replaced it. Run from a copy in such a folder, `setup --minimal --apply` twice, `setup --folder DIR --apply`, a SessionStart hook line exactly as hooks.json holds it, `pitboard add` and the status line leave no file, no link and no printed line in the home or the folder that names the version folder, the plugin's cache folder or \"plugins/cache\"; every hook line reaches its folder only through Claude Code's ${CLAUDE_PLUGIN_ROOT}.",
+   "test": "test_G18_1_P68_nothing_setup_writes_names_the_plugin_cache_version_folder",
+   "proven": "",
+   "issue": 135
   }
  ],
  "declined": [
