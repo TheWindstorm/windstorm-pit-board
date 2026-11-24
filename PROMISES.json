@@ -440,7 +440,7 @@
    "seen": "2026-11-24: one home made on 2026-11-17, before the first release, was mode 775. Released code does not do that: `pitboard setup` makes the home through the store's 700 path before it writes, in every release, and a fresh setup of 0.1.2 on a fleet Linux machine with umask 0002 made it 700. Every hook, run first into an empty home under umask 0002, made it 700 in 0.1.0, 0.1.1 and 0.1.2. Nothing in a released version was seen to make a home other than 700. Read in the code, not run: `pitboard pin` (0.1.2) makes its folder with the default mode, so as the very first command it would make the home that way. And setup's plan says nothing about the mode of a home that already exists.",
    "promise": "A home that Pit Board makes is 700, whichever command or hook writes first (setup's is pinned by a test; `pin` joins it). A home that already exists with another mode is named in setup's plan and never changed.",
    "test": "",
-   "proven": "",
+   "proven": "The half released code already keeps, only: 2026-11-24 02:52Z, a stock Ubuntu 24.04.5 virtual machine, a fresh user with umask 0002, Claude Code 2.1.331: `pitboard setup --minimal --apply` (run by hand) made ~/.pitboard 700, and lanes/, state/ and logs/ 700. The other half (setup's plan names an existing home's mode; `pin` makes the home 700) is not built and not seen.",
    "issue": ""
   },
   {
