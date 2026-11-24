@@ -690,7 +690,7 @@
    "first_ship_in": "0.1.3",
    "ship_in": "0.1.3",
    "seen": "2026-11-24, the family's rule 2 (A PERSON'S MACHINE IS FULL WHERE A STOCK ONE IS EMPTY), part 2: the wrapper runs a program of the person's, their own status line command. P53 holds the bytes it is handed; the environment was not yet said.",
-   "promise": "The person's own status line command is run with the environment Claude Code gave the wrapper, nothing added and nothing taken (only what a shell sets for itself differs: SHLVL, _, PWD, OLDPWD), and the same bytes on stdin, with the lived-in environment of tests/LIVED-IN.md, under dash, bash and bash --posix. The names the wrapper hands Pit Board's part are set after the person's line has run. It is run as Claude Code runs it: `/bin/sh -c <command>` (read on Claude Code 2.1.331 on Linux, whatever SHELL says; the wrapper ran it with bash before, so `$0` and anything bash reads differently from the machine's sh came out otherwise). Not yet read on a Mac.",
+   "promise": "The person's own status line command is run with the environment Claude Code gave the wrapper, nothing added and nothing taken (only what a shell sets for itself differs: SHLVL, _, PWD, OLDPWD), and the same bytes on stdin, with the lived-in environment of tests/LIVED-IN.md, under dash, bash and bash --posix. The names the wrapper hands Pit Board's part are set after the person's line has run. It is run as Claude Code runs it: `/bin/sh -c <command>` (read on Claude Code 2.1.331 on Linux, whatever SHELL says; the wrapper ran it with bash before, so `$0` and anything bash reads differently from the machine's sh came out otherwise). On a Mac not settled: with a one-word command the script's parent is Claude Code; a shell between them was not seen and would not be seen. What would settle it: a status line of several commands read in a session that draws one.",
    "test": "test_G10_5_P54_rule2_the_persons_status_script_gets_the_environment_and_input_it_gets_without_pit_board",
    "proven": "",
    "issue": ""
@@ -716,6 +716,18 @@
    "seen": "2026-11-24, the family's rule 2, part 3: every stock machine and test account had hidden what a person's full settings show. Pit Board's case C on a real Mac (ten keys, mode 600, a status line of four keys) was the start of a lived-in list.",
    "promise": "Before each tag, after the stock round, one round runs lived-in: the same stock test account carrying the lines of tests/LIVED-IN.md, which is kept beside the tests and gets a dated line the day a person's machine shows one it lacked. A proven line says stock or lived-in and which lines were in it; a lived-in pass never stands in for the stock one.",
    "test": "test_G21_14_P57_the_lived_in_list_is_kept_beside_the_tests",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P58",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, on a real Mac's test account with no Claude Code: `pitboard uninstall --apply` put the status line back, then stopped (exit 11) because `claude` is not on the PATH, kept Pit Board's files so that uninstall can run again, and named \"run yourself: claude plugin uninstall ...\", a step a person who took Claude Code off first cannot take. Its census line was made true in 0.1.3 (test_G18_3_P58_with_no_claude_on_the_path_the_census_names_a_step_the_person_can_take).",
+   "promise": "The leave tells three answers apart: `claude` runs; it is not on the PATH but is at one of Claude Code's own install places (it names that path and the one line to run); Claude Code is not on the account, and then Pit Board's own files go by its record as in a full leave, while Claude Code's registry row and plugin cache stay and are named with the line for the day Claude Code comes back. The asks and the log stay as always. A place that could not be read is never taken as \"Claude Code is not here\". Proven in a Mac round with and without Claude Code.",
+   "test": "",
    "proven": "",
    "issue": ""
   }

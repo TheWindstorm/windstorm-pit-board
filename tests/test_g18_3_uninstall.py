@@ -989,3 +989,41 @@ def test_G18_3_P50_the_readmes_by_hand_line_runs_as_printed_and_keeps_the_mode(t
                        cwd=str(home), stdin=subprocess.DEVNULL)
     assert r.returncode != 0 and (home / ".claude" / "settings.json.tmp").read_text() == "left by something else"
     assert json.loads(st.read_text())["statusLine"]["command"].endswith("statusline.sh") and before != st.read_bytes()
+
+
+def test_G18_3_P58_with_no_claude_on_the_path_the_census_names_a_step_the_person_can_take(world):
+    """P58, its 0.1.3 half (seen on a real Mac's test account: the stop said "run yourself: claude plugin uninstall",
+    which a person who took Claude Code off first cannot do). With no `claude`, the line says so, says the status line
+    is back, says Pit Board's files stay, and names the step there is."""
+    home, pb, st = world
+    registry(home, [{"scope": "user", "version": "0.1.3", "installPath": "/x"}])
+
+    def no_claude(args, **kw):
+        raise FileNotFoundError("claude")
+    out, err = io.StringIO(), io.StringIO()
+    code = L.main(["--apply"], stdin=io.StringIO(""), stdout=out, stderr=err, run=no_claude)
+    rows = census(out.getvalue())
+    assert code == L.INCOMPLETE and st.read_text() == MINE_TEXT                       # the status line is back
+    assert "  gone: status line setting in ~/.claude/settings.json (put back byte for byte)" in rows
+    line = [r for r in rows if r.startswith("  kept: plugin windstorm-pit-board@thewindstorm (user scope)")]
+    assert line == ["  kept: plugin windstorm-pit-board@thewindstorm (user scope) (`claude` was not found on the "
+                    "PATH, so Claude Code's own entry for the plugin stays; your status line is already back, and Pit "
+                    "Board's files stay where the line below says. If Claude Code is still on this account, put its "
+                    "`claude` on the PATH and run ~/.pitboard/bin/pitboard uninstall --apply again. If Claude Code "
+                    "is gone, nothing of Pit Board runs any more)"], rows
+    assert "run yourself: claude plugin uninstall" not in out.getvalue()
+    assert any(r.startswith("  kept: Pit Board's files in ~/.pitboard (a step above was not finished") for r in rows)
+    assert not DELETE.search(out.getvalue())                                         # P48: no printed delete
+
+
+def test_G18_3_P54_the_status_lines_kept_files_go_with_the_rest(world):
+    """P54: `status` keeps one file per session in state/ (and, if it was stopped mid-write, one temporary file of its
+    process). Both are Pit Board's own names, so the leave takes them with the rest and the home ends as before."""
+    home, pb, st = world
+    (pb / "state").mkdir(exist_ok=True)
+    sid = "491fc210-0721-4fac-a44f-4ddaab42d465"
+    (pb / "state" / f"{sid}.seg").write_text(f"{cli.SEG_MARK} 0.1.3 9999999999 1 0 7\n\n\n")
+    (pb / "state" / f"{sid}.seg.4242.tmp").write_text("cut short")
+    code, out, _ = run("--apply")
+    assert code == 0, out
+    assert sorted(os.listdir(pb)) == ["lanes", "logs"]
