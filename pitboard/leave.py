@@ -915,6 +915,9 @@ def uninstall(apply=True, folder=None, run=None, census=None):
                            for st, w, y in census.rows]       # P17 ruling: byte for byte only where it is true
             census.gone(f"plugin {name} ({scope or 'user'} scope)")
             went.append(name)
+        elif missing:                                         # P58's first half (0.1.3): a step the person can take
+            out.append(f"plugin {name} ({scope or 'user'} scope): `claude` is not on the PATH")
+            census.kept(f"plugin {name} ({scope or 'user'} scope)", _no_claude_line(census, homes), INCOMPLETE)
         else:
             out.append(f"plugin {name} ({scope or 'user'} scope): uninstall said:\n{tail}")
             census.kept(f"plugin {name} ({scope or 'user'} scope)", f"run yourself: {cmd}", INCOMPLETE)
@@ -929,6 +932,18 @@ def uninstall(apply=True, folder=None, run=None, census=None):
             kept_lines.append(line)
     return out, kept_lines, census, homes
 
+
+def _no_claude_line(census, homes):
+    """P58 (0.1.3 half): with no `claude` on the PATH the leave cannot take Claude Code's own entry for the plugin
+    off, and "run yourself: claude plugin uninstall" would be a step the person cannot take. Say what was not found,
+    what is already done, what stays and where, and the one step there is."""
+    back = any(st == "gone" and w.startswith("status line setting in ") for st, w, _ in census.rows)
+    again = " ".join(_short(os.path.join(h, "bin", "pitboard")) for h in homes[:1]) or "pitboard"
+    return ("`claude` was not found on the PATH, so Claude Code's own entry for the plugin stays"
+            + ("; your status line is already back" if back else "")
+            + ", and Pit Board's files stay where the line below says. If Claude Code is still on this account, put "
+            f"its `claude` on the PATH and run {again} uninstall --apply again. If Claude Code is gone, nothing of Pit "
+            "Board runs any more")
 
 USAGE_LINE = "usage: pitboard uninstall [--folder DIR] [--apply] [--delete-asks-and-log] [--lane KEY] [--json]\n"
 
