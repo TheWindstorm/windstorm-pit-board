@@ -161,6 +161,9 @@ def test_starts_a_child_with_no_home():
 def test_starts_a_child_with_the_real_home():
     subprocess.run([sys.executable, "-I", "-c", "pass"], env=dict(os.environ, HOME=REAL))
 
+def test_a_childs_path_reaches_this_machines_own_programs():
+    subprocess.run([sys.executable, "-I", "-c", "pass"], env=dict(os.environ, PATH="/usr/bin:/bin"))
+
 def test_runs_this_machines_own_program():
     real = shutil.which("systemctl", path="/usr/bin:/bin") or shutil.which("launchctl", path="/usr/bin:/bin")
     assert real, "neither systemctl nor launchctl here"
@@ -176,14 +179,15 @@ def test_stays_in_its_own_home(tmp_path):
 """
 CAUGHT = ("test_reads_the_real_pit_board_home", "test_reads_the_real_plugin_registry", "test_reads_elsewhere_in_the_home",
           "test_renames_into_the_home", "test_starts_a_child_with_no_home", "test_starts_a_child_with_the_real_home",
-          "test_runs_this_machines_own_program")
+          "test_a_childs_path_reaches_this_machines_own_programs", "test_runs_this_machines_own_program")
 
 
 def test_G20_P51_the_suites_guard_catches_each_kind_and_nothing_without_it(tmp_path):
     """P51 (the family's rule 17, THE GUARD HAS FIVE PARTS): tests/conftest.py gives the run its own home, puts loud
     stand-ins for claude, tmux, crontab, systemctl, loginctl and launchctl first on PATH, and its hook fails, in the
     test's own result, a test that reaches the real Pit Board home or plugin registry (also when it swallows the
-    error), starts a child with no HOME or the real one, or runs this machine's own systemctl or launchctl. Control:
+    error), starts a child with no HOME or the real one or one whose PATH reaches this machine's own copy of one of
+    those programs ahead of a stand-in, or runs this machine's own systemctl or launchctl. Control:
     the same planted tests with the guard taken out all pass."""
     import shutil
     import subprocess
@@ -206,14 +210,14 @@ def test_G20_P51_the_suites_guard_catches_each_kind_and_nothing_without_it(tmp_p
     assert verdict == {**{n: "FAILED" for n in CAUGHT}, "test_the_stub_answers_first": "PASSED",
                        "test_stays_in_its_own_home": "PASSED",
                        "test_python_libraries_and_the_checkout_are_left_out": "PASSED"}, out[-4000:]
-    assert "7 failed, 3 passed" in out and "rule 17: this test reached the home or the tools" in out, out[-4000:]
+    assert "8 failed, 3 passed" in out and "rule 17: this test reached the home or the tools" in out, out[-4000:]
     for said in (".pitboard/" + "no-such-file", "plugins/no-such-file", ".local/bin/no-such-file", "-dir/x",
-                 "a child with no HOME", "a child with the real HOME", "this machine's own"):
+                 "a child with no HOME", "a child with the real HOME", "a child whose PATH reaches this machine's own", "this machine's own"):
         assert said in out, (said, out[-4000:])
     conf = root / "tests" / "conftest.py"                                # the control: no guard, nothing caught
     conf.write_text(conf.read_text().replace("sys.addaudithook(_audit)", "pass"))
     out = go()
-    assert "rule 17:" not in out and "10 passed" in out, out[-4000:]
+    assert "rule 17:" not in out and "11 passed" in out, out[-4000:]
 
 
 def test_G20_P51_the_guard_has_no_switch():
