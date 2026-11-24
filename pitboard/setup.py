@@ -383,18 +383,20 @@ def plan_minimal(home=None, settings_path=None, root=None):
     return items + closing_items(home, settings_path)
 
 
-def note(home, settings=None, folder=None, backup=None, made=None, made_dirs=None):
+def note(home, settings=None, folder=None, backup=None, made=None, made_dirs=None, made_home=False):
     """G18.3: the record of what setup did, `setup-record.json` in the home, for `pitboard uninstall`.
     settings = (path, bytes before or None, mode before or None, bytes after): the earliest `before` stays while the
     file is still what Pit Board last wrote. backup = the name of the backup setup made of it: the census counts only
-    the backups listed here, because other tools name theirs the same way (P29). A record that cannot be read is never
-    written over."""
+    the backups listed here, because other tools name theirs the same way (P29). made_home: setup made the home itself
+    (P48); once said, it stays. A record that cannot be read is never written over."""
     path = os.path.join(home, leave.SETUP_RECORD)
     try:
         rec = leave.read_object(path) or {}
     except leave.Unread:
         return
     rec["version"] = __version__
+    if made_home:
+        rec["made_home"] = True
     if settings:
         spath, before, mode, after = settings
         files = [e for e in rec.get("files") or [] if isinstance(e, dict)]

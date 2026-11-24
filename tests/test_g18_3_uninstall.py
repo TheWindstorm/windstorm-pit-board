@@ -87,6 +87,9 @@ def registry(home, rows):
     return p
 
 
+DELETE = re.compile(r"(^|[\s;&|`(])(rm|rmdir|unlink|shred)\s|rmtree|\s-delete(\s|$)")   # P48: a printed delete
+
+
 def census(out):
     return out.split("census:\n", 1)[1].splitlines()     # the count prompt has no newline: the person's Enter
 
@@ -109,18 +112,19 @@ def test_G18_3_apply_puts_the_setting_back_byte_for_byte_and_keeps_the_persons_t
     code, out, _ = run("--apply")
     assert code == 0, out
     assert st.read_text() == MINE_TEXT and oct(os.stat(st).st_mode & 0o777) == oct(0o644)
-    assert sorted(os.listdir(pb)) == ["lanes", "logs", "setup-record.json"]
+    assert sorted(os.listdir(pb)) == ["lanes", "logs"]
     assert os.listdir(pb / "lanes") == ["api.jsonl"]                                  # its lock file went
     assert sorted(n for n in os.listdir(home / ".claude") if ".bak-" in n) == backups and backups   # yours
     rows = census(out)
     assert "  gone: status line setting in ~/.claude/settings.json (put back byte for byte)" in rows
     assert "  gone: ~/.pitboard/bin" in rows and "  gone: ~/.pitboard/statusline.sh" in rows
     assert f"  kept: 1 backup setup made of ~/.claude/settings.json (yours: ~/.claude/{backups[0]})" in rows
-    assert "  kept: 2 asks (1 open) in 1 lane log, the log of what Pit Board did, and setup's record (setup-record.json) in ~/.pitboard (yours)" in rows
+    assert "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did in ~/.pitboard (yours)" in rows
     assert [r for r in rows if "the log of what Pit Board did" in r] == [
-        "  kept: 2 asks (1 open) in 1 lane log, the log of what Pit Board did, and setup's record (setup-record.json) in ~/.pitboard (yours)"]  # one row
-    assert out.splitlines()[-1] == ("They are yours. When you are sure, you can delete them yourself, at your own "
-                                    "terminal: rm -r ~/.pitboard")
+        "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did in ~/.pitboard (yours)"]  # one row
+    gone = [r for r in rows if r.startswith("  gone: ~/.pitboard/")]
+    assert gone[-1] == "  gone: ~/.pitboard/setup-record.json (setup's record; last, once every step above was done)"
+    assert out.splitlines()[-1] == "They are yours, to keep or delete after you look at them."   # P48: no `rm -r`
 
 
 def test_G18_3_run_twice_says_nothing_of_pit_board_is_here(world):
@@ -130,8 +134,8 @@ def test_G18_3_run_twice_says_nothing_of_pit_board_is_here(world):
     code, out, _ = run("--apply")
     assert code == 0 and out.startswith("nothing of Pit Board is here\ncensus:\n") and tree(home) == before
     assert not [r for r in census(out) if r.startswith("  gone")]
-    assert "  kept: 2 asks (1 open) in 1 lane log, the log of what Pit Board did, and setup's record (setup-record.json) in ~/.pitboard (yours)" in census(out)
-    assert out.splitlines()[-1].startswith("They are yours.")
+    assert "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did in ~/.pitboard (yours)" in census(out)
+    assert out.splitlines()[-1] == "They are yours, to keep or delete after you look at them."
 
 
 def test_G18_3_changed_since_takes_out_only_pit_boards_entry(world):
@@ -426,10 +430,10 @@ def test_G18_3_the_stable_copy_alone_takes_itself_off(world):
     _orphan(home)
     r = _launch(home, pb / "pitboard" / "launch.py", "uninstall", "--apply")
     assert r.returncode == 0, r.stdout + r.stderr
-    assert st.read_text() == MINE_TEXT and sorted(os.listdir(pb)) == ["lanes", "logs", "setup-record.json"]
+    assert st.read_text() == MINE_TEXT and sorted(os.listdir(pb)) == ["lanes", "logs"]
     assert not (home / "ORPHAN-RAN").exists()                            # no orphaned code ran
-    assert "  kept: 2 asks (1 open) in 1 lane log, the log of what Pit Board did, and setup's record (setup-record.json) in ~/.pitboard (yours)" in r.stdout
-    assert r.stdout.splitlines()[-1].startswith("They are yours.")
+    assert "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did in ~/.pitboard (yours)" in r.stdout
+    assert r.stdout.splitlines()[-1] == "They are yours, to keep or delete after you look at them."
 
 
 def test_G18_3_the_stable_copy_alone_with_no_plugin_folder_and_no_registry_row(world):
@@ -583,11 +587,13 @@ def test_G18_3_the_kept_line_names_a_command_that_runs_here(world):
     plan = run()[1].splitlines()[-2]
     assert plan.endswith("They are yours. When you are sure, you can delete them yourself, at your own terminal: "
                          "~/.pitboard/bin/pitboard uninstall --apply --delete-asks-and-log")                         # the copy is there while it is a plan
-    after = run("--apply")[1].splitlines()[-1]
-    assert after.endswith("at your own terminal: rm -r ~/.pitboard") and (pb / "lanes").exists()
-    r = subprocess.run(["bash", "-c", after.split("at your own terminal: ", 1)[1]], env=_scrubbed(home),
-                       capture_output=True, text=True, timeout=60)
-    assert r.returncode == 0 and not pb.exists()                         # run exactly as printed
+    r = subprocess.run(["bash", "-c", plan.split("at your own terminal: ", 1)[1]], env=_scrubbed(home),
+                       capture_output=True, text=True, timeout=60)         # run exactly as printed, here with no
+    assert r.returncode == 2 and (pb / "bin" / "pitboard").exists()      # terminal: it refuses, changes nothing
+    assert "--delete-asks-and-log runs only at your own terminal" in r.stderr
+    out = run("--apply")[1]
+    assert not DELETE.search(out) and (pb / "lanes").exists()   # P48: no line is a recursive delete
+    assert out.splitlines()[-1] == "They are yours, to keep or delete after you look at them."
 
 
 def test_G18_3_a_path_with_a_space_is_quoted(tmp_path, monkeypatch):
@@ -790,8 +796,8 @@ def test_G18_3_a_home_of_pit_boards_alone_still_goes_whole_file_by_file(world):
     (pb / "pitboard" / "__pycache__").mkdir()
     (pb / "pitboard" / "__pycache__" / "leave.cpython-312.pyc").write_bytes(b"\0")
     code, out, _ = run("--apply")
-    assert code == 0 and sorted(os.listdir(pb)) == ["lanes", "logs", "setup-record.json"], out
-    assert out.splitlines()[-1].startswith("They are yours. When you are sure")
+    assert code == 0 and sorted(os.listdir(pb)) == ["lanes", "logs"], out
+    assert out.splitlines()[-1] == "They are yours, to keep or delete after you look at them."
 
 
 def test_G18_3_the_kept_line_names_only_what_is_there_and_an_empty_logs_folder_goes(world):
@@ -806,7 +812,7 @@ def test_G18_3_the_kept_line_names_only_what_is_there_and_an_empty_logs_folder_g
     code, out, _ = run("--apply")
     rows = census(out)
     assert code == 0 and not (pb / "logs").exists() and "  gone: ~/.pitboard/logs" in rows
-    assert "  kept: 2 asks (1 open) in 1 lane log, and setup's record (setup-record.json) in ~/.pitboard (yours)" in rows
+    assert "  kept: 2 asks (1 open) in 1 lane log in ~/.pitboard (yours)" in rows
     assert not [r for r in rows if "the log of what Pit Board did" in r]
 
 
@@ -824,7 +830,7 @@ def _no_claude_home(tmp_path, monkeypatch):
 def test_G18_3_a_folder_setup_made_for_the_settings_file_goes_when_empty(tmp_path, monkeypatch):
     """P46 (seen on a real Mac, 2026-11-24, an account with no Claude Code): setup made ~/.claude for the settings
     file; uninstall removed the file ("there was none before") and left the empty ~/.claude, named nowhere. Empty
-    lanes/ and logs/ go too: the home keeps only setup's record, which the census names."""
+    lanes/ and logs/ go too. P48: then setup's record goes last, and the home with it."""
     home = _no_claude_home(tmp_path, monkeypatch)
     code, out, _ = run()
     assert code == 0 and "  would go: ~/.claude (made by setup when there was none; empty)" in census(out)
@@ -833,8 +839,7 @@ def test_G18_3_a_folder_setup_made_for_the_settings_file_goes_when_empty(tmp_pat
     rows = census(out)
     assert code == 0 and "  gone: ~/.claude (made by setup when there was none; empty)" in rows
     assert not (home / ".claude").exists()
-    assert sorted(os.listdir(home)) == [".pitboard"] and os.listdir(home / ".pitboard") == ["setup-record.json"]
-    assert "  kept: setup's record (setup-record.json) in ~/.pitboard (yours)" in rows
+    assert os.listdir(home) == [] and out.splitlines()[-1] == "  gone: ~/.pitboard (Pit Board's home, empty)"
     assert not [r for r in rows if "asks" in r or "the log of" in r]
 
 
@@ -846,3 +851,103 @@ def test_G18_3_a_folder_setup_made_that_holds_the_persons_file_is_named_and_kept
     code, out, _ = run("--apply")
     assert code == 0 and (home / ".claude" / "mine.txt").read_text() == "mine"
     assert "  kept: ~/.claude (made by setup when there was none; left because mine.txt in it is not Pit Board's; yours)" in census(out)
+
+
+def listing(path):
+    """Every entry under path, folders too: kind, mode, and the bytes of a file (the family's whole-home listing)."""
+    out = {}
+    for d, dirs, files in os.walk(path):
+        for n in dirs + files:
+            p = os.path.join(d, n)
+            st = os.lstat(p)
+            body = None
+            if os.path.isfile(p) and not os.path.islink(p):
+                with open(p, "rb") as f:
+                    body = hashlib.sha256(f.read()).hexdigest()
+            out[os.path.relpath(p, path)] = (oct(st.st_mode), body, os.readlink(p) if os.path.islink(p) else None)
+    return out
+
+
+def test_G18_3_P48_the_leave_leaves_the_home_as_found_with_no_step_by_hand(tmp_path, monkeypatch):
+    """P48 (the family's rule 8, read on a real Mac 2026-11-24): the leave kept setup's record and then printed
+    `rm -r ~/.pitboard` for the person to run, so the account was as found only after that line was run by hand.
+    Setup's record is Pit Board's: it goes last, then the empty home. The listing after equals the listing before
+    setup, and no line printed is a delete."""
+    home = tmp_path / "home"
+    (home / "Documents").mkdir(parents=True)
+    (home / "Documents" / "letter.txt").write_text("mine\n")
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.delenv("PITBOARD_HOME", raising=False)
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    before = listing(home)
+    assert run_cli("setup", "--minimal", "--apply")[0] == 0 and (home / ".pitboard" / "setup-record.json").exists()
+    code, plan, _ = run()
+    assert code == 0 and "  would go: ~/.pitboard/setup-record.json (setup's record; last, once every step above was done)" in census(plan)
+    assert "  would go: ~/.pitboard (Pit Board's home, empty by then)" in census(plan) and listing(home) != before
+    code, out, _ = run("--apply")
+    assert code == 0, out
+    assert listing(home) == before                                     # identical, no clean-up by hand
+    assert not DELETE.search(out) and "They are yours" not in out
+    assert census(out)[-2:] == ["  gone: ~/.pitboard/setup-record.json (setup's record; last, once every step above was done)",
+                                "  gone: ~/.pitboard (Pit Board's home, empty)"]
+    code, again, _ = run("--apply")
+    assert code == 0 and again == "nothing of Pit Board is here\n" and listing(home) == before   # a second run
+
+
+def test_G18_3_P48_with_the_persons_own_settings_every_difference_is_a_named_line(world):
+    """P48: with a settings file of the person's, the one difference left is setup's backup of it, kept and named."""
+    home, pb, st = world
+    for n in os.listdir(pb / "lanes"):
+        os.remove(pb / "lanes" / n)
+    os.remove(pb / "lanes.json") if (pb / "lanes.json").exists() else None
+    shutil.rmtree(pb / "logs")
+    shutil.rmtree(pb / "lanes")
+    code, out, _ = run("--apply")
+    assert code == 0 and not pb.exists() and st.read_text() == MINE_TEXT, out
+    baks = sorted(n for n in os.listdir(home / ".claude") if ".bak-" in n)
+    assert baks and f"  kept: 1 backup setup made of ~/.claude/settings.json (yours: ~/.claude/{baks[0]})" in census(out)
+    assert not DELETE.search(out)
+
+
+def test_G18_3_P48_a_leave_that_did_not_finish_keeps_setups_record(world):
+    """P48: the record goes only once every step before it was done; else the next run needs it."""
+    home, pb, st = world
+    registry(home, [{"scope": "user", "installPath": str(home), "version": "0.1.2"}])
+    code, out, _ = run("--apply", fail=True)                           # Claude Code's own uninstall failed
+    assert code == 11 and (pb / "setup-record.json").exists() and "setup-record.json" not in "".join(
+        r for r in census(out) if r.startswith("  gone"))
+    assert not DELETE.search(out)
+
+
+def test_G18_3_P48_a_home_not_pit_boards_alone_keeps_setups_record_named(world):
+    """P48 and rule 23: in a home holding another's things, the record stays and is named, with no command."""
+    home, pb, st = world
+    (pb / "notes.txt").write_text("not Pit Board's\n")
+    code, out, _ = run("--apply")
+    assert code == 0 and (pb / "setup-record.json").exists() and (pb / "notes.txt").exists()
+    assert any("setup's record (setup-record.json)" in r for r in census(out)) and not DELETE.search(out)
+
+
+@pytest.mark.parametrize("there_before", [False, True])
+def test_G18_3_P48_a_home_a_setting_names_goes_only_when_setup_made_it(tmp_path, monkeypatch, there_before):
+    """P48 and the family's rule 23 (A FOLDER A SETTING CAN NAME IS NOT OURS UNTIL WE MADE IT): with PITBOARD_HOME
+    naming a folder, setup records that it made it; the leave removes that folder only then. A folder the person made
+    before setup stays, empty, and is named as theirs."""
+    home, pbh = tmp_path / "home", tmp_path / "their-place" / "pb"
+    home.mkdir()
+    (tmp_path / "their-place").mkdir()
+    if there_before:
+        pbh.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("PITBOARD_HOME", str(pbh))
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    before = listing(tmp_path)
+    assert run_cli("setup", "--minimal", "--apply")[0] == 0
+    assert (json.loads((pbh / "setup-record.json").read_text()).get("made_home") is True) is (not there_before)
+    code, out, _ = run("--apply")
+    assert code == 0 and not DELETE.search(out), out
+    if there_before:
+        assert pbh.is_dir() and os.listdir(pbh) == []
+        assert census(out)[-1] == f"  kept: {pbh} (empty; it was there before setup made anything in it, so it is yours)"
+    else:
+        assert listing(tmp_path) == before and census(out)[-1] == f"  gone: {pbh} (Pit Board's home, empty)"
