@@ -524,7 +524,7 @@
    "seen": "2026-11-24, the family's rule 28 after a wrapper started another skill under umask 000; Pit Board run the same way in a scratch home: setup made `bin/` and `pitboard/` in its home 777, and a session's hooks wrote `state/<key>.activity` 666 (664 under umask 002). The home itself stayed 700, and a second setup was not refused. And every private write reused a fixed `<name>.tmp` if one was left: a leftover 666 `lanes.json.tmp` made the lane map 666; the settings file was written into it and narrowed to 600 only after the bytes were in; a backup was copied at the umask's mode and its mode set after.",
    "promise": "Whatever umask Pit Board is started with, the launcher, the first thing every command, hook and status line run, adds 022 to it before anything is read or written, so nothing Pit Board makes has group or other write in its mode (what is read is each entry's owner, group and mode; access lists are not read); what holds the person's data stays 600 by name. A home that an older start left with 777 folders does not make setup refuse its own home. Every file Pit Board writes is opened new at its final mode (O_EXCL) under a temporary name of its own process, any such name left before removed first, and renamed into place; a backup is opened new at the mode the file had and never written over an earlier backup. Every setup run takes group and other write off Pit Board's own folders and files (the plan says it would close them, --apply closes them), so a home an older start left open is closed by setup. A folder on the way that is not Pit Board's (the folder above the settings file, the folder above a home that is not the default) is never changed, and is named only when another account can really reach and write it (writable by others, or by its group when the group has a member other than the owner, and every folder above lets that account pass; a membership that cannot be read is said so): setup names it in a numbered item with the one command `chmod go-w <path>`, and `pitboard version` says it again while it stays open.",
    "test": "test_G2_nothing_pit_board_makes_is_writable_by_another_account_whatever_the_umask",
-   "proven": "2026-11-24 05:01Z, the same machine, a fresh user with everything under umask 000 (Claude Code's own install too): setup --apply twice (the second: nothing to change), the session-start, user-prompt-submit and stop hooks by hooks.json's own commands, one ask and the status line. Every entry under `~/.pitboard` read back: folders 700 or 755, files 600, 644 or 755, none with group or other write in its mode (access lists were not read). `~/.claude` came out 775 from Claude Code under umask 000 in a group with no other member; neither setup's plan nor `pitboard version` named it. Closing a home an older start left open is proven by its test only.",
+   "proven": "2026-11-24 05:01Z, the same machine, a fresh user with everything under umask 000 (Claude Code's own install too): setup --apply twice (the second: nothing to change), the session-start, user-prompt-submit and stop hooks by hooks.json's own commands, one ask and the status line. Every entry under `~/.pitboard` read back: folders 700 or 755, files 600, 644 or 755, none with group or other write in its mode (access lists were not read). `~/.claude` came out 775 from Claude Code under umask 000 in a group with no other member; neither setup's plan nor `pitboard version` named it: the first sighting of the group-of-one case on a stock machine. Closing a home an older start left open is proven by its test only.",
    "issue": ""
   },
   {
@@ -534,8 +534,32 @@
    "first_ship_in": "0.1.3",
    "ship_in": "0.1.3",
    "seen": "2026-11-24, the family's rule 28 (a folder another account owns on the way, and an account is its number, not its name), read against the walk merged in P41: it looked at the mode and group of the folders on the way but never at who owns them.",
-   "promise": "A folder on the way to the settings file or to a home that is not the default, or any folder above them, that an account other than the person's own number and root owns, and that account can reach, is named by setup and `pitboard version` with who owns it and that only an administrator can hand it back, and with no chmod (the person cannot change it). Every account is compared by its number: a second name with the person's own number is the person. Each line says what was read: owner, group and mode; access lists are not read.",
+   "promise": "A folder on the way to the settings file or to a home that is not the default, or any folder above them, that an account other than the person's own number and root owns, and that account can reach, is named by setup and `pitboard version` with who owns it and that only an administrator can hand it back, and with no chmod (the person cannot change it). Every account is compared by its number: a second name with the person's own number is the person. Each line says what was read: owner, group and mode; access lists are not read. A folder on the way that root owns and another account can write is named as root's, with no command either: only an administrator can close it. A sticky folder (as /tmp) is not named: no other account can remove or replace what the person owns in it.",
    "test": "test_G2_a_folder_another_account_owns_on_the_way_is_named_with_no_command",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P43",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the stock-machine walk of P40: a home whose hooks never wrote a log line had an empty `logs/`; the census said it kept \"the log of what Pit Board did\" though no log file was there, and the empty `logs/` stayed.",
+   "promise": "Uninstall's kept line names only what is there: the asks with their count, the log of what Pit Board did when a log file is there, and setup's record when it is there. An empty `logs/` goes like any empty folder of Pit Board's.",
+   "test": "test_G18_3_the_kept_line_names_only_what_is_there_and_an_empty_logs_folder_goes",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P44",
+   "codon": "G2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, read by the family's maintainer on two Macs (macOS 13.7.8 and 27.2.1, Apple's Python 3.9.6): 28 account entries carry group 4294967294 (\"nobody\", -2 without its sign), and os.getgrouplist raises OverflowError on it; another skill's first Mac read stopped its setup with that traceback. P41's walk called os.getgrouplist and caught only KeyError and OSError.",
+   "promise": "The walk reads every account's groups without ending a command in a traceback: a group number above the signed range is asked again signed; an account whose groups still cannot be read is said so for that account, and the walk goes on. Before 0.1.3's tag, one read on a real Mac under a clean test account: setup's plan and `pitboard version`, exit codes and lines shown, the account left as found.",
+   "test": "test_G2_an_account_with_the_macs_nobody_group_number_is_read_never_a_traceback",
    "proven": "",
    "issue": ""
   }
