@@ -35,6 +35,18 @@ def test_G21_4_every_hook_line_names_the_version_and_the_step(tmp_path):
     assert len(log) == 2 and all(ln.endswith(f" v={V} step=5") for ln in log), log
 
 
+@pytest.mark.skipif(os.name == "nt", reason="bin/pitboard is a POSIX shell script")
+def test_G21_4_a_launch_variable_left_in_the_shell_is_never_logged(tmp_path):
+    """P19: the two variables the launcher hands its hook are the launcher's own. Exported by mistake in a person's
+    shell, neither reaches the log: the step is the launcher's, and with every read readable there is no unread."""
+    env = dict(_env(tmp_path), PITBOARD_LAUNCH_STEP="9", PITBOARD_LAUNCH_UNREAD="left in the shell")
+    r = subprocess.run([os.path.join(ROOT, "bin", "pitboard"), "hook", "stop"], input='{"session_id": "s1"}',
+                       text=True, capture_output=True, env=env, timeout=60)
+    assert r.returncode == 0 and r.stderr == ""
+    line = (tmp_path / "pb" / "logs" / "pitboard.log").read_text()
+    assert line.endswith(f" v={V} step=5\n") and "unread" not in line, line
+
+
 def test_G21_4_a_line_from_an_older_launcher_says_its_step_is_unknown(tmp_path, monkeypatch):
     monkeypatch.setenv("PITBOARD_HOME", str(tmp_path / "pb"))
     monkeypatch.delenv("PITBOARD_LAUNCH_STEP", raising=False)        # a launcher before 0.1.3 sets nothing

@@ -45,7 +45,7 @@ git clone --depth 1 --branch v0.1.2 https://github.com/TheWindstorm/windstorm-pi
 windstorm-pit-board/bin/pitboard setup --folder /path/to/your/project --apply
 ```
 
-`--undo` in place of `--apply` takes it out of that folder again. From 0.1.3, `pitboard uninstall --folder /path/to/your/project --apply` does too.
+Put your project's folder in place of `/path/to/your/project`; until you do, setup refuses it. `--undo` in place of `--apply` takes it out of that folder again. From 0.1.3, `pitboard uninstall --folder /path/to/your/project --apply` does too.
 
 **To update:**
 
@@ -65,6 +65,16 @@ claude plugin uninstall windstorm-pit-board@thewindstorm
 claude plugin install windstorm-pit-board@thewindstorm
 ```
 
+## Settings
+
+None is needed. Each one is an environment variable, read when Pit Board runs:
+
+- `PITBOARD_HOME`: the folder Pit Board keeps its files in (default `~/.pitboard`).
+- `PITBOARD_MACHINE`: the machine name asks are recorded with (default: this computer's name).
+- `PITBOARD_TZ`: the time zone times are shown in, such as `America/New_York` (default: the computer's own).
+- `PITBOARD_SELF_UPDATE`: `0` stops Pit Board updating itself, `1` lets it (default: on).
+- `PITBOARD_LANE`: the lane a `pitboard` command writes to. Each Claude Code session sets it for its own commands, so set it yourself only outside a session.
+
 ## Uninstall
 
 ```
@@ -72,7 +82,7 @@ pitboard uninstall
 pitboard uninstall --apply
 ```
 
-The first line shows what it would take off; the second does it, however Pit Board was set up: each folder install, the install for every project, and what setup changed in your settings, which goes back byte for byte when you have not changed it since (or, when you have, loses only Pit Board's entry). Your asks, and the log of what Pit Board did on this computer (`logs/`, `setup-record.json`, and the `.bak-` copies setup kept of your settings files), stay where they are and are counted. The last thing it prints is a census of what went and what stayed, and why. Run it again and it says `nothing of Pit Board is here`.
+The first line shows what it would take off; the second does it, however Pit Board was set up: each folder install, the install for every project, and what setup changed in your settings, which goes back byte for byte when you have not changed it since (or, when you have, loses only Pit Board's entry). Your asks, and the log of what Pit Board did on this computer (`logs/`, `setup-record.json`, and the `.bak-` copies setup kept of your settings files), stay where they are and are counted. The last thing it prints is a census of what went and what stayed, and why. When Pit Board was installed as a plugin, the census also names what Claude Code's own uninstall, which it runs, changed and kept, as read after it ran: Claude Code's plugin list and `~/.claude.json`, the version folder it keeps in its plugin cache, and the plugin catalog. Pit Board leaves the catalog listed, because removing it with `claude plugin marketplace remove thewindstorm` also uninstalls every other plugin installed from that catalog. Run it again and it says `nothing of Pit Board is here`.
 
 When a session is writing to a lane at that moment, it waits a moment as every command does; if the lane is still busy, it names the lane and changes nothing in that home: run it again. When it cannot read a file it needs, it changes nothing in that place, says which file, and exits 11.
 

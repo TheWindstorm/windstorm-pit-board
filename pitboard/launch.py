@@ -260,8 +260,7 @@ def main(argv=None):
         sys.stderr.write("pitboard: no installed version found\n" + (REMOVED + _copy_cmd("uninstall") + "\n" if removed else ""))
         return 1
     os.environ["PITBOARD_LAUNCH_STEP"] = str(step)     # P15: each hook log line names the step that picked it
-    if unread:
-        os.environ["PITBOARD_LAUNCH_UNREAD"] = unread  # P19: the hook's log line names the read that failed
+    os.environ.update(PITBOARD_LAUNCH_UNREAD=unread) if unread else os.environ.pop("PITBOARD_LAUNCH_UNREAD", None)  # P19, never stale
     sys.path.insert(0, root)
     for name in [n for n in sys.modules if n == "pitboard" or n.startswith("pitboard.")]:
         del sys.modules[name]
