@@ -17,6 +17,7 @@ SID = "0f3a9c2e-1b2c-4d5e-8f90-123456789abc"
 @pytest.fixture(autouse=True)
 def tmp_home(tmp_path, monkeypatch):
     monkeypatch.setenv("PITBOARD_HOME", str(tmp_path / "pb"))
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))          # P51: children get the test's home, never the real one
     for k in ("PITBOARD_LANE", "CLAUDE_CODE_SESSION_ID"):
         monkeypatch.delenv(k, raising=False)
     return tmp_path / "pb"

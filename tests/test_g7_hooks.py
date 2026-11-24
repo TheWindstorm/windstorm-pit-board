@@ -107,7 +107,7 @@ def test_G7_0_every_command_has_the_exact_shape():
 def test_G7_0_missing_plugin_folder_does_nothing(tmp_path):
     with open(os.path.join(ROOT, "hooks", "hooks.json"), encoding="utf-8") as f:
         cmd = json.load(f)["hooks"]["Stop"][0]["hooks"][0]["command"]
-    env = dict(os.environ, CLAUDE_PLUGIN_ROOT=str(tmp_path / "gone"))
+    env = dict(os.environ, CLAUDE_PLUGIN_ROOT=str(tmp_path / "gone"), HOME=str(tmp_path / "home"))   # P51
     r = subprocess.run(["sh", "-c", cmd], input="{}", capture_output=True, text=True, env=env, timeout=30)
     assert (r.returncode, r.stdout, r.stderr) == (0, "", "")
 
