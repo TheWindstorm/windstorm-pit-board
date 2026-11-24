@@ -248,7 +248,7 @@
    "seen": "2026-11-23, reading the release step against the family's rule that a row leaning on a stand-in is seen to hold on a real machine before its version is tagged: the tag's fresh-clone check compares version labels only, so 0.1.3 could be tagged while P15, due in it, has no proven line. The promise gate refuses only the next version.",
    "promise": "The tag's fresh-clone check refuses a tag while a row due in that version has an empty `proven`. A row that can only be proven after its release (a count over days) carries a named exception field with its reason, read by the check; there is no blanket rule that would force a false proven line.",
    "test": "test_G21_1_a_tag_is_refused_while_a_row_due_in_it_has_no_proven_line",
-   "proven": "",
+   "proven": "2026-11-23, on a throwaway tag that existed only in a local clone (its remote removed, never pushed): a fresh clone of main 28a6403e, one local commit setting plugin.json, `__version__` and the CHANGELOG heading to 0.1.3, tagged v0.1.3, then `git clone --branch v0.1.3` of it. In that clone the tag check refused the tag: \"P18 is due in 0.1.3 and has no proven line\", \"P19 is due in 0.1.3 and has no proven line\". After a second local commit that filled those two proven lines with throwaway text and the tag moved to it, a fresh clone of the tag passed the check and listed P15 as proven only after the release. Linux, git 2.43.0, Python 3.12.3.",
    "issue": ""
   },
   {
@@ -319,6 +319,78 @@
    "ship_in": "0.1.4",
    "seen": "2026-11-23, reading Pit Board against the family's rule that a tool prints only the names the person chose: with no lane given, a command prints `which lane? Pass --lane KEY. Lanes on this machine: <keys>`, so the names of every other lane on the computer (taken from session names and folders) go into the transcript of whichever agent ran it.",
    "promise": "With no lane given, a command says how many lanes the computer has. Its one next step leads the agent to its own key first, from where it was told it: the session's first Pit Board line (`you are lane ... (key ...)`), or the `PITBOARD_LANE` the SessionStart hook set for this session. It names `pitboard lanes` only as the person's way to see them all. Lane names are printed only when the person asks with `pitboard lanes`, which the plan names.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P25",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-23, `setup --minimal --apply` at user scope on a shared Linux workstation and on a cloud server: the person's settings file went from mode 664 to 600. The plan said only that `statusLine.command` would be set. The backup kept 664, and uninstall puts 664 back only on its byte-for-byte path.",
+   "promise": "Before setup changes a settings file whose mode is not 600, its plan item says that the file is written private (600), the mode it has now, that its backup keeps that mode, and that uninstall puts that mode back only when it puts the file back byte for byte. The README says the same.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P26",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-23, `setup --minimal --apply` at user scope on a shared Linux workstation and on a cloud server: the person's settings file went from mode 664 to 600. The plan said only that `statusLine.command` would be set. The backup kept 664, and uninstall puts 664 back only on its byte-for-byte path.",
+   "promise": "Setup keeps the mode a settings file had when it changes it. For a file an earlier setup made private (600), uninstall puts the recorded mode back when the file's mode is still 600; when the person changed the mode since, it leaves it and the census says so.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P27",
+   "codon": "G6",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-23, counting which release each running session ran: two sessions can share one lane key (a lane restarted under a new session id), and the hook log line names only the lane, so a read-only probe could not say which session ran which version without the session map beside it.",
+   "promise": "The `session-start` line in `logs/pitboard.log` names the session (the first 8 characters of its id) next to the version that ran (P15), so which version runs in which session is read from the log alone.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P28",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-23, reading the family's rule 7 (the person's own eyes) against the code: `setup --apply` and `uninstall --apply` change things at once and wait for no key; only `--delete-asks-and-log` asks at the person's terminal.",
+   "promise": "What a person must hear before `setup --apply` or `uninstall --apply` changes anything is printed by that command, and at a real terminal it goes on only when they press a key. With no terminal (an agent's tool call) it does not wait and does not hang, and the must-hear block is still the last thing it prints.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P29",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-23, reading the uninstall census against the family's rule 8: `kept: N backup(s) setup made of ~/.claude/settings.json` counts every `settings.json.bak-*` in the folder by its name. Other tools write backups with the same form of name; on one shared workstation about twenty were there and one was setup's.",
+   "promise": "The census counts as setup's only the backups that setup's own record lists; setup records the name of each backup it makes. When the record cannot be read, the census says so and gives no count (rule 6). For a home set up before the record listed backups, it says it cannot tell which are setup's. A test has a stranger's `.bak` file beside setup's.",
+   "test": "test_G18_3_the_census_counts_only_the_backups_setups_record_lists",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P30",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-23, reading the uninstall census against the family's rule 8 (the census names everything still on the computer because of the skill, where it is and whose it is to delete): after Claude Code's own `plugin uninstall`, the census named neither the plugin's version folder Claude Code left in its cache, marked orphaned (seen on a stock VM), nor the Windstorm catalog, which uninstall keeps because it lists other skills.",
+   "promise": "The census names the version folder Claude Code left in its plugin cache, with what was seen of it and on which Claude Code version, and the kept Windstorm catalog, with the command that removes it and what that command does to another Windstorm plugin installed from the same catalog, as seen on a stock VM. Nothing is claimed that was not seen.",
    "test": "",
    "proven": "",
    "issue": ""

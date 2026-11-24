@@ -160,10 +160,12 @@ def plan_minimal(home=None, settings_path=None, root=None):
     return items
 
 
-def note(home, settings=None, folder=None):
+def note(home, settings=None, folder=None, backup=None):
     """G18.3: the record of what setup did, `setup-record.json` in the home, for `pitboard uninstall`.
     settings = (path, bytes before or None, mode before or None, bytes after): the earliest `before` stays while the
-    file is still what Pit Board last wrote. A record that cannot be read is never written over."""
+    file is still what Pit Board last wrote. backup = the name of the backup setup made of it: the census counts only
+    the backups listed here, because other tools name theirs the same way (P29). A record that cannot be read is never
+    written over."""
     path = os.path.join(home, leave.SETUP_RECORD)
     try:
         rec = leave.read_object(path) or {}
@@ -180,6 +182,8 @@ def note(home, settings=None, folder=None):
             entry = {"path": spath, "before": None if before is None else before.decode("utf-8"),
                      "before_mode": mode}
         entry["after_sha256"] = leave.sha256(after)
+        made = [b for b in (old or {}).get("backups") or [] if isinstance(b, str)]
+        entry["backups"] = made + ([os.path.basename(backup)] if backup and os.path.basename(backup) not in made else [])
         rec["files"] = [e for e in files if e.get("path") != spath] + [entry]
     if folder:
         folders = [f for f in rec.get("folders") or [] if isinstance(f, str)]
@@ -201,8 +205,10 @@ def apply(items, home=None):
         os.makedirs(os.path.dirname(it.path), exist_ok=True)
         before = leave.read_bytes(it.path) if it.json_obj is not None else None
         before_mode = os.stat(it.path).st_mode & 0o777 if before is not None else None
+        bak = None
         if os.path.exists(it.path):
-            shutil.copy2(it.path, f"{it.path}.bak-{stamp}")
+            bak = f"{it.path}.bak-{stamp}"
+            shutil.copy2(it.path, bak)
         if it.json_obj is not None:
             content = (json.dumps(it.json_obj, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
             mode = 0o600
@@ -216,7 +222,7 @@ def apply(items, home=None):
         os.replace(tmp, it.path)
         done.append(it)
         if it.json_obj is not None and home:
-            note(home, settings=(it.path, before, before_mode, content))
+            note(home, settings=(it.path, before, before_mode, content), backup=bak)
     return done
 
 
