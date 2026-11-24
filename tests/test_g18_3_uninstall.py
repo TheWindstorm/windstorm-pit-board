@@ -5,6 +5,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -552,14 +553,14 @@ def test_G18_3_the_readmes_by_hand_lines_for_a_home_from_before_0_1_3(world, own
     os.remove(pb / "pitboard" / "leave.py")                 # what a 0.1.2 home has: no leave.py, no record
     os.remove(pb / "setup-record.json")
     lines = _by_hand_lines()
-    assert len(lines) == 2
-    for line in lines:
-        r = subprocess.run(["bash", "-c", line], env=_scrubbed(home),
-                           capture_output=True, text=True, timeout=60)
-        assert r.returncode == 0, r.stderr
+    assert len(lines) == 1                                  # the maintainer's ruling: no removal line on the front page
+    assert not re.search(r"\b(rm|rmdir|find|unlink|shutil|remove|delete)\b", lines[0]), lines[0]
+    home_before = tree(pb)
+    r = subprocess.run(["bash", "-c", lines[0]], env=_scrubbed(home), capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr
     want = dict(MINE) if own else {"model": "x"}
     assert json.loads(st.read_text()) == want
-    assert sorted(os.listdir(pb)) == ["lanes", "logs"]
+    assert tree(pb) == home_before                          # Pit Board's home is the person's to delete
     r = subprocess.run(["bash", "-c", lines[0]], env=_scrubbed(home),
                        capture_output=True, text=True, timeout=60)
     assert r.returncode == 0 and json.loads(st.read_text()) == want                 # run again: nothing changes

@@ -69,7 +69,7 @@ claude plugin install windstorm-pit-board@thewindstorm
 
 None is needed. Each one is an environment variable, read when Pit Board runs:
 
-- `PITBOARD_HOME`: the folder Pit Board keeps its files in (default `~/.pitboard`).
+- `PITBOARD_HOME`: the folder Pit Board keeps its files in (default `~/.pitboard`): a folder for Pit Board alone, never your home folder.
 - `PITBOARD_MACHINE`: the machine name asks are recorded with (default: this computer's name).
 - `PITBOARD_TZ`: the time zone times are shown in, such as `America/New_York` (default: the computer's own).
 - `PITBOARD_SELF_UPDATE`: `0` stops Pit Board updating itself, `1` lets it (default: on).
@@ -94,12 +94,13 @@ pitboard uninstall --apply --delete-asks-and-log
 
 **After Claude Code's own `claude plugin uninstall`**, Pit Board's code is gone from the plugin list, but your status line setting and your Pit Board home stay. The status line then shows `Pit Board was removed by Claude Code · run ~/.pitboard/bin/pitboard uninstall`, and that one command takes the rest off; it needs no plugin.
 
-**A home set up before 0.1.3** has no uninstall of its own until a session on 0.1.3 or newer starts in it. If the plugin is already gone, these lines do the same by hand. The first puts back your own status line (the command the wrapper recorded), and touches nothing else in the file; the second removes everything Pit Board made in its home, and keeps your asks and the log:
+**A home set up before 0.1.3** has no uninstall of its own until a session on 0.1.3 or newer starts in it. If the plugin is already gone, this line puts back your own status line (the command the wrapper recorded), and touches nothing else in the file:
 
 ```
 python3 -c 'import json,os; h=os.environ.get("PITBOARD_HOME") or os.path.expanduser("~/.pitboard"); w=os.path.join(h,"statusline.sh"); p=os.path.expanduser("~/.claude/settings.json"); s=json.load(open(p)); m="# pitboard-original-command: "; c=[json.loads(l[len(m):]) for l in open(w) if l.startswith(m)] if (s.get("statusLine") or {}).get("command")==w else None; c is None or (s["statusLine"].update(command=c[0]) if c and c[0] else s.pop("statusLine")); c is None or json.dump(s,open(p+".tmp","w"),indent=2); c is None or os.replace(p+".tmp",p)'
-cd "${PITBOARD_HOME:-$HOME/.pitboard}" && find . -mindepth 1 -maxdepth 1 ! -name lanes ! -name lanes.json ! -name logs -exec rm -rf {} +
 ```
+
+What is left is Pit Board's home: the folder `~/.pitboard`, or the folder `PITBOARD_HOME` names, which may hold other things of yours. Deleting it is yours to do, after you have looked inside it. From 0.1.3, `pitboard uninstall` removes what Pit Board made there.
 
 ## Built for
 
