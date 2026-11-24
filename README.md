@@ -104,7 +104,7 @@ python3 -c 'import json,os; h=os.environ.get("PITBOARD_HOME") or os.path.expandu
 
 What is left is Pit Board's home: the folder `~/.pitboard`, or the folder `PITBOARD_HOME` names, which may hold other things of yours. Deleting it is yours to do, after you have looked inside it. From 0.1.3, `pitboard uninstall` removes what Pit Board made there.
 
-**Known in 0.1.3, fixed in 0.1.4.** A status line run that Claude Code cuts at the wrong moment can leave a small `.tmp` file in Pit Board's home; nothing reads it, and uninstall takes it away (0.1.4 clears it by itself). After `pitboard uninstall`, setup run from the version folder Claude Code keeps says `Pit Board was removed by Claude Code`, which is not what happened: to set Pit Board up again, run the install line above first (0.1.4 says so itself).
+**Known in 0.1.3, fixed in 0.1.4.** A status line run that Claude Code cuts at the wrong moment can leave a small `.tmp` file in Pit Board's home; nothing reads it, and uninstall takes it away (0.1.4 clears it by itself). After `pitboard uninstall`, setup run from the version folder Claude Code keeps says `Pit Board was removed by Claude Code`, which is not what happened: to set Pit Board up again, run the install line above first (0.1.4 says so itself). The status line shows nothing when it fails for any reason, exactly as it does when nothing waits (read in its code; seen with Pit Board's lanes folder made unreadable). In that seen case `pitboard board` says there are no lanes, and `pitboard board --lane <lane>` shows the error. So an empty status line is not proof that nothing waits. 0.1.4 says when it could not read.
 
 ## Built for
 
