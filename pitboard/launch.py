@@ -13,7 +13,7 @@ import os
 import re
 import sys
 import time
-
+sys.dont_write_bytecode = True    # P37, rule 23: no .pyc in the version folder, which is Claude Code's
 PLUGIN = "windstorm-pit-board"
 VERSION = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 FLOOR = (3, 9)          # G21.15: the oldest Python Pit Board runs on; rule 4, the README and CI name the same

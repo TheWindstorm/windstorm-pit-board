@@ -49,6 +49,22 @@ def test_G18_1_plan_changes_nothing(world):
     assert not pb.exists() and (home / ".claude" / "settings.json").read_bytes() == before
 
 
+def test_G2_1_setup_makes_the_home_700_under_a_loose_umask(world):
+    """P34, the half that holds since the first release: a home that setup makes is 700, whatever the umask.
+    The code folders under it are only the process's default mode."""
+    home, pb = world
+    old = os.umask(0o002)
+    try:
+        code, _, _ = run("setup", "--minimal", "--apply")
+    finally:
+        os.umask(old)
+    assert code == 0
+    assert stat.S_IMODE(pb.stat().st_mode) == 0o700
+    assert {d: stat.S_IMODE((pb / d).stat().st_mode) for d in ("lanes", "state", "logs")} == dict.fromkeys(
+        ("lanes", "state", "logs"), 0o700)
+    assert stat.S_IMODE((pb / "config.json").stat().st_mode) == 0o600
+
+
 def test_G18_1_full_setup_waits_for_0_2_0(world):
     code, _, err = run("setup")
     assert code == 2 and "--minimal" in err

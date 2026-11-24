@@ -45,10 +45,32 @@ def _top_dated(heads):
     return next((i for i, (_, when) in enumerate(heads) if DATE.fullmatch(when)), None)
 
 
+CLONE = re.compile(r"git clone\b(.*)$", re.M)
+
+
+def clone_problems(root, want):
+    """P36 (the family's rule 15, at the tag): every `git clone` line README.md prints names the release a person can
+    paste: `--branch v<want>`, where want is the version this tree states. A placeholder, an older or newer tag, a
+    branch, or a bare clone of the default branch fails. A README that cannot be read is a problem, not "no lines"."""
+    try:
+        text = _read(root, "README.md")
+    except OSError as e:
+        return [f"README.md could not be read: {type(e).__name__}"]
+    out = []
+    for rest in CLONE.findall(text):
+        m = re.search(r"--branch\s+(\S+)", rest)
+        if not m:
+            out.append(f"README.md clone line has no --branch: git clone{rest}")
+        elif m.group(1) != f"v{want}":
+            out.append(f"README.md clone line names {m.group(1)}, not v{want}")
+    return out
+
+
 def version_problems(root):
     """Every place that states the version names the same one, on main and in every release."""
     man, pkg, heads = manifest_version(root), package_version(root), headings(root)
     out = [] if pkg == man else [f"pitboard/__init__.py says {pkg}, plugin.json says {man}"]
+    out += clone_problems(root, man)
     top = _top_dated(heads)
     if top is None:
         return out + ["CHANGELOG.md has no dated release heading"]
@@ -69,6 +91,7 @@ def tag_problems(root, tag):
     out = [f"{where} says {v}, the tag says {want}"
            for where, v in (("plugin.json", manifest_version(root)), ("pitboard/__init__.py", package_version(root)))
            if v != want]
+    out += clone_problems(root, want)
     heads = headings(root)
     top = _top_dated(heads)
     for v, when in heads[:(len(heads) if top is None else top + 1)]:
@@ -98,12 +121,18 @@ def release_tags_at_head(root):
     return [t for t in p.stdout.split() if TAG.fullmatch(t)]
 
 
-def _tree(tmp_path, manifest="0.1.2", package="0.1.2", changelog=("## 0.1.2 (2026-11-24)", "## 0.1.1 (2026-11-22)")):
+GOOD_CLONE = "git clone --depth 1 --branch v0.1.2 https://github.com/TheWindstorm/windstorm-pit-board"
+
+
+def _tree(tmp_path, manifest="0.1.2", package="0.1.2", changelog=("## 0.1.2 (2026-11-24)", "## 0.1.1 (2026-11-22)"),
+          clone=GOOD_CLONE):
     root = tmp_path / "tree"
     (root / ".claude-plugin").mkdir(parents=True)
     (root / "pitboard").mkdir()
     (root / ".claude-plugin" / "plugin.json").write_text(json.dumps({"name": "windstorm-pit-board", "version": manifest}))
     (root / "pitboard" / "__init__.py").write_text(f'"""Pit Board."""\n__version__ = "{package}"\n')
+    if clone is not None:
+        (root / "README.md").write_text(f"# Pit Board\n\n```\n{clone}\nwindstorm-pit-board/bin/pitboard setup\n```\n")
     (root / "CHANGELOG.md").write_text("# Changelog\n\n" + "\n- a change\n\n".join(changelog)
                                        + "\n- a change\n\n## Plan 1.23 (2026-11-22)\n- a plan line\n")
     return str(root)
@@ -128,6 +157,24 @@ def test_G21_1_one_version_in_every_place(tmp_path):
     ]:
         shutil.rmtree(tmp_path / "tree")
         assert want in version_problems(_tree(tmp_path, **kw)), kw
+
+
+def test_G21_1_the_readme_clone_line_names_the_release_a_person_can_paste(tmp_path):
+    """P36: the README's clone line names the tag of the version this tree states; each way it can be wrong fails."""
+    assert clone_problems(ROOT, manifest_version(ROOT)) == []
+    assert CLONE.findall(_read(ROOT, "README.md")), "the README prints a clone line"
+    for clone, want in [
+        (GOOD_CLONE.replace("v0.1.2", "vX.Y.Z"), "README.md clone line names vX.Y.Z, not v0.1.2"),
+        (GOOD_CLONE.replace("v0.1.2", "v0.1.1"), "README.md clone line names v0.1.1, not v0.1.2"),
+        (GOOD_CLONE.replace("v0.1.2", "main"), "README.md clone line names main, not v0.1.2"),
+        ("git clone https://github.com/TheWindstorm/windstorm-pit-board", "README.md clone line has no --branch"),
+    ]:
+        shutil.rmtree(tmp_path / "tree", ignore_errors=True)
+        root = _tree(tmp_path, clone=clone)
+        assert any(want in x for x in version_problems(root)), clone
+        assert any(want in x for x in tag_problems(root, "v0.1.2")), clone
+    shutil.rmtree(tmp_path / "tree")
+    assert "README.md could not be read: FileNotFoundError" in version_problems(_tree(tmp_path, clone=None))
 
 
 def test_G21_1_a_tags_clone_is_refused_unless_its_name_is_every_version_label(tmp_path):

@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.32 · 2026-11-23 · The Windstorm**
+**Plan version 1.33 · 2026-11-24 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -185,7 +185,7 @@ All under `PITBOARD_HOME` (default `~/.pitboard`):
   outbox/<ts>-<event_id>.json events waiting to go to the hub (G13)
   inbox.cursor                last hub event seen by this machine (G16)
   machine.token               this machine's hub token, mode 600 (G13)
-  logs/pitboard.log           diagnostics, rotated at 1 MB, 3 kept
+  logs/pitboard.log           diagnostics, rotated at 1 MB, 3 kept (not built: P33, due 0.1.4; until then it grows)
   outbox/rejected/            events the hub refused, kept for doctor (G13.2)
   outbox/.backoff             when the next sync may run (G13.4)
   update/last-check.json      result of the last update check (G21.3)
@@ -346,7 +346,7 @@ A lane must keep the same key across restarts, compactions and resumes, and two 
 
 `session_name` from the status line input (documented: the `--name` or `/rename` value, or else Claude Code's generated title) only ever sets `lane_name` (G10.6), never the key, because two unrelated sessions can get the same generated title.
 
-**G3.3 The map.** `lanes.json` maps `session_id` → `{"lane": key, "lane_name": name, "first_seen": ts, "last_seen": ts}`. It is written atomically under a lock on `lanes.json.lock`.
+**G3.3 The map.** `lanes.json` maps `session_id` → `{"lane": key, "lane_name": name, "first_seen": ts, "last_seen": ts}`. It is written atomically under a lock on `lanes.json.lock`. From 0.1.4 (plan 1.33, P31) a session that records nothing leaves nothing behind: a headless or harness session that starts, never adds an ask and ends leaves no row in the map, no `lanes/<key>.lock` and no `state/<key>.json` or `state/<key>.activity`; the README says what a session writes and when each piece goes (the family's rule 26). Seen 2026-11-24 with the plugin at user scope: eighteen such sessions in an hour and a half, each a nameless `session-<id>` row, an empty lock file and two state files that nothing removed.
 
 **G3.4 First sight wins the key.** The first time a session ID is seen, its key is computed (G3.1 and G3.2) and stored. The key for that session ID never changes after that. Renaming a session updates `lane_name` only, so its log stays in one file.
 
@@ -452,7 +452,7 @@ Reset after each coloured span: `\x1b[0m`.
 
 ### G7 Hooks
 
-All hooks are declared in `hooks/hooks.json`. Each runs `pitboard hook <event>` with the hook JSON on stdin, time limit 5 s (10 s for `session-start`). Every handler is wrapped so that any exception exits 0 with no output (INV6). Each handler appends one line to `logs/pitboard.log` with the event name, lane key and what it did (no ask text), and ends it with `v=<version> step=<n>`: the version of the code that ran and the G21.4 step that picked its folder, so which version ran in which lane is read from the log, never worked out (plan 1.25, P15). From 0.1.4 the `session-start` line also names the session (`session=<the first 8 characters of its id>`), because two sessions can share one lane key, for example a lane restarted under a new session id; which version runs in which session is then read from the log alone (plan 1.32, P27).
+All hooks are declared in `hooks/hooks.json`. Each runs `pitboard hook <event>` with the hook JSON on stdin, time limit 5 s (10 s for `session-start`). Every handler is wrapped so that any exception exits 0 with no output (INV6). Each handler appends one line to `logs/pitboard.log` with the event name, lane key and what it did (no ask text), and ends it with `v=<version> step=<n>`: the version of the code that ran and the G21.4 step that picked its folder, so which version ran in which lane is read from the log, never worked out (plan 1.25, P15). The log is the record of what Pit Board did, not state: it stays when a session ends (the family's rule 26), and it is bounded: rotated at 1 MB, 3 old files kept, with no line lost or split when several hooks write at once (plan 1.33, P33, due 0.1.4; until then nothing rotates it). From 0.1.4 the `session-start` line also names the session (`session=<the first 8 characters of its id>`), because two sessions can share one lane key, for example a lane restarted under a new session id; which version runs in which session is then read from the log alone (plan 1.32, P27).
 
 **G7.0 Hook command form.** Every command in `hooks/hooks.json` is exactly this shape (with its own event name), so that a session whose plugin folder has been removed after an update does nothing instead of failing, and so that hooks run the newest installed code (G21.4):
 
@@ -521,6 +521,8 @@ If <operator_name> has answered one, run `pitboard answer <ID> --by operator --a
 ```
 
 When asks of this lane were answered on the master list (`via: page`) and are not `done` yet, add after the open asks, one line each: `Answered on the master list, not done yet: A12 → "<answer>"`.
+
+From 0.1.4 (plan 1.33, P32) the `Rules:` line adds: when `pitboard add` itself is refused or fails (a session's permissions, a harness), ask in the chat as usual and say nothing to <operator_name> about the tool. Seen 2026-11-24 in a harness session whose permissions refused the call: its first message to the person opened with a sentence about the refused call.
 
 Without open or page-answered asks: only the first sentence and the `Rules:` line. At most `reminder_max_items` asks, worst first (G5.4 `severity`); then `(+N more: pitboard list)`. Total under 3 000 characters.
 

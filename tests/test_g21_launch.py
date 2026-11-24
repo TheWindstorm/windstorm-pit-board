@@ -203,3 +203,20 @@ def test_G21_4_launcher_stays_tiny_and_imports_no_pit_board_code():
     # the only Pit Board import is the chosen version's cli, inside main()
     assert src.count("from pitboard import cli") == 1 and "from ." not in src
     assert len(src.splitlines()) < 280      # 200 until plan 1.29: the floor check (P16) and three answers (P19)
+
+
+def test_G21_4_the_launcher_writes_no_bytecode_beside_the_code(tmp_path):
+    """P37 (the family's rule 23): the version folder is Claude Code's. A command, a hook and the status line run
+    through the launcher, as Claude Code and the person run them, leave no __pycache__ in it or in the home."""
+    plug = tmp_path / "plug"
+    for d in ("bin", "pitboard", "hooks"):
+        shutil.copytree(os.path.join(ROOT, d), plug / d, ignore=shutil.ignore_patterns("__pycache__"))
+    env = {"HOME": str(tmp_path / "home"), "PITBOARD_HOME": str(tmp_path / "pb"), "PATH": "/usr/bin:/bin"}
+    env.update({k: os.environ[k] for k in ("LD_PRELOAD", "SHIFT_SECONDS") if k in os.environ})
+    (tmp_path / "home").mkdir()
+    for argv, stdin in [(["version"], ""), (["hook", "session-start"], '{"session_id":"s1","source":"startup"}'),
+                        (["status"], '{"session_id":"s1"}')]:
+        subprocess.run(["sh", str(plug / "bin" / "pitboard")] + argv, input=stdin, env=env, capture_output=True,
+                       text=True, timeout=60)
+    assert (tmp_path / "pb" / "lanes.json").exists()                 # the hook ran, so its imports happened
+    assert [str(p.relative_to(tmp_path)) for p in tmp_path.rglob("__pycache__")] == []
