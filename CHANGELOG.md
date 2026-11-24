@@ -34,6 +34,9 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.34 (2026-11-24)
+- G18.3 point 5 (P48, due 0.1.3, the family's rules 23 and 8, by the maintainer's ruling): `setup-record.json` is Pit Board's, not the person's. Once every step before it is done the leave removes it last, then the home when it is empty and Pit Board made it (setup records that it made the home; a folder `PITBOARD_HOME` named that was there before setup stays, named as the person's). No line uninstall prints is a delete: the `rm -r <home>` printed after `--apply` is gone, and the plan's `--delete-asks-and-log` line is the one way offered. Seen in the log of a run on a real Mac, where the home was as found only after the printed `rm -r` was run.
+
 ## Plan 1.33 (2026-11-24)
 - Tests only, the family's rule 25 (no test leans on the real calendar), by the maintainer's ruling: the suite runs whole with the wall clock shifted by an outside library that every child process inherits. The uninstall tests that start a program in a clean environment now hand on the shift's two variables, and still give no `PITBOARD_HOME` and no `claude` on the PATH, so those programs are reached too. Pit Board gets no test-only clock offset of its own.
 
