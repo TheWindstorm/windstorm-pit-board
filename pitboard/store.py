@@ -37,7 +37,7 @@ DEFAULTS = {
     "self_update": True,
     "update_check_hours": 6,
 }
-ENV_OVERRIDES = {"PITBOARD_MACHINE": "machine", "PITBOARD_TZ": "display_tz", "PITBOARD_HUB_URL": "hub_url"}
+ENV_OVERRIDES = {"PITBOARD_MACHINE": "machine", "PITBOARD_TZ": "display_tz"}   # P38: no hub setting until a hub exists
 
 
 class LaneBusy(RuntimeError):

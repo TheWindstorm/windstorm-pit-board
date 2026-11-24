@@ -162,7 +162,7 @@ def test_G2_10_config_defaults_file_and_env(tmp_home, monkeypatch):
     monkeypatch.setenv("PITBOARD_SELF_UPDATE", "0")
     cfg = s.config()
     assert (cfg["machine"], cfg["display_tz"], cfg["hub_url"], cfg["self_update"]) == (
-        "box-2", "America/Chicago", "http://100.64.0.5:8765", False)
+        "box-2", "America/Chicago", None, False)                     # P38: no hub yet, so its variable is not read
 
 
 def test_INV2_cache_can_be_deleted_without_loss():

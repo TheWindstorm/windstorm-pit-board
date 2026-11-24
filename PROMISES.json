@@ -478,6 +478,30 @@
    "test": "test_G21_4_the_launcher_writes_no_bytecode_beside_the_code",
    "proven": "2026-11-24 02:56Z, the family's rule 23 round on a stock Ubuntu 24.04.5 virtual machine, Claude Code 2.1.331, a fresh user: whole-home listings before and after `pitboard setup --minimal --apply` and before and after a run of the hooks (their hooks.json commands, run by hand with Claude Code's input), `pitboard add`, an approval and the status line showed no `__pycache__` anywhere and no difference outside Pit Board's named places. The same round on the code before the fix had shown 14 .pyc files in the version folder.",
    "issue": ""
+  },
+  {
+   "id": "P38",
+   "codon": "G2.10",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, reading every environment read in the code for the family's rule 27 (every setting a released tool reads has an owner, and none is only for tests): none is only for tests, but the settings a person may set were named only in the plan, `PITBOARD_HUB_URL` was read for a hub that is not built, and three commands give no sign when a setting changed their result.",
+   "promise": "The README lists every setting a person may set, one line each. A test holds every environment read in the code to three groups kept in the repo: that list, the facts Claude Code and the terminal give, and the launcher's own markers, which it sets and clears every run; a read in no group fails it. Nothing reads a setting for a part that is not built.",
+   "test": "test_G2_10_every_setting_the_code_reads_is_named_for_a_person",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P39",
+   "codon": "G6",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, reading every environment read in the code for the family's rule 27 (every setting a released tool reads has an owner, and none is only for tests): none is only for tests, but the settings a person may set were named only in the plan, `PITBOARD_HUB_URL` was read for a hub that is not built, and three commands give no sign when a setting changed their result.",
+   "promise": "A command whose result a setting changed says so: `pitboard add` always names the lane it wrote to (an ask filed in the wrong lane by a `PITBOARD_LANE` left in a shell is otherwise the one mistake a person cannot see); `pitboard board` and the reminder name the home when it is not `~/.pitboard`; `pitboard version` says self-update is off whenever it is off.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [

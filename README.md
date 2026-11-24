@@ -65,6 +65,16 @@ claude plugin uninstall windstorm-pit-board@thewindstorm
 claude plugin install windstorm-pit-board@thewindstorm
 ```
 
+## Settings
+
+None is needed. Each one is an environment variable, read when Pit Board runs:
+
+- `PITBOARD_HOME`: the folder Pit Board keeps its files in (default `~/.pitboard`).
+- `PITBOARD_MACHINE`: the machine name asks are recorded with (default: this computer's name).
+- `PITBOARD_TZ`: the time zone times are shown in, such as `America/New_York` (default: the computer's own).
+- `PITBOARD_SELF_UPDATE`: `0` stops Pit Board updating itself, `1` lets it (default: on).
+- `PITBOARD_LANE`: the lane a `pitboard` command writes to. Each Claude Code session sets it for its own commands, so set it yourself only outside a session.
+
 ## Uninstall
 
 ```
