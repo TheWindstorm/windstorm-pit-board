@@ -450,6 +450,32 @@ def _original_from_wrapper(wpath):
     raise Unread(f"{wpath} has no recorded command")
 
 
+def made_dirs_off(path, entry, census, apply):
+    """P46 (seen on a real Mac): the folders setup made on the way to a settings file that was not there (as ~/.claude
+    with no Claude Code) go when nothing else is in them, deepest first; otherwise each is named. Read, never assumed."""
+    going = {os.path.basename(path)}
+    for d in [x for x in entry.get("made_dirs") or [] if isinstance(x, str)]:
+        try:
+            left = sorted(set(os.listdir(d)) - (going if not apply else set()))
+        except FileNotFoundError:
+            continue
+        except OSError as e:
+            census.kept(_short(d), f"could not be read ({type(e).__name__})", INCOMPLETE)
+            return
+        if left:
+            census.kept(_short(d), "made by setup when there was none; left because "
+                        + ", ".join(left[:3]) + (" and more" if len(left) > 3 else "") + " in it is not Pit Board's; yours")
+            return
+        if apply:
+            try:
+                os.rmdir(d)
+            except OSError as e:
+                census.kept(_short(d), f"could not be removed ({type(e).__name__})", INCOMPLETE)
+                return
+        census.gone(_short(d), "made by setup when there was none; empty")
+        going = {os.path.basename(d)}
+
+
 def settings_back(path, home, entry, census, apply):
     """G18.3 point 3: put one settings file back. Returns True when nothing of Pit Board's is left in it."""
     wpath = os.path.join(home, WRAPPER)
@@ -466,6 +492,8 @@ def settings_back(path, home, entry, census, apply):
                     write_atomic(path, before, entry.get("before_mode") or os.stat(path).st_mode & 0o777)
             census.gone(f"status line setting in {_short(path)}",
                         "put back byte for byte" if before is not None else "file removed: there was none before")
+            if before is None:
+                made_dirs_off(path, entry, census, apply)
             return True
         d = read_object(path)
         sl = d.get("statusLine")
@@ -625,8 +653,8 @@ def home_off(home, census, apply, blocked=""):
             continue
         if os.path.isdir(path) and not os.path.islink(path):
             if name in ("lanes", "logs"):                     # the person's asks and log: kept and counted below
-                if name == "logs" and not os.listdir(path) and not yours_folder:
-                    _remove(path, census, apply, _short(path))  # P43: an empty logs/ is an empty folder of Pit Board's
+                if not os.listdir(path) and not yours_folder:  # P43, P46: an empty logs/ or lanes/ is Pit Board's
+                    _remove(path, census, apply, _short(path))
                     continue
                 if name == "lanes" and not yours_folder and name not in shared:
                     for rel in _files_in(home, name):
@@ -666,7 +694,8 @@ def home_off(home, census, apply, blocked=""):
                 + "; yours to delete after looking at it")
             left = True
     kept = [n for n in PERSON if os.path.exists(os.path.join(home, n))
-            and not (n == "logs" and os.path.isdir(os.path.join(home, n)) and not os.listdir(os.path.join(home, n)))]
+            and not (n in ("logs", "lanes") and os.path.isdir(os.path.join(home, n))
+                     and not os.listdir(os.path.join(home, n)))]
     if not kept and not left:
         if apply and not yours_folder:
             try:
