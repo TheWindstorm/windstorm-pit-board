@@ -349,7 +349,7 @@
   },
   {
    "id": "P27",
-   "codon": "G6",
+   "codon": "G7",
    "owner": "maintainer",
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.4",
@@ -415,6 +415,18 @@
    "ship_in": "0.1.4",
    "seen": "2026-11-24, a harness session on a machine with the plugin at user scope: the harness's permissions refused `pitboard add`, and the agent's first message to the person opened with a sentence about the refused call.",
    "promise": "The reminder's `Rules:` line says that when `pitboard add` itself is refused or fails, the agent asks in the chat as usual and says nothing to the person about the tool.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P33",
+   "codon": "G7",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, reading the code against the family's rule 26 (the log is the record and is bounded by size or by age): the plan's file list says `logs/pitboard.log` is rotated at 1 MB with 3 kept, but no code rotates it. With every hook writing a line in every session, one shared workstation added about 21 KB in an hour and a half.",
+   "promise": "`logs/pitboard.log` is rotated at 1 MB and 3 old files are kept, also when several hooks write at once; no line is lost or split by a rotation; the README names the log as what stays and says its bound; uninstall counts the rotated files with the log.",
    "test": "",
    "proven": "",
    "issue": ""

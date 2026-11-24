@@ -35,6 +35,7 @@ Every release before this one still reads the same: the lane logs, the cache and
 - Tests only, the family's rule 25 (no test leans on the real calendar), by the maintainer's ruling: the suite runs whole with the wall clock shifted by an outside library that every child process inherits. The uninstall tests that start a program in a clean environment now hand on the shift's two variables, and still give no `PITBOARD_HOME` and no `claude` on the PATH, so those programs are reached too. Pit Board gets no test-only clock offset of its own.
 
 - G3.3 (P31, due 0.1.4): a session that records nothing leaves nothing behind. Headless and harness sessions that start and end without an ask each left a nameless lane in the map, an empty lock file and two state files, eighteen in an hour and a half on one machine.
+- G7 hook log (P33, due 0.1.4): the plan's file list has always said `logs/pitboard.log` is rotated at 1 MB with 3 kept, and no code did it. The log is the record and stays when a session ends (the family's rule 26); 0.1.4 bounds it as the list says. P27's codon is G7 (the hook log is described there), not G6.
 - G7.7 (P32, due 0.1.4): when `pitboard add` itself is refused or fails, the reminder says to ask in the chat as usual and say nothing to the person about the tool. Seen in a harness session whose first message to the person opened with the refused call.
 
 ## Plan 1.32 (2026-11-23)
