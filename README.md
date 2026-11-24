@@ -37,14 +37,14 @@ claude plugin install windstorm-pit-board@thewindstorm
 
 Then, in a new Claude Code session, `pitboard setup` shows what it would change (the status line segment, the launcher copy in your Pit Board home) and `pitboard setup --apply` does it.
 
-**For one project folder only** (that folder's own settings, never yours), from a clone of a release tag (`vX.Y.Z`, the newest on the Releases page):
+**For one project folder only** (that folder's own settings, never yours), from a clone of the newest release tag:
 
 ```
-git clone --depth 1 --branch vX.Y.Z https://github.com/TheWindstorm/windstorm-pit-board
+git clone --depth 1 --branch v0.1.2 https://github.com/TheWindstorm/windstorm-pit-board
 windstorm-pit-board/bin/pitboard setup --folder /path/to/your/project --apply
 ```
 
-`pitboard uninstall --folder /path/to/your/project --apply` takes it out of that folder again.
+`--undo` in place of `--apply` takes it out of that folder again. From 0.1.3, `pitboard uninstall --folder /path/to/your/project --apply` does too.
 
 **To update:**
 
