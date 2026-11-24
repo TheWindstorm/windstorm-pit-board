@@ -47,7 +47,7 @@ OWN_NAMES = {
                    r"setup-record\.json)" + _S + r"|\.refresh-.+"),
     "bin": re.compile(r"pitboard" + _S),
     "pitboard": re.compile(r"(launch\.py|leave\.py|copied-from|__pycache__)" + _S),
-    "state": re.compile(r"[a-z0-9][a-z0-9-]*\.(json|activity|wake|page-told|reminded)" + _S + r"|permission-open"),
+    "state": re.compile(r"[a-z0-9][a-z0-9-]*\.(json|activity|wake|page-told|reminded|seg)" + _S + r"|permission-open"),
     "update": re.compile(r"(last-check\.json|good-versions|bad-versions|pin|minute|last-seen-version|generation-shown)"
                          + _S),
     "lanes": re.compile(r"[a-z0-9][a-z0-9-]*\.(jsonl|lock)" + _S),

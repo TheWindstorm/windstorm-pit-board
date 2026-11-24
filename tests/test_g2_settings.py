@@ -1,12 +1,14 @@
 """P38 (the maintainer's ruling): every setting Pit Board reads is named where a person reads it. Each environment
 read in the code is in one of three groups: the README's list of settings a person may set, the facts Claude Code
-and the terminal give, or the launcher's own markers to its hook, which it sets and clears itself."""
+and the terminal give, or the launcher's and the status line wrapper's own markers to the code they start,
+which they set themselves."""
 import os
 import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HOST = {"CLAUDE_CODE_SESSION_ID", "CLAUDE_ENV_FILE", "CLAUDE_PLUGIN_ROOT", "TMUX_PANE", "NO_COLOR", "COLUMNS", "TZ"}
-OWN = {"PITBOARD_LAUNCH_STEP", "PITBOARD_LAUNCH_UNREAD"}
+OWN = {"PITBOARD_LAUNCH_STEP", "PITBOARD_LAUNCH_UNREAD", "PITBOARD_LAUNCH_NS",   # the launcher's, to its own code
+       "PITBOARD_WRAPPER_SID", "PITBOARD_WRAPPER_NAME"}                          # P54: the wrapper's, to status
 READ = re.compile(r"""(?:environ(?:\.get)?|env\.get|getenv)\s*[\[(]\s*["']([A-Z][A-Z0-9_]*)["']""")
 TOKEN = re.compile(r"""["']((?:PITBOARD|CLAUDE)_[A-Z0-9_]+)["']""")      # quoted: a name, not a constant
 SHELL = re.compile(r"\$\{?((?:PITBOARD|CLAUDE)_[A-Z0-9_]+)")
