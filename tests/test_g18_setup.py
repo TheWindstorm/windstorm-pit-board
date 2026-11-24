@@ -5,6 +5,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 
 import pytest
 
@@ -628,7 +629,8 @@ def test_G18_1_P68_nothing_setup_writes_names_the_plugin_cache_version_folder(tm
     as a real install is, and everything runs from there as a session runs it: `setup --minimal --apply` twice in a
     row, `setup --folder DIR --apply`, a SessionStart hook line exactly as hooks.json holds it, `pitboard add` and
     the status line. Then every byte of every file in the home and the folder (all but Claude Code's own cache and
-    list) and every printed line are read for the version folder, the plugin's cache folder and "plugins/cache"."""
+    list) and every printed line are read for the version folder, the plugin's cache folder and "plugins/cache", and
+    (rule 29 (f)) for the real path of the Python running the suite and the folders other updaters own."""
     home, proj, own = tmp_path / "home", tmp_path / "proj", tmp_path / "own"
     claude = home / ".claude"
     plug = claude / "plugins" / "cache" / "thewindstorm" / "windstorm-pit-board"
@@ -664,7 +666,10 @@ def test_G18_1_P68_nothing_setup_writes_names_the_plugin_cache_version_folder(tm
     sh([str(home / ".pitboard" / "statusline.sh")], cwd=proj,
        given=json.dumps({"session_id": "s-p68", "cwd": str(proj), "session_name": "api"}))
 
-    needles = {str(ver), os.path.realpath(ver), str(plug), os.path.realpath(plug), "plugins/cache"}
+    needles = {str(ver), os.path.realpath(ver), str(plug), os.path.realpath(plug), "plugins/cache",
+               # rule 29 (f): no stored program under a folder another updater owns; python3 is named, never resolved
+               os.path.realpath(sys.executable), "/Cellar/", "/.pyenv/", "/mise/", "/miniconda", "/anaconda",
+               "Xcode.app", "/claude/versions/"}
     hits, read = [], set()
     for top in (home, proj):
         for d, dirs, files in os.walk(top):
