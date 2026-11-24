@@ -8,6 +8,7 @@ import sys
 
 import pytest
 
+from conftest import NO_CLAUDE_PATH
 from pitboard import launch as L
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -211,7 +212,7 @@ def test_G21_4_the_launcher_writes_no_bytecode_beside_the_code(tmp_path):
     plug = tmp_path / "plug"
     for d in ("bin", "pitboard", "hooks"):
         shutil.copytree(os.path.join(ROOT, d), plug / d, ignore=shutil.ignore_patterns("__pycache__"))
-    env = {"HOME": str(tmp_path / "home"), "PITBOARD_HOME": str(tmp_path / "pb"), "PATH": "/usr/bin:/bin"}
+    env = {"HOME": str(tmp_path / "home"), "PITBOARD_HOME": str(tmp_path / "pb"), "PATH": NO_CLAUDE_PATH}
     env.update({k: os.environ[k] for k in ("LD_PRELOAD", "SHIFT_SECONDS") if k in os.environ})
     (tmp_path / "home").mkdir()
     for argv, stdin in [(["version"], ""), (["hook", "session-start"], '{"session_id":"s1","source":"startup"}'),

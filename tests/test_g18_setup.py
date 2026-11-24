@@ -8,6 +8,7 @@ import subprocess
 
 import pytest
 
+from conftest import NO_CLAUDE_PATH
 from pitboard import __version__, cli, setup as S
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -579,7 +580,7 @@ def test_G18_1_every_setup_line_pit_board_prints_runs_as_printed(short_tmp):
     home.mkdir()
     os.chmod(short_tmp, 0o755)
     bindir = os.path.join(root, "bin")                            # `pitboard` on the PATH, as a session has it
-    env = {"HOME": str(home), "PATH": f"{bindir}:/usr/bin:/bin", "PITBOARD_MACHINE": "studio-1"}
+    env = {"HOME": str(home), "PATH": f"{bindir}{os.pathsep}{NO_CLAUDE_PATH}", "PITBOARD_MACHINE": "studio-1"}
     reg = home / ".claude" / "plugins" / "installed_plugins.json"   # the install, as Claude Code records it
     reg.parent.mkdir(parents=True)
     reg.write_text(json.dumps({"version": 2, "plugins": {"windstorm-pit-board@thewindstorm": [

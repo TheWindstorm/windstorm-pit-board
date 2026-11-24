@@ -51,6 +51,20 @@ for _n in _SYSTEM:
         _f.write(f'#!/bin/sh\necho "rule 17 stub: {_n} $* (a test brings its own {_n})" >&2\nexit 97\n')
     os.chmod(os.path.join(_STUBS, _n), 0o755)
 os.environ["PATH"] = _STUBS + os.pathsep + os.environ.get("PATH", "")
+# A child that must find no `claude` is handed NO_CLAUDE_PATH, never /usr/bin:/bin (the family's rule 17, a child's own
+# PATH is watched too): the stand-ins for the other programs above, then the system folders' programs linked one by
+# one into a folder of this run, leaving out every name above, so no child reaches this machine's own copy of one.
+_SYSBIN = os.path.join(_SESSION_TMP, "sysbin")
+os.makedirs(_SYSBIN)
+for _d in ("/usr/bin", "/bin"):
+    for _n in (sorted(os.listdir(_d)) if os.path.isdir(_d) else []):
+        if _n not in _SYSTEM and not os.path.lexists(os.path.join(_SYSBIN, _n)):
+            os.symlink(os.path.join(_d, _n), os.path.join(_SYSBIN, _n))
+_NOCLAUDE = os.path.join(_SESSION_TMP, "stubs-no-claude")
+os.makedirs(_NOCLAUDE)
+for _n in _SYSTEM[1:]:
+    os.symlink(os.path.join(_STUBS, _n), os.path.join(_NOCLAUDE, _n))
+NO_CLAUDE_PATH = _NOCLAUDE + os.pathsep + _SYSBIN
 def _libraries():
     out = [sys.prefix, sys.base_prefix, sys.exec_prefix, getattr(sys, "base_exec_prefix", sys.exec_prefix),
            *sysconfig.get_paths().values()]
@@ -101,6 +115,10 @@ def _audit(event, args):
             found = argv[0] if os.sep in argv[0] else shutil.which(argv[0], path=env.get("PATH"))
             if found and not _under(found, _TEMP):
                 _seen["hits"].append(f"this machine's own {os.path.basename(argv[0])}: {' '.join(argv)[:100]}")
+        for n in _SYSTEM:      # what the child itself may start: its PATH must not reach this machine's own copy
+            found = shutil.which(n, path=env.get("PATH") or os.defpath)
+            if found and not _under(found, _TEMP):
+                _seen["hits"].append(f"a child whose PATH reaches this machine's own {n} ({found}): {' '.join(argv)[:80]}")
 
 
 sys.addaudithook(_audit)

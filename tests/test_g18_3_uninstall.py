@@ -14,6 +14,7 @@ import threading
 
 import pytest
 
+from conftest import NO_CLAUDE_PATH
 from pitboard import cli, leave as L
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -38,7 +39,7 @@ def world(tmp_path, monkeypatch):
     os.chmod(st, 0o644)
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.delenv("PITBOARD_HOME", raising=False)
-    monkeypatch.setenv("PATH", "/usr/bin:/bin")         # no `claude` here unless a test puts one
+    monkeypatch.setenv("PATH", NO_CLAUDE_PATH)         # no `claude` here unless a test puts one
     assert run_cli("setup", "--minimal", "--apply")[0] == 0
     pb = home / ".pitboard"
     (pb / "lanes").mkdir(exist_ok=True)
@@ -361,7 +362,7 @@ def folder(world, tmp_path, monkeypatch):
     bindir.mkdir()
     (bindir / "claude").write_text(STAND_IN)
     (bindir / "claude").chmod(0o755)
-    monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}/usr/bin:/bin")
+    monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}{NO_CLAUDE_PATH}")
     monkeypatch.setenv("STAND_IN_LOG", str(tmp_path / "calls.log"))
     from pitboard import folder as F
     monkeypatch.setattr(F, "sessions_in", lambda folder, ps_lines=None, cwd_of=None: [])
@@ -401,7 +402,7 @@ def test_G18_3_folder_alone_leaves_the_rest(world, folder):
 def _scrubbed(home):
     """A clean environment: no PITBOARD_HOME, no `claude` on the PATH. A shifted-clock run (the family's rule 25)
     hands on its two variables, so the programs started here read the shifted clock too."""
-    env = {"HOME": str(home), "PATH": "/usr/bin:/bin"}
+    env = {"HOME": str(home), "PATH": NO_CLAUDE_PATH}
     env.update({k: os.environ[k] for k in ("LD_PRELOAD", "SHIFT_SECONDS") if k in os.environ})
     return env
 
@@ -699,7 +700,7 @@ def test_G18_1_setup_refuses_a_home_that_is_not_pit_boards_alone(tmp_path, monke
     (home / ".claude").mkdir(parents=True)
     (home / ".claude" / "settings.json").write_text(MINE_TEXT)
     monkeypatch.setenv("HOME", str(home))
-    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    monkeypatch.setenv("PATH", NO_CLAUDE_PATH)
     if where == "your home folder":
         target, mine = home, _put(home, ["Documents/letter.txt"])
     else:
@@ -767,7 +768,7 @@ def test_G18_3_pit_board_in_your_home_folder_takes_only_what_carries_its_mark_or
     (home / "lanes" / "api.jsonl").write_text('{"type": "asked", "uid": "u1"}\n')
     monkeypatch.undo()
     monkeypatch.setenv("HOME", str(home))
-    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    monkeypatch.setenv("PATH", NO_CLAUDE_PATH)
     monkeypatch.setenv("PITBOARD_HOME", str(home))
     mine = _put(home, ["Documents/letter.txt", "state/my-state", "logs/my.log"])
     code, out, _ = run("--apply")
@@ -822,7 +823,7 @@ def _no_claude_home(tmp_path, monkeypatch):
     home.mkdir()
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.delenv("PITBOARD_HOME", raising=False)
-    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    monkeypatch.setenv("PATH", NO_CLAUDE_PATH)
     assert run_cli("setup", "--minimal", "--apply")[0] == 0
     assert (home / ".claude" / "settings.json").exists()
     return home
@@ -879,7 +880,7 @@ def test_G18_3_P48_the_leave_leaves_the_home_as_found_with_no_step_by_hand(tmp_p
     (home / "Documents" / "letter.txt").write_text("mine\n")
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.delenv("PITBOARD_HOME", raising=False)
-    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    monkeypatch.setenv("PATH", NO_CLAUDE_PATH)
     before = listing(home)
     assert run_cli("setup", "--minimal", "--apply")[0] == 0 and (home / ".pitboard" / "setup-record.json").exists()
     code, plan, _ = run()
@@ -941,7 +942,7 @@ def test_G18_3_P48_a_home_a_setting_names_goes_only_when_setup_made_it(tmp_path,
         pbh.mkdir()
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv("PITBOARD_HOME", str(pbh))
-    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    monkeypatch.setenv("PATH", NO_CLAUDE_PATH)
     before = listing(tmp_path)
     assert run_cli("setup", "--minimal", "--apply")[0] == 0
     assert (json.loads((pbh / "setup-record.json").read_text()).get("made_home") is True) is (not there_before)
@@ -969,7 +970,7 @@ def test_G18_3_P50_the_readmes_by_hand_line_runs_as_printed_and_keeps_the_mode(t
     os.chmod(st, mode)
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.delenv("PITBOARD_HOME", raising=False)
-    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    monkeypatch.setenv("PATH", NO_CLAUDE_PATH)
     assert run_cli("setup", "--minimal", "--apply")[0] == 0
     os.chmod(st, mode)                                         # as the file was left: 600 by setup, or the person's
     line, = _by_hand_lines()
