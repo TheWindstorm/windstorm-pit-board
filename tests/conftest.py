@@ -12,6 +12,9 @@ of the account running the suite.
 4. The count fails the test in its own result, also when the test swallowed the error.
 5. A gate test (tests/test_g20_ci.py) plants a test for each kind, sees each one caught, and sees them pass with the
    guard taken out.
+The guard has no switch: nothing here reads a setting that takes it out or sends the run to the real home. The gate
+test takes the hook out only in its own planted copy of this file, and a test holds that this file reads no such
+setting.
 Not seen by the hook: a read that only stats a path (no audit event), and what a child does by itself (parts 1 and 2
 are for those).
 """
@@ -48,9 +51,22 @@ for _n in _SYSTEM:
         _f.write(f'#!/bin/sh\necho "rule 17 stub: {_n} $* (a test brings its own {_n})" >&2\nexit 97\n')
     os.chmod(os.path.join(_STUBS, _n), 0o755)
 os.environ["PATH"] = _STUBS + os.pathsep + os.environ.get("PATH", "")
-_ALLOWED = sorted({os.path.realpath(p) for p in [ROOT, sys.prefix, sys.base_prefix, sys.exec_prefix,
-                                                  site.getusersitepackages(), *sysconfig.get_paths().values()]
-                   if p and os.path.realpath(p).startswith(REAL_HOME + os.sep)})
+def _libraries():
+    out = [sys.prefix, sys.base_prefix, sys.exec_prefix, getattr(sys, "base_exec_prefix", sys.exec_prefix),
+           *sysconfig.get_paths().values()]
+    try:
+        out.append(site.getusersitepackages())
+    except AttributeError:
+        pass
+    return out + [x for x in sys.path if x and ("site-packages" in x or "dist-packages" in x)]
+
+
+# Left out of the watch: this checkout, the run's own folder and Python's own libraries. A place left out is never the
+# home itself or a folder above it, nor one that holds the home's .pitboard, .claude, .config or Library/LaunchAgents.
+_KEPT = [os.path.join(REAL_HOME, x) for x in (".pitboard", ".claude", ".config", os.path.join("Library", "LaunchAgents"))]
+_ALLOWED = sorted({r for r in map(os.path.realpath, [ROOT, _SESSION_TMP] + [p for p in _libraries() if p])
+                   if r != REAL_HOME and not REAL_HOME.startswith(r + os.sep)
+                   and not any(k == r or k.startswith(r + os.sep) for k in _KEPT)})
 _TEMP = sorted({os.path.realpath(tempfile.gettempdir()), "/tmp", os.path.realpath("/tmp"), _SESSION_TMP})
 _seen = {"test": None, "hits": []}
 
@@ -66,11 +82,14 @@ def _under(p, roots):
 def _audit(event, args):
     if not _seen["test"]:
         return
-    if event in ("open", "os.listdir", "os.scandir", "glob.glob", "os.chmod", "os.remove", "os.rename", "os.replace",
-                 "os.mkdir", "os.rmdir", "shutil.rmtree", "os.utime", "os.symlink", "os.unlink"):
-        if (args and isinstance(args[0], (str, bytes, os.PathLike)) and _under(args[0], [REAL_HOME])
-                and not _under(args[0], _ALLOWED)):
-            _seen["hits"].append(f"{event} {os.fsdecode(args[0])}")
+    if event in ("open", "os.listdir", "os.scandir", "glob.glob", "os.chmod", "os.chown", "os.remove", "os.mkdir",
+                 "os.rmdir", "shutil.rmtree", "os.utime", "os.truncate", "os.rename", "os.replace", "os.symlink",
+                 "os.link", "shutil.copyfile", "shutil.copytree", "shutil.move", "os.unlink"):
+        two = event in ("os.rename", "os.replace", "os.symlink", "os.link", "shutil.copyfile", "shutil.copytree",
+                        "shutil.move")
+        for a in (args[:2] if two else args[:1]):          # a rename or copy INTO the home counts as much as out of it
+            if isinstance(a, (str, bytes, os.PathLike)) and _under(a, [REAL_HOME]) and not _under(a, _ALLOWED):
+                _seen["hits"].append(f"{event} {os.fsdecode(a)}")
     elif event == "subprocess.Popen":
         _exe, argv, _cwd, env = args
         env = os.environ if env is None else {os.fsdecode(k): os.fsdecode(v) for k, v in env.items()}
