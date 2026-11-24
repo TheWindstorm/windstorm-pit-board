@@ -116,9 +116,9 @@ def test_G18_3_apply_puts_the_setting_back_byte_for_byte_and_keeps_the_persons_t
     assert "  gone: status line setting in ~/.claude/settings.json (put back byte for byte)" in rows
     assert "  gone: ~/.pitboard/bin" in rows and "  gone: ~/.pitboard/statusline.sh" in rows
     assert f"  kept: 1 backup setup made of ~/.claude/settings.json (yours: ~/.claude/{backups[0]})" in rows
-    assert "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, in ~/.pitboard (yours)" in rows
+    assert "  kept: 2 asks (1 open) in 1 lane log, the log of what Pit Board did, and setup's record (setup-record.json) in ~/.pitboard (yours)" in rows
     assert [r for r in rows if "the log of what Pit Board did" in r] == [
-        "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, in ~/.pitboard (yours)"]  # one row
+        "  kept: 2 asks (1 open) in 1 lane log, the log of what Pit Board did, and setup's record (setup-record.json) in ~/.pitboard (yours)"]  # one row
     assert out.splitlines()[-1] == ("They are yours. When you are sure, you can delete them yourself, at your own "
                                     "terminal: rm -r ~/.pitboard")
 
@@ -130,7 +130,7 @@ def test_G18_3_run_twice_says_nothing_of_pit_board_is_here(world):
     code, out, _ = run("--apply")
     assert code == 0 and out.startswith("nothing of Pit Board is here\ncensus:\n") and tree(home) == before
     assert not [r for r in census(out) if r.startswith("  gone")]
-    assert "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, in ~/.pitboard (yours)" in census(out)
+    assert "  kept: 2 asks (1 open) in 1 lane log, the log of what Pit Board did, and setup's record (setup-record.json) in ~/.pitboard (yours)" in census(out)
     assert out.splitlines()[-1].startswith("They are yours.")
 
 
@@ -428,7 +428,7 @@ def test_G18_3_the_stable_copy_alone_takes_itself_off(world):
     assert r.returncode == 0, r.stdout + r.stderr
     assert st.read_text() == MINE_TEXT and sorted(os.listdir(pb)) == ["lanes", "logs", "setup-record.json"]
     assert not (home / "ORPHAN-RAN").exists()                            # no orphaned code ran
-    assert "  kept: 2 asks (1 open) in 1 lane log, and the log of what Pit Board did, in ~/.pitboard (yours)" in r.stdout
+    assert "  kept: 2 asks (1 open) in 1 lane log, the log of what Pit Board did, and setup's record (setup-record.json) in ~/.pitboard (yours)" in r.stdout
     assert r.stdout.splitlines()[-1].startswith("They are yours.")
 
 
@@ -792,3 +792,19 @@ def test_G18_3_a_home_of_pit_boards_alone_still_goes_whole_file_by_file(world):
     code, out, _ = run("--apply")
     assert code == 0 and sorted(os.listdir(pb)) == ["lanes", "logs", "setup-record.json"], out
     assert out.splitlines()[-1].startswith("They are yours. When you are sure")
+
+
+def test_G18_3_the_kept_line_names_only_what_is_there_and_an_empty_logs_folder_goes(world):
+    """P43 (seen on a stock machine 2026-11-24): a home whose hooks never wrote a log line has an empty logs/. Before,
+    the census said it kept "the log of what Pit Board did" when there was none, and the empty logs/ stayed."""
+    home, pb, st = world
+    for n in os.listdir(pb / "logs"):
+        os.remove(pb / "logs" / n)
+    code, out, _ = run()
+    assert code == 0 and (pb / "logs").is_dir()                                   # the plan changes nothing
+    assert "  would go: ~/.pitboard/logs" in census(out)
+    code, out, _ = run("--apply")
+    rows = census(out)
+    assert code == 0 and not (pb / "logs").exists() and "  gone: ~/.pitboard/logs" in rows
+    assert "  kept: 2 asks (1 open) in 1 lane log, and setup's record (setup-record.json) in ~/.pitboard (yours)" in rows
+    assert not [r for r in rows if "the log of what Pit Board did" in r]

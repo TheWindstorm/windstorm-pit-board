@@ -156,12 +156,22 @@ def _other_members(gid, owner):
 
 
 def _groups(uid):
+    """The group numbers of account `uid` (unsigned, as stat gives them), or None when they cannot be read. P44: on a
+    Mac some accounts carry group 4294967294 ("nobody", -2 without its sign) and os.getgrouplist raises OverflowError
+    on it; the same number given signed answers."""
     import pwd
     try:
         p = pwd.getpwuid(uid)
-        return set(os.getgrouplist(p.pw_name, p.pw_gid))
     except (KeyError, OSError):
         return None
+    for gid in (p.pw_gid, p.pw_gid - 2 ** 32 if p.pw_gid >= 2 ** 31 else None):
+        if gid is None:
+            continue
+        try:
+            return {g % 2 ** 32 for g in os.getgrouplist(p.pw_name, gid)} | {p.pw_gid}
+        except (OverflowError, OSError, ValueError):
+            continue
+    return None
 
 
 def _passes(uid, groups, st, bits):
@@ -181,6 +191,8 @@ def who_can_write(path):
         st = os.lstat(path)
         if stat.S_ISLNK(st.st_mode) or not stat.S_ISDIR(st.st_mode) or not st.st_mode & 0o022:
             return None
+        if st.st_mode & stat.S_ISVTX:                     # sticky (/tmp): no other account removes or replaces ours
+            return None
         above, p = [], os.path.dirname(os.path.abspath(path))
         while True:
             above.append(os.stat(p))
@@ -195,12 +207,16 @@ def who_can_write(path):
         members = _other_members(st.st_gid, st.st_uid)
         if members is None:
             return "its group's members could not be read"
+        unread = []
         for uid in sorted(members):
             groups = _groups(uid)
-            if groups is None:
-                return "its group's members could not be read"
+            if groups is None:                            # said for that account; the walk goes on (P44)
+                unread.append(_name(uid))
+                continue
             if _passes(uid, groups, st, 3) and all(_passes(uid, groups, a, 1) for a in above):
                 return f"account {_name(uid)} of its group can reach and write it"
+        if unread:
+            return f"the groups of account {', '.join(unread[:3])} in its group could not be read"
     return None
 
 
@@ -251,7 +267,12 @@ def way_open(home, settings_path):
         why = None if w in seen else who_can_write(w)
         if why:
             seen.add(w)
-            out.append((w, os.lstat(w).st_mode & 0o777, why, f"chmod go-w {shlex.quote(w)}"))
+            st = os.lstat(w)
+            if st.st_uid != os.getuid():                  # root's (rule 28): the person cannot run chmod on it
+                who = "root" if st.st_uid == 0 else f"account {_name(st.st_uid)}"
+                out.append((w, st.st_mode & 0o777, f"owned by {who}, and {why}; only an administrator can close it", None))
+            else:
+                out.append((w, st.st_mode & 0o777, why, f"chmod go-w {shlex.quote(w)}"))
     return out
 
 

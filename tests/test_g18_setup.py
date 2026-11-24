@@ -424,3 +424,61 @@ def test_G2_a_folder_another_account_owns_on_the_way_is_named_with_no_command(sh
     text = S.describe(items)
     assert "chmod" not in text and "only an administrator can hand it back" in text
     assert "access lists (ACLs) are not read" in text
+
+
+def test_G2_a_folder_root_owns_that_another_account_can_write_is_named_as_roots_with_no_command(short_tmp, monkeypatch):
+    """P42 (the family's rule 28, 12:03 AM ET clause): a folder on the way that is root's and that another account can
+    write never falls into the person's branch: its line names root as the owner and gives no command. A sticky
+    folder (as /tmp) is not named: no other account can remove or replace what the person owns in it."""
+    home, pb = short_tmp / "home", short_tmp / "pb"
+    claude = home / ".claude"
+    claude.mkdir(parents=True)
+    for d in (short_tmp, home):
+        os.chmod(d, 0o755)
+    os.chmod(claude, 0o777)
+    real = os.lstat
+
+    def as_roots(p, *a, **k):
+        st = real(p, *a, **k)
+        if os.path.abspath(p) == str(claude):
+            t = list(st)
+            t[4] = 0                                             # st_uid: root
+            return os.stat_result(t)
+        return st
+    monkeypatch.setattr(S.os, "lstat", as_roots)
+    named = {w: (why, fix) for w, _, why, fix in S.way_open(str(pb), str(claude / "settings.json"))}
+    assert named[str(claude)] == ("owned by root, and any account can reach and write it; only an administrator can "
+                                  "close it", None)
+    assert "chmod" not in S.describe(S.closing_items(str(pb), str(claude / "settings.json")))
+    os.chmod(claude, 0o1777)
+    assert str(claude) not in {w for w, _, _, _ in S.way_open(str(pb), str(claude / "settings.json"))}
+
+
+def test_G2_an_account_with_the_macs_nobody_group_number_is_read_never_a_traceback(short_tmp, monkeypatch):
+    """P44 (the family's rule 28, read on two Macs 2026-11-24): accounts there carry group 4294967294 ("nobody", -2
+    without its sign) and Apple's Python 3.9 raises OverflowError from os.getgrouplist on it, while the signed number
+    answers. The walk asks again signed; an account whose groups still cannot be read is said so, and the walk goes
+    on. os.getgrouplist is stood in, as the Mac answers."""
+    import pwd
+    calls = []
+
+    def mac_getgrouplist(name, gid):
+        calls.append(gid)
+        if gid > 2 ** 31 - 1:
+            raise OverflowError("signed integer is greater than maximum")
+        return [gid, 12]
+    monkeypatch.setattr(S.os, "getgrouplist", mac_getgrouplist)
+    e = type("Pw", (), {"pw_name": "macuser", "pw_uid": 501, "pw_gid": 4294967294})()
+    monkeypatch.setattr(pwd, "getpwuid", lambda uid: e)
+    assert S._groups(501) == {4294967294, 12} and calls == [4294967294, -2]
+    monkeypatch.setattr(S.os, "getgrouplist", lambda n, g: (_ for _ in ()).throw(OverflowError("no")))
+    assert S._groups(501) is None                                # unreadable: None, never a traceback
+    home, pb = short_tmp / "home", short_tmp / "pb"
+    claude = home / ".claude"
+    claude.mkdir(parents=True)
+    for d in (short_tmp, home):
+        os.chmod(d, 0o755)
+    os.chmod(claude, 0o775)
+    monkeypatch.setattr(S, "_other_members", lambda g, owner: {501})
+    named = {w: why for w, _, why, _ in S.way_open(str(pb), str(claude / "settings.json"))}
+    assert named[str(claude)] == "the groups of account macuser in its group could not be read"

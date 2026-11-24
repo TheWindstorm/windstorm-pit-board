@@ -625,6 +625,9 @@ def home_off(home, census, apply, blocked=""):
             continue
         if os.path.isdir(path) and not os.path.islink(path):
             if name in ("lanes", "logs"):                     # the person's asks and log: kept and counted below
+                if name == "logs" and not os.listdir(path) and not yours_folder:
+                    _remove(path, census, apply, _short(path))  # P43: an empty logs/ is an empty folder of Pit Board's
+                    continue
                 if name == "lanes" and not yours_folder and name not in shared:
                     for rel in _files_in(home, name):
                         if rel.endswith(".lock"):
@@ -662,7 +665,8 @@ def home_off(home, census, apply, blocked=""):
                 "it is in your home folder" if yours_folder else f"{why_top} beside it is not")
                 + "; yours to delete after looking at it")
             left = True
-    kept = [n for n in PERSON if os.path.exists(os.path.join(home, n))]
+    kept = [n for n in PERSON if os.path.exists(os.path.join(home, n))
+            and not (n == "logs" and os.path.isdir(os.path.join(home, n)) and not os.listdir(os.path.join(home, n)))]
     if not kept and not left:
         if apply and not yours_folder:
             try:
@@ -670,8 +674,12 @@ def home_off(home, census, apply, blocked=""):
             except OSError:
                 pass
         return None
-    if kept:
-        census.kept(f"{_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')}, and the log of what Pit Board did, "
+    if kept:                                                  # P43: only what is there is named
+        parts = ([f"{_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')}"]
+                 if "lanes" in kept or "lanes.json" in kept else [])
+        parts += ["the log of what Pit Board did"] if "logs" in kept else []
+        parts += [f"setup's record ({SETUP_RECORD})"] if SETUP_RECORD in kept else []
+        census.kept(f"{', '.join(parts[:-1]) + ', and ' + parts[-1] if len(parts) > 1 else parts[0]} "
                     f"in {_short(home)}", "yours")                # one row with the count; the line below says how
     if left:                                                  # P40: no command for a folder that is not Pit Board's alone
         return (f"Pit Board is off this computer. What it left in {_short(home)}, and why, is named above; it is "
@@ -704,8 +712,8 @@ def ask_count(homes, stdin, stdout):
 def delete_kept(home, expected, census):
     """G18.3 point 6: delete the asks and the log the person counted, unless the count changed since."""
     mine = f"your asks and the log of what Pit Board did, in {_short(home)}"
-    counted = f"the log of what Pit Board did, in {_short(home)}"
-    census.rows = [r for r in census.rows if not r[1].endswith(counted)]   # this row replaces the counted one
+    counted = f" in {_short(home)}"                            # home_off's one counted row (P43: its words vary)
+    census.rows = [r for r in census.rows if not (r[0] == "kept" and r[1].endswith(counted) and r[2] == "yours")]
     try:
         now = count_asks(home)[0]
     except Unread as e:
