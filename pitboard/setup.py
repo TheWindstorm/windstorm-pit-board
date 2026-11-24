@@ -142,13 +142,89 @@ def own_open(home):
     return found
 
 
+def _other_members(gid, owner):
+    """The accounts other than the owner in group `gid`: its member list and every account whose primary group it is.
+    None when that cannot be read."""
+    import grp
+    import pwd
+    try:
+        uids = {pwd.getpwnam(n).pw_uid for n in grp.getgrgid(gid).gr_mem}
+        uids |= {p.pw_uid for p in pwd.getpwall() if p.pw_gid == gid}
+    except (KeyError, OSError):
+        return None
+    return uids - {owner}
+
+
+def _groups(uid):
+    import pwd
+    try:
+        p = pwd.getpwuid(uid)
+        return set(os.getgrouplist(p.pw_name, p.pw_gid))
+    except (KeyError, OSError):
+        return None
+
+
+def _passes(uid, groups, st, bits):
+    """Account `uid` (None: an account in none of the groups) has `bits` (x=1, wx=3) on the folder `st`."""
+    if uid is not None and uid == st.st_uid:
+        return st.st_mode >> 6 & bits == bits
+    if uid is not None and st.st_gid in groups:
+        return st.st_mode >> 3 & bits == bits
+    return st.st_mode & bits == bits
+
+
+def who_can_write(path):
+    """P41, the family's rule 28 (WHEN A PERSON'S FOLDER IS NAMED): why another account can really reach and write
+    the folder at `path`, or None. Write: writable by others, or by its group when the group has a member other than
+    the owner. Reach: every folder above lets that account pass. A link is never followed."""
+    try:
+        st = os.lstat(path)
+        if stat.S_ISLNK(st.st_mode) or not stat.S_ISDIR(st.st_mode) or not st.st_mode & 0o022:
+            return None
+        above, p = [], os.path.dirname(os.path.abspath(path))
+        while True:
+            above.append(os.stat(p))
+            if os.path.dirname(p) == p:
+                break
+            p = os.path.dirname(p)
+    except OSError:
+        return None
+    if _passes(None, set(), st, 3) and all(_passes(None, set(), a, 1) for a in above):
+        return "any account can reach and write it"
+    if st.st_mode & 0o030 == 0o030:
+        members = _other_members(st.st_gid, st.st_uid)
+        if members is None:
+            return "its group's members could not be read"
+        for uid in sorted(members):
+            groups = _groups(uid)
+            if groups is None:
+                return "its group's members could not be read"
+            if _passes(uid, groups, st, 3) and all(_passes(uid, groups, a, 1) for a in above):
+                return f"account {_name(uid)} of its group can reach and write it"
+    return None
+
+
+def _name(uid):
+    import pwd
+    try:
+        return pwd.getpwuid(uid).pw_name
+    except KeyError:
+        return str(uid)
+
+
 def way_open(home, settings_path):
     """P41: folders on the way that are not Pit Board's and that it cannot know it made: the folder above the settings
-    file, and the folder above a home that is not the default one. Named with the command, never changed."""
+    file, and the folder above a home that is not the default one. Named with the command, never changed, and only
+    when another account can really reach and write it: (path, mode, why)."""
     way = [os.path.dirname(os.path.abspath(settings_path))]
     if os.path.abspath(home) != os.path.join(os.path.expanduser("~"), ".pitboard"):
         way.append(os.path.dirname(os.path.abspath(home)))
-    return [(w, _open_mode(w)) for w in dict.fromkeys(way) if _open_mode(w) is not None]
+    out = []
+    for w in dict.fromkeys(way):
+        why = who_can_write(w)
+        if why:
+            out.append((w, os.lstat(w).st_mode & 0o777, why))
+    return out
 
 
 def closing_items(home, settings_path):
@@ -159,9 +235,9 @@ def closing_items(home, settings_path):
         rel = [f"{os.path.relpath(p, home) if p != home else '.'} ({_open_mode(p):o})" for p in own]
         items.append(Item("Pit Board's own, open to other accounts", home,
                           "\n".join(["would close: group and other write taken off"] + rel), close=own))
-    for w, m in way_open(home, settings_path):
+    for w, m, why in way_open(home, settings_path):
         items.append(Item("a folder on the way, not Pit Board's", w,
-                          f"open to other accounts ({m:o}); setup does not change it\nto close it: chmod go-w {shlex.quote(w)}",
+                          f"{m:o}: {why}; setup does not change it\nto close it: chmod go-w {shlex.quote(w)}",
                           name_only=True))
     return items
 
