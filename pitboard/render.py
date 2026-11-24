@@ -6,7 +6,8 @@ breaks an ANSI code. Standard library only.
 """
 import os
 import unicodedata
-from datetime import datetime, timezone
+import math
+from datetime import datetime, timedelta, timezone
 
 from . import contract, flags, timefmt
 
@@ -217,6 +218,37 @@ def status_segment(state, now=None, plain=False, cfg=None):
     word = f"{flags.word(worst)} " if plain else ""
     text = f"{flags.SYMBOL[worst]} {word}{n} ask{'s' if n != 1 else ''} · oldest {timefmt.age(oldest, now_dt)}"
     return flags.paint(text, worst, plain)
+
+
+SEGMENT_NEVER = 9999999999   # P54: the time a segment of no open ask stays true until (seconds, year 2286)
+
+
+def segment_until(state, now=None, cfg=None):
+    """P54: the time (whole seconds since 1970, rounded down) before which status_segment(state, t) is the same text as
+    at now: the next change of the oldest ask's age (once a minute under an hour, once an hour under two days, then
+    once a day) or of an ask's flag (a deadline coming within urgent_deadline_hours, a can-wait ask reaching
+    escalate_after_hours). SEGMENT_NEVER when nothing is open; None when that cannot be worked out."""
+    cfg = cfg or {}
+    now_dt = now or datetime.now(timezone.utc)
+    open_asks = [a for a in (state or {}).get("asks", []) if a.get("status") == "open"]
+    if not open_asks:
+        return SEGMENT_NEVER
+    try:
+        oldest = contract.parse_ts(min(a["asked_at"] for a in open_asks))
+        secs = max(0.0, (now_dt - oldest).total_seconds())
+        step = 60 if secs < 3600 else 3600 if secs < 48 * 3600 else 86400
+        marks = [oldest + timedelta(seconds=(int(secs // step) + 1) * step)]
+        urgent = float(cfg.get("urgent_deadline_hours", flags.DEFAULT_URGENT_DEADLINE_HOURS))
+        escalate = float(cfg.get("escalate_after_hours", flags.DEFAULT_ESCALATE_HOURS))
+        for a in open_asks:
+            if a.get("deadline"):
+                marks.append(contract.parse_ts(a["deadline"]) - timedelta(hours=urgent))
+            if a.get("severity") == "can-wait":
+                marks.append(contract.parse_ts(a["asked_at"]) + timedelta(hours=escalate))
+        until = min(m for m in marks if m > now_dt)
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return None
+    return min(SEGMENT_NEVER, math.floor(until.timestamp()))
 
 
 REMINDER_MAX_CHARS = 3000

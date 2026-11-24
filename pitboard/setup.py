@@ -61,6 +61,47 @@ def original_from_wrapper(path):
     return None
 
 
+def segment_read_lines(home):
+    """P54 (measured on a real Mac: a redraw with Pit Board took 130 to 150 ms under Apple's python3, the person's own
+    script 11 ms): the wrapper shows the segment Pit Board last kept for this session (state/<session id>.seg, written
+    by `status`) without starting Python, when all of these hold: the session id and the session name it finds in the
+    input are the ones the file was kept for (the id: the text after the one '"session_id":"' up to the next quote; the
+    name: the JSON text of the one '"session_name":"' up to its first quote not escaped, kept escaped as it came; a
+    name key in any other form, null or with a space after the colon, is a name it cannot tell, and no file is used);
+    NO_COLOR is as it was; the clock is before the time the text stays true until; and each file the file names
+    is there or not as it was and, if there, strictly older than the file (the file's time is the moment Pit Board started,
+    before it read anything; a file of the same time counts as changed); the clock is not before that moment (a clock
+    that went back makes it stale). Existence is tested by itself: dash says a file is not newer than a missing one,
+    bash says it is. Anything else, a file that is missing, unreadable or not of this shape included, runs Pit Board
+    as before, handing it the session id and name it found (PITBOARD_WRAPPER_SID, PITBOARD_WRAPPER_NAME), which the
+    file then stores as they are: one text decides. On that road the wrapper starts `date` and nothing more beyond what
+    it starts anyway (`cat` for the input, and the person's own status line)."""
+    return [
+        f"H={shlex.quote(home)}",
+        "sid=; nm=; nok=; hit=; ok=; pb=",
+        "case $in in *'\"session_id\":\"'*'\"session_id\":\"'*) ;; *'\"session_id\":\"'*) sid=${in#*'\"session_id\":\"'}; "
+        "sid=${sid%%'\"'*} ;; esac",
+        "case $sid in *[!a-z0-9-]*) sid= ;; esac",
+        "case $in in *'\"session_name\":\"'*'\"session_name\":\"'*) ;; *'\"session_name\":\"'*) "
+        "r=${in#*'\"session_name\":\"'}",
+        "  while c=${r%%'\"'*}; [ \"$c\" != \"$r\" ]; do nm=$nm$c; r=${r#*'\"'}; b=${c##*[!\\\\]}",
+        "    [ $((${#b} % 2)) = 1 ] || { nok=1; break; }; nm=$nm'\"'; done ;; *'\"session_name\"'*) ;; *) nok=1 ;; esac",
+        'f="$H/state/$sid.seg"',
+        'if [ -n "$sid" ] && [ -n "$nok" ] && [ -f "$f" ]; then',
+        '  { IFS= read -r h && IFS= read -r knm && IFS= read -r seg && n=0 && ok=1 &&',
+        '    while IFS= read -r d; do n=$((n+1)); case $d in',
+        "      '+ '*) { [ -e \"${d#+ }\" ] && [ \"$f\" -nt \"${d#+ }\" ]; } || ok= ;;",
+        "      '- '*) [ ! -e \"${d#- }\" ] || ok= ;;",
+        "      *) ok= ;; esac; done; } < \"$f\" 2>/dev/null",
+        '  set -f; set -- $h; set +f; p=0; [ -n "${NO_COLOR+x}" ] && p=1',
+        '  if [ -n "$ok" ] && [ "$1 $2" = "pitboard-seg 1" ] && [ "$6" = "$p" ] && [ "$7" = "$n" ] && [ "$knm" = "$nm" ]; then',
+        '    now=$(date +%s); [ "$now" -lt "$4" ] 2>/dev/null && [ "$now" -ge "$5" ] 2>/dev/null && pb=$seg && hit=1',
+        "  fi",
+        "fi",
+        '[ -n "$sid" ] && [ -n "$nok" ] && export PITBOARD_WRAPPER_SID="$sid" PITBOARD_WRAPPER_NAME="$nm"',
+    ]
+
+
 def wrapper_text(original, home):
     """G10.5: run the operator's status line and Pit Board's segment with the same input, and
     print the segment first: before a one-line status line, joined with ' · ', or on its own
@@ -77,15 +118,14 @@ def wrapper_text(original, home):
         "# Written by pitboard setup (plan G10.5). Runs your own status line and Pit Board's segment; prints the segment first.",
         MARK + json.dumps(original or ""),
         "in=$(cat; printf x); in=${in%x}",
-        "SH=sh; command -v bash >/dev/null 2>&1 && SH=bash",
     ]
-    if original:
-        lines.append(f"own=$(printf '%s' \"$in\" | \"$SH\" -c {shlex.quote(original)} 2>/dev/null)")
+    if original:                                     # P55: run as Claude Code runs it (read on 2.1.331: /bin/sh -c)
+        lines.append(f"own=$(printf '%s' \"$in\" | /bin/sh -c {shlex.quote(original)} 2>/dev/null)")
     else:
         lines.append("own=")
-    lines += [
+    lines += segment_read_lines(home) + [
         f"cap() {{ python3 -I -c {shlex.quote(CAP_RUNNER)} {STATUS_CAP_SECONDS} \"$@\"; }}",
-        f"pb=$(export PITBOARD_HOME={shlex.quote(home)}; printf '%s' \"$in\" | cap {shlex.quote(launcher)} status 2>/dev/null) || pb=",
+        f"[ -n \"$hit\" ] || pb=$(export PITBOARD_HOME={shlex.quote(home)}; printf '%s' \"$in\" | cap {shlex.quote(launcher)} status 2>/dev/null) || pb=",
         "nl='\n'",
         'if [ -n "$own" ] && [ -n "$pb" ]; then',
         '  case "$own" in *"$nl"*) printf \'%s\\n%s\' "$pb" "$own" ;; *) printf \'%s · %s\' "$pb" "$own" ;; esac',

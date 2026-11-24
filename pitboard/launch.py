@@ -226,6 +226,7 @@ def main(argv=None):
     refusal = floor_refusal(argv)                      # G21.15: the first act, before anything is read or written
     if refusal:
         return floor_stop(refusal)
+    os.environ["PITBOARD_LAUNCH_NS"] = str(time.time_ns())   # P54: before anything is read; the status line's file
     if argv[:1] == ["uninstall"]:                      # plan 1.28: the one exception, no orphaned code runs
         code = _leave(argv)
         if code is not None:

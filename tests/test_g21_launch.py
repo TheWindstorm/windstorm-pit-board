@@ -202,7 +202,7 @@ def test_G21_4_launcher_stays_tiny_and_imports_no_pit_board_code():
     assert top <= {"json", "os", "re", "sys", "time", "pitboard"}        # time: P19's log line when no folder runs
     # the only Pit Board import is the chosen version's cli, inside main()
     assert src.count("from pitboard import cli") == 1 and "from ." not in src
-    assert len(src.splitlines()) < 280      # 200 until plan 1.29: the floor check (P16) and three answers (P19)
+    assert len(src.splitlines()) < 285      # 200 until plan 1.29: the floor check (P16) and three answers (P19); P54: its start time
 
 
 def test_G21_4_the_launcher_writes_no_bytecode_beside_the_code(tmp_path):

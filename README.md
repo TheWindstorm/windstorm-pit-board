@@ -37,6 +37,8 @@ claude plugin install windstorm-pit-board@thewindstorm
 
 Then, in a new Claude Code session, `pitboard setup --minimal` shows what it would change (the status line segment, the launcher copy in your Pit Board home) and `pitboard setup --minimal --apply` does it. (0.1.2's README left out `--minimal`, and setup refuses the line without it.) Setup writes `~/.claude/settings.json` private (mode 600). When the file has another mode, the plan says so first: the backup setup keeps has the old mode, and uninstall puts the old mode back only when it puts the file back byte for byte.
 
+The status line then runs your own status line command as before, with the same input and environment, and puts Pit Board's segment in front of it. When nothing Pit Board shows can have changed, a redraw starts no Python: it shows what Pit Board kept for that session in its home's `state` folder (one small file per session, mode 600, holding the count and the age it shows, never an ask's words; a file goes after a week or when a new version runs). The first redraw of a session, and the first after an ask or a setting changes, runs Pit Board.
+
 **For one project folder only** (that folder's own settings, never yours), from a clone of the newest release tag:
 
 ```
