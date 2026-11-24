@@ -551,3 +551,41 @@ def test_G2_the_walk_covers_what_decides_what_runs(short_tmp, monkeypatch):
         os.chmod(reg, 0o644)
     assert out[0][2] == ("Claude Code's plugin registry could not be read, so the installed copy's folders were not "
                          "walked") and out[0][3] is None
+
+
+def test_G18_1_every_setup_line_pit_board_prints_runs_as_printed(short_tmp):
+    """P49 (the family's rule 7, seen running the v0.1.2 tag on a real Mac 2026-11-24): the README said `pitboard setup`
+    and `pitboard setup --apply`, and setup refuses both (exit 2, "this release has setup --minimal only"); `pitboard
+    version` said "run pitboard setup --apply to close". Every setup line the README prints for the user road, and the
+    line `version` prints, runs exactly as printed and does what it says."""
+    import re
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    home = short_tmp / "home"
+    home.mkdir()
+    os.chmod(short_tmp, 0o755)
+    bindir = os.path.join(root, "bin")                            # `pitboard` on the PATH, as a session has it
+    env = {"HOME": str(home), "PATH": f"{bindir}:/usr/bin:/bin", "PITBOARD_MACHINE": "studio-1"}
+    reg = home / ".claude" / "plugins" / "installed_plugins.json"   # the install, as Claude Code records it
+    reg.parent.mkdir(parents=True)
+    reg.write_text(json.dumps({"version": 2, "plugins": {"windstorm-pit-board@thewindstorm": [
+        {"scope": "user", "version": __version__, "installPath": root}]}}))
+
+    def sh(line):
+        return subprocess.run(["bash", "-c", line], env=env, capture_output=True, text=True, timeout=60,
+                              stdin=subprocess.DEVNULL, cwd=str(home))
+
+    readme = open(os.path.join(root, "README.md"), encoding="utf-8").read()
+    lines = [m for m in re.findall(r"`(pitboard setup[^`]*)`", readme) if "--folder" not in m]
+    assert lines == ["pitboard setup --minimal", "pitboard setup --minimal --apply"], lines
+    for line in lines:
+        r = sh(line)
+        assert r.returncode == 0 and "has setup --minimal only" not in r.stdout + r.stderr, (line, r.stdout, r.stderr)
+    assert (home / ".pitboard" / "bin" / "pitboard").exists()
+    os.chmod(home / ".pitboard" / "pitboard", 0o777)              # what 0.1.2 left under umask 000
+    v = sh("pitboard version").stdout.splitlines()
+    at = v.index("Pit Board's own, open to other accounts: 1")
+    assert v[at + 1] == "  to close them: ~/.pitboard/bin/pitboard setup --minimal --apply", v
+    r = sh(v[at + 1].split(": ", 1)[1])                                     # run exactly as printed
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert stat.S_IMODE(os.stat(home / ".pitboard" / "pitboard").st_mode) & 0o022 == 0
+    assert not [ln for ln in sh("pitboard version").stdout.splitlines() if ln.startswith("Pit Board's own")]
