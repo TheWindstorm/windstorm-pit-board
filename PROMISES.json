@@ -814,6 +814,18 @@
    "test": "",
    "proven": "",
    "issue": 132
+  },
+  {
+   "id": "P66",
+   "codon": "G10.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, in a scratch home on Linux (the code of 0.1.2 and of main that day), the family's rules 6 and 30 (A MISSING FIELD IS NOT AN ANSWER): with Pit Board's lanes folder unreadable (mode 000) and one open ask in it, the status line printed nothing, exit 0, byte for byte what it prints when nothing is open; `pitboard board --plain` said \"which lane? Pass --lane KEY. Lanes on this machine: none yet\" (exit 3). By the code: `pitboard status` catches every error and prints nothing (cli.py, cmd_status's last except), and the list of lanes reads an unreadable folder as none (store.lane_keys).",
+   "promise": "A read Pit Board cannot make is never shown as nothing. The status line shows a short could-not-read segment (as the launcher already does for its own files) when the lane's log, its state or Pit Board's home cannot be read, and nothing only when it read them and nothing is open; the board says the lanes folder could not be read, never \"none yet\". Every read the status line and the board decide on has a test that makes it fail (no permission, a missing field, an empty answer with exit 0) and reads the words.",
+   "test": "",
+   "proven": "",
+   "issue": 133
   }
  ],
  "declined": [
