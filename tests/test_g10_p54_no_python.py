@@ -69,12 +69,18 @@ def world(tmp_path, monkeypatch):
     os.umask(old)
 
 
+def _clock():
+    """The family's rule 25, way B: a run with the clock shifted hands the shift on to the wrapper and everything it
+    starts, as the other scrubbed environments of the suite do; a run without it hands on nothing."""
+    return {k: os.environ[k] for k in ("LD_PRELOAD", "SHIFT_SECONDS") if k in os.environ}
+
+
 def redraw(w, data, shell=("sh",), **env_more):
     """One redraw as Claude Code makes it: the wrapper started with the session's JSON on stdin. Returns (bytes printed,
     the programs it started, in order)."""
     if w["log"].exists():
         w["log"].unlink()
-    env = {"HOME": str(w["home"]), "PATH": w["shims"], **env_more}
+    env = {"HOME": str(w["home"]), "PATH": w["shims"], **env_more, **_clock()}
     sh = [shutil.which(shell[0]) or "/bin/sh", *shell[1:]]
     r = subprocess.run([*sh, str(w["pb"] / "statusline.sh")], input=data, capture_output=True, env=env, timeout=30)
     starts = w["log"].read_text().split() if w["log"].exists() else []
@@ -414,7 +420,7 @@ def test_G10_5_P54_rule2_the_persons_status_script_gets_the_environment_and_inpu
     assert run("setup", "--minimal", "--apply")[0] == 0
     lived = {"GH_TOKEN": "ghp_short", "GIT_CONFIG_GLOBAL": str(world["tmp"] / "gitconfig"), "EDITOR": "vim",
              "LANG": "en_US.UTF-8", "MY_NOTE": "line one\nline two", "MY_NAME": "Zoë", "NO_COLOR": "1"}
-    env = {"HOME": str(world["home"]), "PATH": os.environ["PATH"], **lived}
+    env = {"HOME": str(world["home"]), "PATH": os.environ["PATH"], **lived, **_clock()}
     data = fixture("name-1.json")
     direct = subprocess.run(["/bin/sh", "-c", own], input=data, capture_output=True, env=env, timeout=30).stdout
     for _ in range(3):                                               # Pit Board run, then the quiet road
@@ -491,7 +497,7 @@ def test_G10_5_P54_rule2_the_persons_command_runs_in_the_shell_claude_code_uses(
     d["statusLine"]["command"] = own
     s.write_text(json.dumps(d))
     assert run("setup", "--minimal", "--apply")[0] == 0
-    env = {"HOME": str(world["home"]), "PATH": os.environ["PATH"]}
+    env = {"HOME": str(world["home"]), "PATH": os.environ["PATH"], **_clock()}
     data = fixture("no-name.json")
     direct = subprocess.run(["/bin/sh", "-c", own], input=data, capture_output=True, env=env, timeout=30).stdout
     got = subprocess.run([shutil.which(shell[0]), *shell[1:], str(world["pb"] / "statusline.sh")], input=data,
