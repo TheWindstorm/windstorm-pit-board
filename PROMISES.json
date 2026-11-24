@@ -826,6 +826,30 @@
    "test": "test_G18_1_P68_nothing_setup_writes_names_the_plugin_cache_version_folder",
    "proven": "",
    "issue": 135
+  },
+  {
+   "id": "P72",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 31 (a command in text is never handed to a shell unquoted), read in the code of the 0.1.3 release head before its tag: two lines uninstall prints carried a command that removes something between backticks. (a) The census's kept line for the catalog said \"removing it with `claude plugin marketplace remove <catalog>` also uninstalls every plugin installed from that catalog\". Seen 1 of 1 on Linux with a stand-in `claude` that only logs its arguments: the line, relayed by an agent's `echo \"...\"` in double quotes, ran \"plugin marketplace remove thewindstorm\"; with the real `claude` that removes the catalog and every plugin installed from it. That line is new in 0.1.3 (0.1.1 and 0.1.2 do not hold it), so no release printed it. (b) The refusal of --delete-asks-and-log away from a terminal, which is what an agent gets, said \"Nothing changed. `pitboard uninstall --apply` takes Pit Board off and keeps them.\"; not run. Three more lines carried `claude` in backticks (no command), and setup's note on the old spelling of the folder undo carried two commands in backticks. The new test went red on all of them on the code as it was.",
+   "promise": "No line uninstall or setup prints, on any road, carries a backtick or a dollar sign followed by a parenthesis: the catalog's kept line says what removing the catalog does without naming the command, and a command the person may type stands alone on a line of its own. A test runs uninstall (a plan, the apply twice, the delete refused away from a terminal, the catalog still listed, `claude` failing and missing, a lane busy, the list unreadable) and setup (a plan, the apply twice, its refusals, the folder mode and its refusals, the old spelling) and reads every printed line.",
+   "test": "test_G18_3_P72_no_line_uninstall_prints_is_run_by_a_shell",
+   "proven": "",
+   "issue": 139
+  },
+  {
+   "id": "P73",
+   "codon": "G9.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 31, read in the skill of the 0.1.3 release head: the skill showed `pitboard add --title \"<...>\" --suggested \"<...>\"` with the ask's words in double quotes, and the same for --step, --answer, --note and --reason, and said nothing about backticks. An agent copies the example line before it reads anything under it. An ask whose text quotes a command between backticks, typed that way, runs the command before pitboard starts; an ask is often about a risky command. The SessionStart reminder, which every session reads, showed --answer \"...\" and --reason \"...\" the same way. `pitboard add` takes its text only as arguments (reading it from a file or from standard input is planned for 0.1.4).",
+   "promise": "Every example in the skill that carries an ask's words puts them in single quotes, and the sentence under the add example says why: no backtick and no dollar sign in the words, a command named in plain words, because inside double quotes a shell runs what a pair of backticks holds before pitboard starts. The SessionStart reminder says the same in one clause and shows its own examples in single quotes. A test reads the skill and the reminder for a text argument in double quotes.",
+   "test": "test_G9_1_P73_the_skill_and_the_reminder_show_ask_text_in_single_quotes",
+   "proven": "",
+   "issue": 140
   }
  ],
  "declined": [

@@ -516,8 +516,8 @@ Each handler writes at most one JSON object to stdout. Context for the model goe
 Pit Board: you are lane "<lane_name>" (key <key>) on <machine>. <n> ask(s) wait on <operator_name>:
 - A12 [RED, 2d] Merge #651 now or wait for review? Suggested: merge now.
 - A14 [BLUE, 5h] YOUR HAND: create a Stripe account. Due Thu 5:00 PM ET.
-Rules: record every new ask with `pitboard add` before you ask it, and start the question with its ID. That includes an ask only <operator_name> can answer that you send to another agent (a coordinator, a reviewer) or a shared board instead of the chat.
-If <operator_name> has answered one, run `pitboard answer <ID> --by operator --answer "..."`. If it no longer matters, `pitboard withdraw <ID> --reason "..."`. Do not ask again in chat unless it still blocks your next step.
+Rules: record every new ask with `pitboard add` before you ask it, and start the question with its ID. Put the ask's words in single quotes, with no backtick and no dollar sign in them. That includes an ask only <operator_name> can answer that you send to another agent (a coordinator, a reviewer) or a shared board instead of the chat.
+If <operator_name> has answered one, run `pitboard answer <ID> --by operator --answer '...'`. If it no longer matters, `pitboard withdraw <ID> --reason '...'`. Do not ask again in chat unless it still blocks your next step.
 ```
 
 When asks of this lane were answered on the master list (`via: page`) and are not `done` yet, add after the open asks, one line each: `Answered on the master list, not done yet: A12 → "<answer>"`.
@@ -1244,24 +1244,25 @@ If `command -v pitboard` finds nothing, use `~/.pitboard/bin/pitboard` wherever 
 
 Before you ask the operator anything that you need an answer or an action for (a decision, an approval, a login, a payment, a signature, an account, a purchase, information only they have):
 
-1. Record it: `pitboard add --title "<the question or action, one line>" --suggested "<the answer you recommend and why, short>"`.
-   - Something only they can do with their own hands (pay, sign, log in, create an account, buy): add `--kind hand` and one `--step "..."` per step, and no `--suggested`.
+1. Record it: `pitboard add --title '<the question or action, one line>' --suggested '<the answer you recommend and why, short>'`.
+   - The ask's words go in single quotes, as above, with no backtick and no dollar sign in them; name a command in plain words. Inside double quotes a shell runs what a pair of backticks holds before pitboard even starts, and an ask is often about a risky command. An apostrophe ends single quotes: leave it out or say it another way.
+   - Something only they can do with their own hands (pay, sign, log in, create an account, buy): add `--kind hand` and one `--step '...'` per step, and no `--suggested`.
    - It truly cannot wait (a deadline today, something breaking): `--severity urgent`. You can carry on without it for now: `--severity can-wait`. Otherwise leave the default (blocking).
    - A real deadline: `--deadline "YYYY-MM-DD HH:MM"` or `--deadline +2d`.
 2. Ask in chat, starting with the ID it printed: "A12: Merge #651 now? I suggest merging now because ..."
 3. One ask per decision. Do not bundle three questions into one.
 4. If the answer is the operator's to give but you send the ask somewhere else instead of the chat (another agent, such as a coordinator or a reviewer, or a shared board), record it first all the same, and put its ID and this line in your message: "A12 is recorded on the Pit Board for the operator. Answer under A12, or say 'not mine to answer' under A12."
-   - They answer under the ID: `pitboard answer A12 --by agent --answer "<who>: <their answer>"`.
+   - They answer under the ID: `pitboard answer A12 --by agent --answer '<who>: <their answer>'`.
    - They say it is not theirs to answer: the ask stays open for the operator. Ask the operator in chat, starting with A12.
 
 Do not record: questions to yourself, questions to other agents that they can answer themselves, rhetorical questions, status updates.
 
 ## When it is answered or no longer needed
 
-- The operator answers in chat: `pitboard answer A12 --by operator --answer "<their answer, a few words>"`.
+- The operator answers in chat: `pitboard answer A12 --by operator --answer '<their answer, a few words>'`.
 - The operator types `ok A12` or `no A12`: it is already recorded; just act on it.
-- The work is finished: `pitboard done A12 --note "<what you did, one line>"`.
-- It no longer matters: `pitboard withdraw A12 --reason "<why>"`.
+- The work is finished: `pitboard done A12 --note '<what you did, one line>'`.
+- It no longer matters: `pitboard withdraw A12 --reason '<why>'`.
 
 ## Never
 

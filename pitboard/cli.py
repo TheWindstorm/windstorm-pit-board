@@ -947,8 +947,9 @@ def main(argv=None, stdout=None, stderr=None):
             return int(e.code or 0)
         if a.folder:
             from . import leave
-            stderr.write("pitboard: `setup --folder DIR --undo` is the old spelling of `pitboard uninstall --folder "
-                         "DIR --apply`; it does the same, and goes after 0.1.3.\n")
+            stderr.write("pitboard: setup --folder DIR --undo is the old spelling of this command, which does the same:\n"
+                         "  pitboard uninstall --folder DIR --apply\n"
+                         "The old spelling goes after 0.1.3.\n")
             return leave.main(["--folder", a.folder, "--apply"] + (["--json"] if a.json else []), stdout=stdout,
                               stderr=stderr)
     as_json = "--json" in argv

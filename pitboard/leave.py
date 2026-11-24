@@ -236,7 +236,7 @@ def claude(args, cwd, run=None):
         r = run(["claude"] + args, cwd=cwd, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                 timeout=CLAUDE_LIMIT_SECONDS)
     except FileNotFoundError:
-        return False, "`claude` is not on the PATH", True
+        return False, "the claude command is not on the PATH", True
     except (OSError, subprocess.SubprocessError) as e:
         return False, str(e), False
     return r.returncode == 0, ("" if r.returncode == 0 else error_text(r.stdout, r.stderr)), False
@@ -302,8 +302,8 @@ def claude_left(census, names, before):
             continue
         if listed:
             census.kept(f"the plugin catalog {cat} in Claude Code's list",
-                        "other plugins install and update from it; removing it with `claude plugin marketplace remove "
-                        f"{cat}` also uninstalls every plugin installed from that catalog, so Pit Board leaves it")
+                        "other plugins install and update from it; removing that catalog from Claude Code also uninstalls "
+                        "every plugin installed from it, so Pit Board leaves it")
 
 
 # ------------------------------------------------------------------ the census
@@ -916,7 +916,7 @@ def uninstall(apply=True, folder=None, run=None, census=None):
             census.gone(f"plugin {name} ({scope or 'user'} scope)")
             went.append(name)
         elif missing:                                         # P58's first half (0.1.3): a step the person can take
-            out.append(f"plugin {name} ({scope or 'user'} scope): `claude` is not on the PATH")
+            out.append(f"plugin {name} ({scope or 'user'} scope): the claude command is not on the PATH")
             census.kept(f"plugin {name} ({scope or 'user'} scope)", _no_claude_line(census, homes), INCOMPLETE)
         else:
             out.append(f"plugin {name} ({scope or 'user'} scope): uninstall said:\n{tail}")
@@ -939,10 +939,10 @@ def _no_claude_line(census, homes):
     what is already done, what stays and where, and the one step there is."""
     back = any(st == "gone" and w.startswith("status line setting in ") for st, w, _ in census.rows)
     again = " ".join(_short(os.path.join(h, "bin", "pitboard")) for h in homes[:1]) or "pitboard"
-    return ("`claude` was not found on the PATH, so Claude Code's own entry for the plugin stays"
+    return ("The claude command was not found on the PATH, so Claude Code's own entry for the plugin stays"
             + ("; your status line is already back" if back else "")
             + ", and Pit Board's files stay where the line below says. If Claude Code is still on this account, put "
-            f"its `claude` on the PATH and run {again} uninstall --apply again. If Claude Code is gone, nothing of Pit "
+            f"its claude command on the PATH and run {again} uninstall --apply again. If Claude Code is gone, nothing of Pit "
             "Board runs any more")
 
 USAGE_LINE = "usage: pitboard uninstall [--folder DIR] [--apply] [--delete-asks-and-log] [--lane KEY] [--json]\n"
@@ -980,8 +980,8 @@ def main(argv=None, stdin=None, stdout=None, stderr=None, run=None):
     apply, delete, folder, as_json = parsed
     if delete and not (apply and not folder and stdin.isatty() and stdout.isatty()):
         stderr.write("pitboard: --delete-asks-and-log runs only at your own terminal, with --apply: your asks are "
-                     "yours to delete.\nNothing changed. `pitboard uninstall --apply` takes Pit Board off and keeps "
-                     "them.\n")
+                     "yours to delete.\nNothing changed. This takes Pit Board off and keeps them:\n"
+                     "  pitboard uninstall --apply\n")
         return USAGE
     counted = {}
     if delete:                                                # the count first: a wrong one changes nothing at all
