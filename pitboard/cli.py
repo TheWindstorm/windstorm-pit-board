@@ -513,12 +513,15 @@ def segment_path(sid):
     return os.path.join(store.home(), "state", sid + ".seg")
 
 
-def _keep_segment(t0_ns, sid, key, segment, until, plain):
+def _keep_segment(t0_ns, inp, sid, key, segment, until, plain):
     """P54: the finished segment for the status line wrapper to show without starting Python. Kept only when the
     wrapper handed over the session id and session name it found in the input (PITBOARD_WRAPPER_SID and
     PITBOARD_WRAPPER_NAME; the file stores exactly that name, so one text decides) and its id is this session's. It
     holds the version that wrote it, the time its text stays true until, the moment the launcher started, NO_COLOR as
-    the wrapper reads it, and every file whose change can change the segment, each with whether it was there. Its
+    the wrapper reads it, and every file whose change can change the segment, each with whether it was there. The
+    wrapper's cut is checked against the one real parse of the same input: when the name it handed over is not the
+    input's own session_name (a space after a colon, the key only inside another object, a name that is not a
+    string), no file is kept, which costs time and never truth. Its
     own file time is the moment the launcher started, before it read anything: a file changed after that is newer, and
     the wrapper runs Pit Board again, so a count read before a change is never shown after it. It holds the count and
     the age the segment shows, never an ask's words."""
@@ -526,7 +529,7 @@ def _keep_segment(t0_ns, sid, key, segment, until, plain):
     if envb is None or os.environ.get("PITBOARD_WRAPPER_SID") != sid or b"PITBOARD_WRAPPER_NAME" not in envb:
         return
     name = envb[b"PITBOARD_WRAPPER_NAME"]
-    if until is None or not _SEG_SID.fullmatch(sid or ""):
+    if until is None or not _SEG_SID.fullmatch(sid or "") or not _same_name(name, inp):
         return
     h = store.home()
     deps = [lane.map_path(), os.path.join(h, "config.json"), store.log_path(key),
@@ -548,6 +551,23 @@ def _keep_segment(t0_ns, sid, key, segment, until, plain):
     os.utime(tmp, ns=(t0_ns, t0_ns))                  # set before the rename: never seen newer than the read
     os.replace(tmp, path)
     _prune_segments(os.path.dirname(path), t0_ns)
+
+
+def _same_name(cut, inp):
+    """P54: the wrapper's cut of the name (the JSON text between the quotes) is the input's own top-level session_name,
+    or both say there is none."""
+    try:
+        text = cut.decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    if "session_name" not in inp:
+        return text == ""
+    if not isinstance(inp["session_name"], str):
+        return False
+    try:
+        return json.loads('"' + text + '"') == inp["session_name"]
+    except ValueError:
+        return False
 
 
 def _prune_segments(folder, now_ns):
@@ -634,7 +654,7 @@ def cmd_status(args, stdin=None):
                 until = render.segment_until(st, now, cfg)
                 if until is not None and name_due is not None:
                     until = min(until, name_due)          # a rename waiting for its minute is noted when it is due
-                _keep_segment(t0, sid, key, out.message, until, plain)
+                _keep_segment(t0, inp, sid, key, out.message, until, plain)
             except Exception:  # noqa: BLE001 - the segment still prints; the next redraw runs Pit Board again
                 pass
     except Exception:  # noqa: BLE001

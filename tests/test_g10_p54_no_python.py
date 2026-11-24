@@ -89,20 +89,27 @@ def add(title="Go?"):
     assert run("add", "--lane", "api-server", "--title", title, "--suggested", "yes")[0] == 0
 
 
-def settle(w, data, shell=("sh",), **env):
-    """The first redraws of a session: Pit Board runs, and when the session has a name it notes it in the lane map
-    (a change it made itself), so the next one runs it once more. Then quiet. Returns what the quiet one printed."""
-    _, s1 = redraw(w, data, shell, **env)
-    assert "python3" in s1
-    for _ in range(2):
+def until_quiet(w, data, shell=("sh",), tries=5, **env):
+    """Redraw until the quiet road (cat and date only); returns what it printed. Pit Board may run on the way: once
+    more after it notes a session's name in the lane map (a change it made itself), and, on a shell that compares file
+    times in whole seconds (seen on the macOS runner, where the same test passed or failed by where the second fell),
+    again until an input written in the same second as its start lies in an earlier second. That is the safe side:
+    it costs a run, never shows an old count. From the second Pit Board run on, each try waits for the next whole
+    second."""
+    for i in range(tries):
         out, starts = redraw(w, data, shell, **env)
         if starts == ["cat", "date"]:
             return out
+        assert "python3" in starts, starts
+        if i:
+            time.sleep(1.02 - time.time() % 1)
     raise AssertionError(f"never quiet: {starts}")
 
 
-def quiet(starts):
-    return [s for s in starts if s not in ("cat", "date")] == []
+def settle(w, data, shell=("sh",), **env):
+    """The first redraw of a session runs Pit Board; then until_quiet."""
+    assert "python3" in redraw(w, data, shell, **env)[1]
+    return until_quiet(w, data, shell, **env)
 
 
 @pytest.mark.parametrize("shell", SHELLS, ids=" ".join)
@@ -115,10 +122,10 @@ def test_G10_5_P54_a_redraw_with_nothing_changed_starts_only_cat_and_date(world,
     first, s1 = redraw(world, data, shell)
     assert "python3" in s1 and segfile(world).exists()                     # the first redraw runs Pit Board
     assert (b"1 ask" in first) == bool(asks)
-    if inp != "no-name.json":                                              # it noted the name: the lane map changed
-        assert "python3" in redraw(world, data, shell)[1]
-    second, s2 = redraw(world, data, shell)
-    assert second == first and s2 == ["cat", "date"], s2                   # every start counted: cat and date only
+    second = until_quiet(world, data, shell)                                # every start counted: cat and date only
+    assert second == first
+    for _ in range(5):                                                      # and it stays quiet
+        assert redraw(world, data, shell) == (first, ["cat", "date"])
     t = time.perf_counter()
     redraw(world, data, shell)
     print(f"P54 no-change redraw under {' '.join(shell)}: {(time.perf_counter() - t) * 1000:.1f} ms")
@@ -136,8 +143,7 @@ def test_G10_5_P54_an_input_that_is_not_there_is_not_a_change_under_any_shell(wo
     elif p.exists():
         p.unlink()
     data = fixture("no-name.json")
-    redraw(world, data, shell)
-    assert redraw(world, data, shell)[1] == ["cat", "date"]
+    settle(world, data, shell)
     if missing == "lane log":
         add()
     elif missing == "update":
@@ -147,7 +153,7 @@ def test_G10_5_P54_an_input_that_is_not_there_is_not_a_change_under_any_shell(wo
     out, starts = redraw(world, data, shell)
     assert "python3" in starts
     assert (b"1 ask" in out) == (missing == "lane log")
-    assert redraw(world, data, shell)[1] == ["cat", "date"]
+    assert until_quiet(world, data, shell) == out
 
 
 @pytest.mark.parametrize("change", ["ask added", "ask answered", "lane map", "config", "update folder",
@@ -185,7 +191,7 @@ def test_G10_5_P54_each_change_runs_pit_board_once_then_quiet_again(world, chang
         assert out == b""
     if change == "NO_COLOR":
         assert b"\x1b[" not in out and b"1 ask" in out
-    assert quiet(redraw(world, data, **env)[1]), change
+    assert until_quiet(world, data, **env) == out, change
 
 
 def test_G10_5_P54_an_input_of_the_same_time_as_the_file_counts_as_changed(world):
@@ -278,7 +284,7 @@ def test_G10_5_P54_the_name_is_one_text_the_wrapper_cut_and_a_rename_after_an_es
     out, starts = redraw(world, two)                                         # differs only after the quote
     assert "python3" in starts
     assert segfile(world).read_bytes().split(b"\n")[1] == 'Pit \\"Bo\\\\ard\\" é·2'.encode()
-    assert redraw(world, two)[1] == ["cat", "date"]
+    until_quiet(world, two)
     # G10.6 notes a name at most once a minute: the rename waits, and the kept segment ends when it is due
     seen_p = world["pb"] / "state" / "statusline-seen.json"
     seen = json.loads(seen_p.read_text())
@@ -410,7 +416,7 @@ def test_G10_5_P54_rule2_the_persons_status_script_gets_the_environment_and_inpu
              "LANG": "en_US.UTF-8", "MY_NOTE": "line one\nline two", "MY_NAME": "Zoë", "NO_COLOR": "1"}
     env = {"HOME": str(world["home"]), "PATH": os.environ["PATH"], **lived}
     data = fixture("name-1.json")
-    direct = subprocess.run(["bash", "-c", own], input=data, capture_output=True, env=env, timeout=30).stdout
+    direct = subprocess.run(["/bin/sh", "-c", own], input=data, capture_output=True, env=env, timeout=30).stdout
     for _ in range(3):                                               # Pit Board run, then the quiet road
         r = subprocess.run([shutil.which(shell[0]), *shell[1:], str(world["pb"] / "statusline.sh")], input=data,
                            capture_output=True, env=env, timeout=30).stdout
@@ -422,3 +428,72 @@ def test_G10_5_P54_rule2_the_persons_status_script_gets_the_environment_and_inpu
         strip = lambda e: {k: v for k, v in e.items() if k not in SHELL_OWN}   # noqa: E731
         assert strip(got["env"]) == strip(want["env"])
         assert not [k for k in got["env"] if k.startswith("PITBOARD_")]
+
+
+NAME_1 = '"session_name":"Pit \\"Bo\\\\ard\\" é·1"'
+
+
+@pytest.mark.parametrize("form", ["a space after the colon of the name", "a space after the colon of the id",
+                                  "the name only inside another object", "the name null"])
+def test_G10_5_P54_the_wrappers_cut_is_checked_against_the_real_parse(world, form):
+    """A Claude Code that one day writes the input another way costs time, never truth: the wrapper treats a name key
+    it cannot read as unknown, and Pit Board keeps no file when the id and name the wrapper handed it are not its own
+    parse of the same JSON."""
+    add()
+    t = fixture("name-1.json").decode()
+    assert t.count(NAME_1) == 1
+    if form == "a space after the colon of the name":
+        t = t.replace('"session_name":"', '"session_name": "', 1)
+    elif form == "a space after the colon of the id":
+        t = t.replace('"session_id":"', '"session_id": "', 1)
+    elif form == "the name only inside another object":
+        t = t.replace(NAME_1 + ",", "", 1).replace('"workspace":{', '"workspace":{"session_name":"Nested",', 1)
+    else:
+        t = t.replace(NAME_1, '"session_name":null', 1)
+    data = t.encode()
+    json.loads(data)
+    for _ in range(3):
+        out, starts = redraw(world, data)
+        assert "python3" in starts and b"1 ask" in out, (form, starts)
+        assert not segfile(world).exists(), form
+
+
+def test_G10_5_P54_several_quiet_sessions_stay_quiet_and_write_nothing_they_share(world):
+    """The lane map is shared by every session, so one session's write would wake all the others. Once each session
+    has settled, redraws of all of them in turn start no Python and change no file of Pit Board's home."""
+    add()
+    sids = [SID, "0f3a9c2e-1b2c-4d5e-8f90-123456789abc", "7e1d2c3b-0000-4000-8000-0000000000aa",
+            "7e1d2c3b-0000-4000-8000-0000000000bb"]
+    for i, sid in enumerate(sids[1:], 2):
+        L.resolve(sid, f"Lane {i}")
+    t = fixture("name-1.json").decode()
+    inputs = [t.replace(SID, sid).replace("é·1", f"é·{i}").encode() for i, sid in enumerate(sids, 1)]
+    for data in inputs:
+        settle(world, data)
+    outs = [until_quiet(world, data) for data in inputs]                   # the others' notes woke each once
+    before = {p: p.stat().st_mtime_ns for p in world["pb"].rglob("*") if p.is_file()}
+    for _ in range(3):
+        for data, out in zip(inputs, outs):
+            assert redraw(world, data) == (out, ["cat", "date"])
+    after = {p: p.stat().st_mtime_ns for p in world["pb"].rglob("*") if p.is_file()}
+    assert after == before
+    assert sum(b"1 ask" in o for o in outs) == 1
+
+
+@pytest.mark.parametrize("shell", SHELLS, ids=" ".join)
+def test_G10_5_P54_rule2_the_persons_command_runs_in_the_shell_claude_code_uses(world, shell):
+    """Read on Claude Code 2.1.331 (Linux): a status line command runs as `/bin/sh -c <command>`, whatever SHELL says.
+    The wrapper ran it with bash whenever bash was there, so a command that reads differently in bash than in the
+    machine's sh (here `echo -n`, and `$0`) printed something else with Pit Board than without it."""
+    s = world["home"] / ".claude" / "settings.json"
+    own = "echo -n one; printf ' %s' \"$0\""
+    d = json.loads(s.read_text())
+    d["statusLine"]["command"] = own
+    s.write_text(json.dumps(d))
+    assert run("setup", "--minimal", "--apply")[0] == 0
+    env = {"HOME": str(world["home"]), "PATH": os.environ["PATH"]}
+    data = fixture("no-name.json")
+    direct = subprocess.run(["/bin/sh", "-c", own], input=data, capture_output=True, env=env, timeout=30).stdout
+    got = subprocess.run([shutil.which(shell[0]), *shell[1:], str(world["pb"] / "statusline.sh")], input=data,
+                         capture_output=True, env=env, timeout=30).stdout
+    assert got == direct, (got, direct)

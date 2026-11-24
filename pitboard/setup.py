@@ -66,7 +66,8 @@ def segment_read_lines(home):
     script 11 ms): the wrapper shows the segment Pit Board last kept for this session (state/<session id>.seg, written
     by `status`) without starting Python, when all of these hold: the session id and the session name it finds in the
     input are the ones the file was kept for (the id: the text after the one '"session_id":"' up to the next quote; the
-    name: the JSON text of the one '"session_name":"' up to its first quote not escaped, kept escaped as it came);
+    name: the JSON text of the one '"session_name":"' up to its first quote not escaped, kept escaped as it came; a
+    name key in any other form, null or with a space after the colon, is a name it cannot tell, and no file is used);
     NO_COLOR is as it was; the clock is before the time the text stays true until; and each file the file names
     is there or not as it was and, if there, strictly older than the file (the file's time is the moment Pit Board started,
     before it read anything; a file of the same time counts as changed); the clock is not before that moment (a clock
@@ -84,7 +85,7 @@ def segment_read_lines(home):
         "case $in in *'\"session_name\":\"'*'\"session_name\":\"'*) ;; *'\"session_name\":\"'*) "
         "r=${in#*'\"session_name\":\"'}",
         "  while c=${r%%'\"'*}; [ \"$c\" != \"$r\" ]; do nm=$nm$c; r=${r#*'\"'}; b=${c##*[!\\\\]}",
-        "    [ $((${#b} % 2)) = 1 ] || { nok=1; break; }; nm=$nm'\"'; done ;; *) nok=1 ;; esac",
+        "    [ $((${#b} % 2)) = 1 ] || { nok=1; break; }; nm=$nm'\"'; done ;; *'\"session_name\"'*) ;; *) nok=1 ;; esac",
         'f="$H/state/$sid.seg"',
         'if [ -n "$sid" ] && [ -n "$nok" ] && [ -f "$f" ]; then',
         '  { IFS= read -r h && IFS= read -r knm && IFS= read -r seg && n=0 && ok=1 &&',
@@ -117,10 +118,9 @@ def wrapper_text(original, home):
         "# Written by pitboard setup (plan G10.5). Runs your own status line and Pit Board's segment; prints the segment first.",
         MARK + json.dumps(original or ""),
         "in=$(cat; printf x); in=${in%x}",
-        "SH=sh; command -v bash >/dev/null 2>&1 && SH=bash",
     ]
-    if original:
-        lines.append(f"own=$(printf '%s' \"$in\" | \"$SH\" -c {shlex.quote(original)} 2>/dev/null)")
+    if original:                                     # P55: run as Claude Code runs it (read on 2.1.331: /bin/sh -c)
+        lines.append(f"own=$(printf '%s' \"$in\" | /bin/sh -c {shlex.quote(original)} 2>/dev/null)")
     else:
         lines.append("own=")
     lines += segment_read_lines(home) + [
