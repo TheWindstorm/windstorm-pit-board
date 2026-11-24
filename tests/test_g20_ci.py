@@ -118,60 +118,76 @@ def test_G9_5_ci_runs_the_skill_format_gate():
     assert "gh skill publish --dry-run" in text
 
 
-def test_G20_P51_the_suites_guard_fails_a_test_that_reaches_the_real_home(tmp_path):
-    """P51 (the family's rule 17): the suite's guard (tests/conftest.py) is seen to fail each way a test can lean on
-    the account running it: it opens the real plugin registry; it does so and swallows the error; it starts a child
-    with the real HOME, or with none; it starts the real `claude` program. The same file's test that gives its own
-    home passes. Run in a child pytest whose real home is a fake one and whose `claude` is a stand-in, so nothing of
-    the account running this suite is read or started."""
+PLANTED = """import os, pwd, shutil, subprocess, sys
+REAL = os.path.realpath(pwd.getpwuid(os.getuid()).pw_dir)
+PROBE = "no-such-file-pit-board-guard-probe"           # a name that is never there: nothing real is read
+
+def test_reads_the_real_pit_board_home():
+    try:
+        open(os.path.join(REAL, ".pitboard", PROBE))
+    except OSError:
+        pass
+
+def test_reads_the_real_plugin_registry():
+    try:
+        open(os.path.join(REAL, ".claude", "plugins", PROBE))
+    except OSError:
+        pass
+
+def test_starts_a_child_with_no_home():
+    subprocess.run([sys.executable, "-I", "-c", "pass"], env={"PATH": os.environ["PATH"]})
+
+def test_starts_a_child_with_the_real_home():
+    subprocess.run([sys.executable, "-I", "-c", "pass"], env=dict(os.environ, HOME=REAL))
+
+def test_runs_this_machines_own_program():
+    real = shutil.which("systemctl", path="/usr/bin:/bin") or shutil.which("launchctl", path="/usr/bin:/bin")
+    assert real, "neither systemctl nor launchctl here"
+    subprocess.run([real, "--version" if real.endswith("systemctl") else "version"], capture_output=True)
+
+def test_the_stub_answers_first():
+    r = subprocess.run(["claude", "--version"], capture_output=True, text=True)
+    assert r.returncode == 97 and "rule 17 stub" in r.stderr
+
+def test_stays_in_its_own_home(tmp_path):
+    assert os.path.realpath(os.path.expanduser("~")) != REAL
+    (tmp_path / "x").write_text("x")
+"""
+CAUGHT = ("test_reads_the_real_pit_board_home", "test_reads_the_real_plugin_registry", "test_starts_a_child_with_no_home",
+          "test_starts_a_child_with_the_real_home", "test_runs_this_machines_own_program")
+
+
+def test_G20_P51_the_suites_guard_catches_each_kind_and_nothing_without_it(tmp_path):
+    """P51 (the family's rule 17, THE GUARD HAS FIVE PARTS): tests/conftest.py gives the run its own home, puts loud
+    stand-ins for claude, tmux, crontab, systemctl, loginctl and launchctl first on PATH, and its hook fails, in the
+    test's own result, a test that reaches the real Pit Board home or plugin registry (also when it swallows the
+    error), starts a child with no HOME or the real one, or runs this machine's own systemctl or launchctl. Control:
+    the same planted tests with the guard taken out all pass."""
     import shutil
-    import site
     import subprocess
     import sys
     here = os.path.dirname(os.path.abspath(__file__))
-    fake = tmp_path / "fake-home"
-    (fake / ".claude" / "plugins").mkdir(parents=True)
-    (fake / ".claude" / "plugins" / "installed_plugins.json").write_text('{"version": 2, "plugins": {}}')
-    tools = tmp_path / "tools"
-    tools.mkdir()
-    (tools / "claude").write_text("#!/bin/sh\necho stand-in\n")
-    os.chmod(tools / "claude", 0o755)
-    run = tmp_path / "run"
-    run.mkdir()
-    shutil.copy(os.path.join(here, "conftest.py"), run / "conftest.py")
-    (run / "test_leans.py").write_text(
-        "import os, subprocess\n"
-        "REG = os.path.expanduser('~/.claude/plugins/installed_plugins.json')\n"
-        "def test_forgets():\n"
-        "    open(REG).read()\n"
-        "def test_swallows():\n"
-        "    try:\n"
-        "        open(os.path.expanduser('~/.pitboard/nothing-here'))\n"
-        "    except OSError:\n"
-        "        pass\n"
-        "def test_child_with_the_real_home():\n"
-        "    subprocess.run(['true'])\n"
-        "def test_child_with_no_home():\n"
-        "    subprocess.run(['true'], env={'PATH': '/usr/bin:/bin'})\n"
-        "def test_the_real_claude(tmp_path):\n"
-        "    subprocess.run(['claude', '--version'], env=dict(os.environ, HOME=str(tmp_path)), capture_output=True)\n"
-        "def test_remembers(tmp_path, monkeypatch):\n"
-        "    monkeypatch.setenv('HOME', str(tmp_path))\n"
-        "    os.makedirs(os.path.expanduser('~/.claude/plugins'))\n"
-        "    open(os.path.expanduser('~/.claude/plugins/installed_plugins.json'), 'w').write('{}')\n"
-        "    subprocess.run(['true'])\n")
-    env = dict(os.environ, HOME=str(fake), PYTHONUSERBASE=site.getuserbase(), PYTHONDONTWRITEBYTECODE="1",
-               PATH=f"{tools}:/usr/bin:/bin")
-    env.pop("PITBOARD_HOME", None)
-    r = subprocess.run([sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", "--rootdir", str(run),
-                        "-c", os.devnull, str(run)], env=env, capture_output=True, text=True, timeout=120,
-                       stdin=subprocess.DEVNULL)
-    assert r.returncode == 1, r.stdout + r.stderr
-    assert "6 passed, 5 errors" in r.stdout, r.stdout
-    for name in ("test_forgets", "test_swallows", "test_child_with_the_real_home", "test_child_with_no_home",
-                 "test_the_real_claude"):
-        assert f"ERROR at teardown of {name}" in r.stdout, (name, r.stdout)
-    assert "test_remembers" not in r.stdout, r.stdout
-    for said in ("open " + str(fake), "pitboard/nothing-here", f"a child whose HOME is the real home: {fake}",
-                 "a child with no HOME", "the real claude program"):
-        assert said in r.stdout, (said, r.stdout)
+    root = tmp_path / "planted"
+    (root / "tests").mkdir(parents=True)
+    shutil.copy(os.path.join(here, "conftest.py"), root / "tests" / "conftest.py")
+    (root / "tests" / "test_planted.py").write_text(PLANTED)
+
+    def go():
+        r = subprocess.run([sys.executable, "-m", "pytest", "-v", "-p", "no:cacheprovider", "--rootdir", str(root),
+                            "-c", os.devnull, str(root / "tests")], cwd=str(root), capture_output=True, text=True,
+                           timeout=120, stdin=subprocess.DEVNULL)
+        return r.stdout + r.stderr
+
+    out = go()
+    verdict = {ln.split("::", 1)[1].split()[0]: ln.split()[1] for ln in out.splitlines()
+               if "test_planted.py::" in ln and ln.split()[1:2] in (["PASSED"], ["FAILED"])}
+    assert verdict == {**{n: "FAILED" for n in CAUGHT}, "test_the_stub_answers_first": "PASSED",
+                       "test_stays_in_its_own_home": "PASSED"}, out[-4000:]
+    assert "5 failed, 2 passed" in out and "rule 17: this test reached the home or the tools" in out, out[-4000:]
+    for said in (".pitboard/" + "no-such-file", "plugins/no-such-file", "a child with no HOME", "a child with the real HOME",
+                 "this machine's own"):
+        assert said in out, (said, out[-4000:])
+    conf = root / "tests" / "conftest.py"                                # the control: no guard, nothing caught
+    conf.write_text(conf.read_text().replace("sys.addaudithook(_audit)", "pass"))
+    out = go()
+    assert "rule 17:" not in out and "7 passed" in out, out[-4000:]
