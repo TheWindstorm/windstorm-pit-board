@@ -22,7 +22,10 @@ def world(tmp_path, monkeypatch):
     monkeypatch.setenv("PITBOARD_MACHINE", "studio-1")
     for k in ("PITBOARD_LANE", "CLAUDE_CODE_SESSION_ID", "NO_COLOR"):
         monkeypatch.delenv(k, raising=False)
-    return home, pb
+    os.chmod(home / ".claude", 0o755)                 # P41: the fixture's own folder, not the runner's umask
+    old = os.umask(os.umask(0) | 0o022)               # what the launcher does first (P41): these tests skip it
+    yield home, pb
+    os.umask(old)
 
 
 def settings(home, obj=None):
@@ -271,3 +274,102 @@ def test_G2_a_private_file_is_opened_new_never_written_into_a_temp_file_left_bef
     S.apply([S.Item("again", str(p), "set", b"{}\n", 0o600)])
     assert baks[0].read_bytes() == earlier                       # an earlier backup is never written over
     assert (home / ".claude" / f"settings.json.bak-{stamp}-2").exists()
+
+
+@pytest.fixture
+def short_tmp():
+    """A short folder, so a plan line with a path is not cut at the CLI's width (pytest's own paths are long)."""
+    import tempfile
+    d = tempfile.mkdtemp(prefix="pb", dir="/tmp")
+    yield __import__("pathlib").Path(d)
+    for top, dirs, files in os.walk(d):
+        for n in dirs:
+            os.chmod(os.path.join(top, n), 0o700)
+    shutil.rmtree(d)
+
+
+def test_G2_setup_closes_its_own_and_names_the_folders_on_the_way(short_tmp):
+    """P41 (the family's rule 28, a file is only as closed as the folders above it): a home as 0.1.2 left it under
+    umask 000 (bin/ and pitboard/ 777, an activity file 666). The plan says it would close them and changes nothing;
+    --apply closes them. ~/.claude above the settings file, and the folder above a home that is not the default, are
+    the person's: named with the one command when another account can reach and write them, never changed, and
+    `pitboard version` says it again while it stays open. Nothing of the person's changes."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    home = short_tmp / "home"
+    claude = home / ".claude"
+    claude.mkdir(parents=True)
+    (claude / "mine.txt").write_text("mine")
+    os.chmod(claude / "mine.txt", 0o666)
+    os.chmod(claude, 0o777)                                      # any account can write it...
+    os.chmod(home, 0o755)
+    os.chmod(short_tmp, 0o755)                                   # ...and reach it
+    env = {"HOME": str(home), "PATH": os.environ.get("PATH", "/usr/bin:/bin"), "PITBOARD_MACHINE": "studio-1"}
+
+    def go(*argv, **extra):
+        return subprocess.run(["sh", os.path.join(root, "bin", "pitboard"), *argv], env={**env, **extra},
+                              capture_output=True, text=True, timeout=60, stdin=subprocess.DEVNULL)
+
+    assert go("setup", "--minimal", "--apply").returncode == 0
+    pb = home / ".pitboard"
+    (pb / "state").mkdir(exist_ok=True)
+    (pb / "state" / "s1.activity").write_text("idle 2026-11-24T00:00:00Z\n")
+    for rel, m in (("bin", 0o777), ("pitboard", 0o777), ("state/s1.activity", 0o666)):
+        os.chmod(pb / rel, m)                                    # what 0.1.2 left under umask 000
+
+    def modes():
+        return {str(p.relative_to(home)): stat.S_IMODE(p.lstat().st_mode) for p in [home] + list(home.rglob("*"))}
+
+    before = modes()
+    r = go("setup", "--minimal")
+    assert r.returncode == 0 and modes() == before, r.stdout
+    out = r.stdout
+    assert "would close: group and other write taken off" in out
+    assert "bin (777)" in out and "pitboard (777)" in out and "state/s1.activity (666)" in out
+    assert "a folder on the way, not Pit Board's: " + str(claude) in out
+    assert "777: any account can reach and write it; setup does not change it" in out and f"chmod go-w {claude}" in out
+    r = go("setup", "--minimal", "--apply")
+    assert r.returncode == 0 and "closed: group and other write taken off" in r.stdout, r.stdout
+    after = modes()
+    assert [k for k, m in after.items() if k.startswith(".pitboard") and m & 0o022] == []
+    assert after[".claude"] == 0o777 and after[".claude/mine.txt"] == 0o666     # the person's: never changed
+    assert after["."] == before["."]
+    v = go("version").stdout.splitlines()
+    at = v.index(f"open to other accounts: {claude} (777)")
+    assert v[at + 1:at + 3] == ["  any account can reach and write it", f"  to close it: chmod go-w {claude}"]
+    assert v[-1].startswith("status line runs")                           # P15: still the last line
+    os.chmod(claude, 0o755)
+    shared = short_tmp / "shared"
+    shared.mkdir(mode=0o700)
+    os.chmod(shared, 0o777)
+    r = go("setup", "--minimal", PITBOARD_HOME=str(shared / "pb"))
+    assert r.returncode == 0 and f"a folder on the way, not Pit Board's: {shared}" in r.stdout, r.stdout
+    assert f"{claude}" not in r.stdout.split("a folder on the way")[-1]  # closed now: not named
+    assert stat.S_IMODE(shared.stat().st_mode) == 0o777
+
+
+def test_G2_a_folder_of_the_persons_is_named_only_when_another_account_can_reach_and_write_it(short_tmp, monkeypatch):
+    """P41, the family's rule 28 (WHEN A PERSON'S FOLDER IS NAMED): a 775 folder in the person's own group with
+    nobody else in it is the ordinary state on a Linux desktop and is not named; with a second member it is named
+    when every folder above lets that member pass, and not when the home above is 700; a membership that cannot be
+    read is said so."""
+    home, pb = short_tmp / "home", short_tmp / "pb"
+    claude = home / ".claude"
+    claude.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+    os.chmod(short_tmp, 0o755)                                   # every folder above lets any account pass
+    settings_path = str(claude / "settings.json")
+    os.chmod(claude, 0o775)
+    os.chmod(home, 0o755)
+    gid = claude.stat().st_gid
+    monkeypatch.setattr(S, "_other_members", lambda g, owner: set())
+    assert str(claude) not in {w for w, _, _ in S.way_open(str(pb), settings_path)}     # a group of one
+    monkeypatch.setattr(S, "_other_members", lambda g, owner: {4242} if g == gid else set())
+    monkeypatch.setattr(S, "_groups", lambda uid: {gid})
+    named = {w: why for w, _, why in S.way_open(str(pb), settings_path)}
+    assert named.get(str(claude)) == "account 4242 of its group can reach and write it"
+    os.chmod(home, 0o700)                                        # a home at 700 keeps everyone out
+    assert str(claude) not in {w for w, _, _ in S.way_open(str(pb), settings_path)}
+    os.chmod(home, 0o755)
+    monkeypatch.setattr(S, "_other_members", lambda g, owner: None)
+    named = {w: why for w, _, why in S.way_open(str(pb), settings_path)}
+    assert named.get(str(claude)) == "its group's members could not be read"
