@@ -622,6 +622,18 @@
    "test": "test_G18_1_every_setup_line_pit_board_prints_runs_as_printed",
    "proven": "",
    "issue": ""
+  },
+  {
+   "id": "P50",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the first run with a real Claude Code (2.1.331, no sign-in) on a real Mac test account, Pit Board 0.1.2 installed from the catalog, with a settings file of a real account's shape (mode 600, a status line of four keys): after `claude plugin uninstall`, the README's by-hand line for a home set up before 0.1.3, run exactly as printed, put the status line and its other keys back but wrote the file anew at the default mode: 600 came back 644 (664 on a machine whose umask is 002). No test had ever run that line.",
+   "promise": "The README's by-hand line, run exactly as printed in a test against a home that setup made, puts the person's own status line back with all its keys, changes no other key, and keeps the settings file's mode; its temporary file is opened new at that mode.",
+   "test": "test_G18_3_P50_the_readmes_by_hand_line_runs_as_printed_and_keeps_the_mode",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [
