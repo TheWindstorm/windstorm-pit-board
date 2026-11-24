@@ -222,7 +222,7 @@ def _copy_cmd(sub):
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    os.umask(os.umask(0) | 0o022)                      # rule 28: nothing made is writable by another account
+    os.umask(os.umask(0) | 0o022)                      # rule 28: no group or other write in a mode it makes
     refusal = floor_refusal(argv)                      # G21.15: the first act, before anything is read or written
     if refusal:
         return floor_stop(refusal)
