@@ -130,6 +130,70 @@ def claude(args, cwd, run=None):
     return r.returncode == 0, ("" if r.returncode == 0 else error_text(r.stdout, r.stderr)), False
 
 
+# ------------------------------------------------------------------ what Claude Code's own uninstall did (P30)
+
+def _print(path):
+    """(size, mtime_ns, sha256) of a file, "missing", or "unreadable": read, never assumed."""
+    try:
+        with open(path, "rb") as f:
+            data = f.read()
+        st = os.stat(path)
+    except FileNotFoundError:
+        return "missing"
+    except OSError:
+        return "unreadable"
+    return (st.st_size, st.st_mtime_ns, hashlib.sha256(data).hexdigest())
+
+
+def claude_files():
+    """The files of Claude Code's own that its `plugin uninstall` was seen to change (rule 23 round, P30)."""
+    return [os.path.join(claude_dir(), "plugins", "installed_plugins.json"), os.path.join(_home_dir(), ".claude.json")]
+
+
+def claude_left(census, names, before):
+    """P30: after Claude Code's own uninstall, name what it changed and what it kept, as read now. `names` are the
+    plugins it uninstalled; `before` the prints of claude_files() taken before the first call."""
+    changed = [_short(p) for p in claude_files() if before.get(p) != _print(p)]
+    if changed:
+        census.kept("Claude Code's own files: " + ", ".join(changed),
+                    "changed by Claude Code's own uninstall, which Pit Board ran; they are Claude Code's")
+    cats = []
+    for name in names:
+        plugin, _, cat = name.partition("@")
+        if cat and cat not in cats:
+            cats.append(cat)
+        top = os.path.join(claude_dir(), "plugins", "cache", cat, plugin)
+        try:
+            vers = sorted(v for v in os.listdir(top) if os.path.isdir(os.path.join(top, v)))
+        except FileNotFoundError:
+            vers = []
+        except OSError as e:
+            census.kept(_short(top), f"could not be read ({type(e).__name__}), so Pit Board cannot say what Claude "
+                                     "Code kept there")
+            continue
+        for v in vers:
+            d = os.path.join(top, v)
+            marked = os.path.exists(os.path.join(d, ".orphaned_at"))
+            census.kept(_short(d), "Pit Board's code, a version folder Claude Code keeps in its plugin cache after its "
+                        "own uninstall" + (" (it marked it .orphaned_at)" if marked else "")
+                        + "; Claude Code's to clean up, so Pit Board leaves it")
+    known = os.path.join(claude_dir(), "plugins", "known_marketplaces.json")
+    for cat in cats:
+        try:
+            with open(known, encoding="utf-8") as f:
+                listed = cat in (json.load(f) or {})
+        except FileNotFoundError:
+            listed = False
+        except (OSError, ValueError, TypeError) as e:
+            census.kept(f"the plugin catalog {cat}", f"{_short(known)} could not be read ({type(e).__name__}), "
+                        "so Pit Board cannot say whether Claude Code still lists it")
+            continue
+        if listed:
+            census.kept(f"the plugin catalog {cat} in Claude Code's list",
+                        "other plugins install and update from it; removing it with `claude plugin marketplace remove "
+                        f"{cat}` also uninstalls every plugin installed from that catalog, so Pit Board leaves it")
+
+
 # ------------------------------------------------------------------ the census
 
 class Census:
@@ -201,7 +265,7 @@ def _drop(d, home, plugin, strip_env=True):
     return d
 
 
-def folder_undo(folder, run=None, envhome=None, census=None, apply=True):
+def folder_undo(folder, run=None, envhome=None, census=None, apply=True, went=None):
     """Uninstall the plugin from one folder and put its settings back (G18.1 folder mode, now G18.3's).
     Returns (lines, home). Raises NoRecord when the folder has no record, Unread when the record cannot be read."""
     census = census if census is not None else Census()
@@ -222,6 +286,8 @@ def folder_undo(folder, run=None, envhome=None, census=None, apply=True):
     out.append(f"plugin {plugin}: " + ("removed from this folder" if ok else f"uninstall said:\n{tail}"))
     if ok:
         census.gone(f"plugin {plugin} in {folder}")
+        if went is not None:
+            went.append(plugin)
     else:
         census.kept(f"plugin {plugin} in {folder}", f"run yourself: cd {_shell(folder)} && claude plugin uninstall "
                     f"{plugin} --scope local" if missing else "Claude Code's uninstall failed; its error is above",
@@ -527,14 +593,17 @@ def uninstall(apply=True, folder=None, run=None, census=None):
     """G18.3. Returns (lines to print before the census, kept lines, census, homes)."""
     census = census or Census(apply)
     out, kept_lines = [], []
+    before, went = {p: _print(p) for p in claude_files()}, []       # P30: what Claude Code's own uninstall does
     if folder:
         try:
-            lines, _ = folder_undo(folder, run=run, census=census, apply=apply)
+            lines, _ = folder_undo(folder, run=run, census=census, apply=apply, went=went)
             out += lines
         except NoRecord as e:
             census.kept(folder, f"{e}; nothing changed", INCOMPLETE)
         except Unread as e:
             census.kept(folder, f"{e}; nothing changed", INCOMPLETE)
+        if went:
+            claude_left(census, went, before)
         return out, kept_lines, census, []
     try:
         rows = registry(claude_dir())
@@ -564,7 +633,7 @@ def uninstall(apply=True, folder=None, run=None, census=None):
             continue
         seen_folders.add(real)
         try:
-            lines, h = folder_undo(real, run=run, census=census, apply=apply)
+            lines, h = folder_undo(real, run=run, census=census, apply=apply, went=went)
             out += lines
             if h not in homes:
                 homes.append(h)
@@ -612,9 +681,12 @@ def uninstall(apply=True, folder=None, run=None, census=None):
                            if w == user_settings and st == "gone" and scope in ("", "user") else (st, w, y)
                            for st, w, y in census.rows]       # P17 ruling: byte for byte only where it is true
             census.gone(f"plugin {name} ({scope or 'user'} scope)")
+            went.append(name)
         else:
             out.append(f"plugin {name} ({scope or 'user'} scope): uninstall said:\n{tail}")
             census.kept(f"plugin {name} ({scope or 'user'} scope)", f"run yourself: {cmd}", INCOMPLETE)
+    if went:
+        claude_left(census, went, before)
     unfinished = census.code != 0                             # a read failed or a step failed above
     for h in homes:                                           # last, each home: the running launcher copy goes last
         blocked = ("a status line setting still runs its wrapper; fix that file" if not settings_ok.get(h, True)

@@ -53,13 +53,16 @@ def run_cli(*argv):
     return cli.main(list(argv), stdout=out, stderr=err), out.getvalue(), err.getvalue()
 
 
-def run(*argv, stdin=None, stdout=None, calls=None, fail=False):
-    """leave.main with a stand-in for `claude`: records each call; fail=True answers exit 1."""
+def run(*argv, stdin=None, stdout=None, calls=None, fail=False, effect=None):
+    """leave.main with a stand-in for `claude`: records each call; fail=True answers exit 1; effect(args) is what
+    the stand-in does to the home before it answers."""
     out, err = stdout or io.StringIO(), io.StringIO()
 
     def fake(args, **kw):
         if calls is not None:
             calls.append((args, kw.get("cwd")))
+        if effect is not None and not fail:
+            effect(args)
         return subprocess.CompletedProcess(args, 1 if fail else 0, "", "stand-in: failed on purpose\n" if fail else "")
     code = L.main(list(argv), stdin=stdin or io.StringIO(""), stdout=out, stderr=err, run=fake)
     return code, out.getvalue(), err.getvalue()
@@ -598,3 +601,71 @@ def test_G18_3_byte_for_byte_is_said_only_while_nothing_else_wrote_the_file(worl
     code, out, _ = run("--apply")
     assert code == 0 and ("  gone: status line setting in ~/.claude/settings.json (put back byte for byte; then Claude "
                           "Code's own uninstall changed its entries in that file)") in census(out)
+
+
+# ---------------------------------------------------------------- P30: what Claude Code's own uninstall did
+
+def _as_seen_on_2_1_331(home, catalog_listed=True):
+    """The home as Claude Code 2.1.331 left it in the rule 23 round: its uninstall dropped the registry row, rewrote
+    ~/.claude.json and kept the version folder marked .orphaned_at; the catalog stayed listed."""
+    ver = home / ".claude" / "plugins" / "cache" / "thewindstorm" / "windstorm-pit-board" / "0.1.3"
+    (ver / "bin").mkdir(parents=True)
+    (home / ".claude.json").write_text('{"numStartups": 1}\n')
+    known = home / ".claude" / "plugins" / "known_marketplaces.json"
+    known.write_text(json.dumps({"thewindstorm": {"source": {"source": "github"}}} if catalog_listed else {}))
+
+    def effect(args):
+        registry(home, None)
+        (home / ".claude.json").write_text('{"numStartups": 1, "changed": true}\n')
+        (ver / ".orphaned_at").write_text("1763952000000")
+    return ver, effect
+
+
+P30_FILES = ("  kept: Claude Code's own files: ~/.claude/plugins/installed_plugins.json, ~/.claude.json (changed by "
+             "Claude Code's own uninstall, which Pit Board ran; they are Claude Code's)")
+P30_FOLDER = ("  kept: ~/.claude/plugins/cache/thewindstorm/windstorm-pit-board/0.1.3 (Pit Board's code, a version folder "
+              "Claude Code keeps in its plugin cache after its own uninstall (it marked it .orphaned_at); Claude Code's to "
+              "clean up, so Pit Board leaves it)")
+P30_CATALOG = ("  kept: the plugin catalog thewindstorm in Claude Code's list (other plugins install and update from it; "
+               "removing it with `claude plugin marketplace remove thewindstorm` also uninstalls every plugin installed "
+               "from that catalog, so Pit Board leaves it)")
+
+
+def test_G18_3_the_census_names_what_claude_codes_own_uninstall_changed_and_kept(world):
+    """P30: each line is read after the call, never assumed: the files it changed, the version folder it kept (with
+    its mark), and the catalog, with what its removal does to every other plugin from it. Pit Board removes none."""
+    home, pb, st = world
+    registry(home, [{"scope": "user", "version": "0.1.3", "installPath": "/x"}])
+    ver, effect = _as_seen_on_2_1_331(home)
+    code, out, _ = run("--apply", effect=effect)
+    rows = census(out)
+    assert code == 0 and P30_FILES in rows and P30_FOLDER in rows and P30_CATALOG in rows, rows
+    assert rows.index(P30_FILES) > rows.index("  gone: plugin windstorm-pit-board@thewindstorm (user scope)")
+    assert ver.is_dir() and (home / ".claude" / "plugins" / "known_marketplaces.json").exists()
+
+
+def test_G18_3_the_census_claims_only_what_it_read(world):
+    """Nothing changed, no mark, the catalog gone: no line says otherwise. The plan, before any call, says none."""
+    home, pb, st = world
+    registry(home, [{"scope": "user", "version": "0.1.3", "installPath": "/x"}])
+    ver, _ = _as_seen_on_2_1_331(home, catalog_listed=False)
+    assert [r for r in census(run()[1]) if "Claude Code's own" in r or "catalog" in r] == []
+    rows = census(run("--apply")[1])
+    assert not [r for r in rows if "Claude Code's own files" in r or "catalog" in r], rows
+    assert P30_FOLDER.replace(" (it marked it .orphaned_at)", "") in rows
+
+
+@NOT_ROOT
+def test_G18_3_an_unreadable_catalog_list_is_said_not_guessed(world):
+    home, pb, st = world
+    registry(home, [{"scope": "user", "version": "0.1.3", "installPath": "/x"}])
+    ver, effect = _as_seen_on_2_1_331(home)
+    known = home / ".claude" / "plugins" / "known_marketplaces.json"
+    os.chmod(known, 0)
+    try:
+        rows = census(run("--apply", effect=effect)[1])
+    finally:
+        os.chmod(known, 0o600)
+    assert ("  kept: the plugin catalog thewindstorm (~/.claude/plugins/known_marketplaces.json could not be read "
+            "(PermissionError), so Pit Board cannot say whether Claude Code still lists it)") in rows
+    assert P30_CATALOG not in rows
