@@ -1027,3 +1027,46 @@ def test_G18_3_P54_the_status_lines_kept_files_go_with_the_rest(world):
     code, out, _ = run("--apply")
     assert code == 0, out
     assert sorted(os.listdir(pb)) == ["lanes", "logs"]
+
+
+# ---------------------------------------------------------------- the way back in (the family's rule 8)
+
+def _no_claude(args, **kw):
+    raise FileNotFoundError(args[0])                                     # `claude` is on no PATH: the leave is cut
+
+
+@pytest.mark.parametrize("leaving", ["keep", "delete", "cut"])
+def test_G18_3_the_way_back_in_setup_leave_setup_again_and_an_ask_is_added_and_shown(world, leaving):
+    """The family's rule 8 (THE WAY BACK IN IS WALKED TOO): setup, an ask, a leave in each form (keeping the asks,
+    deleting them at the person's own terminal, and one cut half way because `claude` cannot be run), then setup
+    again: it answers 0, and the commands after it work: the kept ask is shown where it was kept, a new ask is added
+    and shown with it."""
+    home, pb, st = world
+    assert run_cli("add", "--lane", "circle", "--title", "first?", "--suggested", "yes")[0] == 0
+    if leaving == "keep":
+        code, out, _ = run("--apply")
+        assert code == 0 and set(os.listdir(pb)) <= {"lanes", "lanes.json", "logs"}, out   # only the person's things
+    elif leaving == "delete":
+        _, ask, _ = run("--apply", "--delete-asks-and-log", stdin=Tty("\n"), stdout=Tty())   # changes nothing: the count
+        n = re.search(r"Type (\d+) to do both", ask).group(1)
+        code, out, _ = run("--apply", "--delete-asks-and-log", stdin=Tty(n + "\n"), stdout=Tty())
+        assert code == 0 and not pb.exists(), out
+    else:
+        registry(home, [{"scope": "user", "installPath": str(home / "cache" / "x"), "version": "0.1.3"}])
+        out, err = io.StringIO(), io.StringIO()
+        code = L.main(["--apply"], stdin=io.StringIO(""), stdout=out, stderr=err, run=_no_claude)
+        assert code == L.INCOMPLETE and "a step above was not finished" in out.getvalue(), out.getvalue()
+        assert (pb / "setup-record.json").exists() and (pb / "statusline.sh").exists()   # kept for the next run
+        assert st.read_text() == MINE_TEXT                                   # the person's status line is back
+    code, out, err = run_cli("setup", "--minimal", "--apply")
+    assert code == 0, out + err
+    assert json.loads(st.read_text())["statusLine"]["command"] == str(pb / "statusline.sh")
+    kept = 0 if leaving == "delete" else 1
+    code, out, _ = run_cli("status", "--lane", "circle", "--plain")
+    assert code == 0 and (out == "" if kept == 0 else out.startswith("🔴 RED 1 ask")), out
+    code, out, _ = run_cli("add", "--lane", "circle", "--title", "second?", "--suggested", "yes")
+    assert code == 0 and out.startswith(f"A{kept + 1} recorded"), out
+    code, out, _ = run_cli("status", "--lane", "circle", "--plain")
+    assert code == 0 and out.startswith(f"🔴 RED {kept + 1} ask"), out
+    code, out, _ = run_cli("board", "--lane", "circle", "--plain")
+    assert code == 0 and ("first?" in out) == bool(kept) and "second?" in out, out

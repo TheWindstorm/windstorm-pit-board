@@ -778,6 +778,18 @@
    "test": "",
    "proven": "",
    "issue": ""
+  },
+  {
+   "id": "P63",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, walking the family's rule 8 circle (setup, leave, setup again) with a real Claude Code 2.1.331 in a scratch home on Linux: the circle works in each form (the asks kept and shown after setup again, a new ask added; a leave cut because `claude` could not be run, then setup again). Two printed lines fall short: (a) the census of a leave that keeps the asks says \"They are yours, to keep or delete\" but not what a setup after it does with them (it takes them up again, the same lane and the same open asks); (b) after a full leave, setup run from the version folder Claude Code keeps answers exit 1 with \"pitboard: no installed version found\" and \"Pit Board was removed by Claude Code\", which is not what happened (Pit Board's own leave ran Claude Code's uninstall), and it does not give the install line, the one step that works.",
+   "promise": "The census of a leave that keeps something says what a setup after it does with it. Setup run where no installed version is registered says truly what it found and gives the install line. Setup's last act is the check the commands themselves make, and it says \"set up\" and answers 0 only when that passes.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [
