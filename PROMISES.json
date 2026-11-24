@@ -40,7 +40,7 @@
   {
    "id": "P3",
    "seen": "2026-11-22, the same reboot: the terminal tab showing the pilot lane got a new id and kept its label. The tmux pane id saved with an ask before the reboot (%148) no longer existed; the lane came back as %10, because a new tmux server gives pane ids out again from the start. Its window name changed too (bash to claude).",
-   "promise": "Waking (G16.5) types into a saved pane only when it still runs Claude Code, its tmux session name equals the ask's where.tmux_session and its folder equals where.cwd; never by a saved id alone, and window names are not compared.",
+   "promise": "Waking (G16.5) types into a saved pane only when it still runs Claude Code, its tmux session name equals the ask's where.tmux_session and its folder equals where.cwd; never by a saved id alone, and window names are not compared. Both names are read with tmux's -u (P71), and an ask whose where has no tmux_session is never woken by a name.",
    "codon": "G16.5",
    "owner": "maintainer",
    "first_ship_in": "0.4.0",
@@ -850,6 +850,18 @@
    "test": "",
    "proven": "",
    "issue": 137
+  },
+  {
+   "id": "P71",
+   "codon": "G6.7",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, the family's rule 30 (A NAME IS READ WHOLE), on Linux with tmux 3.4 and Python 3.12, a throwaway tmux server with a session named \"tést\" and a window named \"wïn\", the code of the 0.1.3 release head: `pitboard add` run with LC_ALL=C and no TMUX in its environment (TMUX_PANE set) kept \"t_st\" and \"w_n\" in the ask's `where`. tmux prints \"_\" for each non-ASCII letter when its client has no UTF-8 language. With TMUX set the names came whole, and the pattern for `where` then drops them; with no language variable at all, Python itself sets LC_CTYPE=C.UTF-8 for the programs it starts (PEP 538), so the names came whole as well. `tmux -u` gave them whole even with LC_ALL=C. An ASCII name with \"_\" (a_b) is kept as it is. The names feed the ask's `where` only today, never a lane's key; row P3 (waking, 0.4.0) compares the session name to decide where to type.",
+   "promise": "Every tmux call of Pit Board's own carries `-u`, so a session or window name is read whole in every environment Pit Board runs in; a name that came out changed is never kept. The test's tmux stand-in prints \"_\" for each non-ASCII letter unless the call carries `-u`, and one world reads a session with such a name from an environment with LC_ALL=C and no TMUX.",
+   "test": "",
+   "proven": "",
+   "issue": 138
   }
  ],
  "declined": [
