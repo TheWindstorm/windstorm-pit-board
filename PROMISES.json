@@ -401,8 +401,8 @@
    "owner": "maintainer",
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.4",
-   "seen": "2026-11-24, the plugin at user scope on a shared workstation: in an hour and a half, eighteen headless or harness sessions started and ended without an ask. Each left a nameless `session-<id>` row in `lanes.json` and an empty `lanes/session-<id>.lock` that nothing removed.",
-   "promise": "A session that starts and ends without recording an ask leaves no row in the lane map and no lock file behind. A session that does record one keeps its lane as before.",
+   "seen": "2026-11-24, the plugin at user scope on a shared workstation: in an hour and a half, eighteen headless or harness sessions started and ended without an ask. Each left a nameless `session-<id>` row in `lanes.json` an empty `lanes/session-<id>.lock`, and `state/session-<id>.json` and `state/session-<id>.activity`, none of which anything removed.",
+   "promise": "A session that starts and ends without recording an ask leaves nothing of its own behind: no row in the lane map, no lock file, no state files. A session that does record one keeps its lane as before. The README says what a session writes and when each piece goes.",
    "test": "",
    "proven": "",
    "issue": ""
