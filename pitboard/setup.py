@@ -143,8 +143,9 @@ def own_open(home):
 
 
 def _other_members(gid, owner):
-    """The accounts other than the owner in group `gid`: its member list and every account whose primary group it is.
-    None when that cannot be read."""
+    """The accounts other than the owner and root in group `gid`: its member list and every account whose primary group
+    it is. None when that cannot be read. Root can write anything; naming a folder for it says nothing (P45, seen on a
+    Mac, where a new folder under /tmp takes the group wheel)."""
     import grp
     import pwd
     try:
@@ -152,7 +153,7 @@ def _other_members(gid, owner):
         uids |= {p.pw_uid for p in pwd.getpwall() if p.pw_gid == gid}
     except (KeyError, OSError):
         return None
-    return uids - {owner}
+    return uids - {owner, 0}                              # P45: root (number 0) is the administrator, never "another"
 
 
 def _groups(uid):

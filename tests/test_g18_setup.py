@@ -482,3 +482,28 @@ def test_G2_an_account_with_the_macs_nobody_group_number_is_read_never_a_traceba
     monkeypatch.setattr(S, "_other_members", lambda g, owner: {501})
     named = {w: why for w, _, why, _ in S.way_open(str(pb), str(claude / "settings.json"))}
     assert named[str(claude)] == "the groups of account macuser in its group could not be read"
+
+
+def test_G2_root_in_the_folders_group_is_never_another_account(short_tmp, monkeypatch):
+    """P45 (seen on a real Mac, 2026-11-24): a new folder under /tmp takes the group wheel, whose other member is root,
+    and the walk named it "account root of its group can reach and write it". Root (number 0) is the administrator,
+    who can write anything: never "another account". A second member that is not root is still named."""
+    home, pb = short_tmp / "home", short_tmp / "pb"
+    claude = home / ".claude"
+    claude.mkdir(parents=True)
+    for d in (short_tmp, home):
+        os.chmod(d, 0o755)
+    os.chmod(claude, 0o775)
+    gid = claude.stat().st_gid
+    import grp
+    import pwd
+    root = type("Pw", (), {"pw_name": "root", "pw_uid": 0, "pw_gid": 0})()
+    monkeypatch.setattr(pwd, "getpwall", lambda: [root])
+    monkeypatch.setattr(pwd, "getpwnam", lambda n: root)
+    monkeypatch.setattr(grp, "getgrgid", lambda g: type("G", (), {"gr_mem": ["root"]})())
+    monkeypatch.setattr(S, "_groups", lambda uid: {gid})
+    assert S._other_members(gid, os.getuid()) == set()
+    assert str(claude) not in {w for w, _, _, _ in S.way_open(str(pb), str(claude / "settings.json"))}
+    other = type("Pw", (), {"pw_name": "other", "pw_uid": os.getuid() + 1, "pw_gid": gid})()
+    monkeypatch.setattr(pwd, "getpwall", lambda: [root, other])
+    assert str(claude) in {w for w, _, _, _ in S.way_open(str(pb), str(claude / "settings.json"))}
