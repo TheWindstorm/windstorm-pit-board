@@ -35,7 +35,7 @@ claude plugin marketplace add TheWindstorm/windstorm-pit-stop
 claude plugin install windstorm-pit-board@thewindstorm
 ```
 
-Then, in a new Claude Code session, `pitboard setup` shows what it would change (the status line segment, the launcher copy in your Pit Board home) and `pitboard setup --apply` does it. Setup writes `~/.claude/settings.json` private (mode 600). When the file has another mode, the plan says so first: the backup setup keeps has the old mode, and uninstall puts the old mode back only when it puts the file back byte for byte.
+Then, in a new Claude Code session, `pitboard setup --minimal` shows what it would change (the status line segment, the launcher copy in your Pit Board home) and `pitboard setup --minimal --apply` does it. (0.1.2's README left out `--minimal`, and setup refuses the line without it.) Setup writes `~/.claude/settings.json` private (mode 600). When the file has another mode, the plan says so first: the backup setup keeps has the old mode, and uninstall puts the old mode back only when it puts the file back byte for byte.
 
 **For one project folder only** (that folder's own settings, never yours), from a clone of the newest release tag:
 

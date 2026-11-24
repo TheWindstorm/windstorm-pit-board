@@ -724,8 +724,10 @@ def _open_lines(home):
         own = setup_mod.own_open(home)
     except Exception:  # noqa: BLE001                  # never fails `version`
         return []
-    return lines + ([f"Pit Board's own, open to other accounts: {len(own)} · run pitboard setup --apply to close"]
-                    if own else [])
+    from . import leave                                      # P49 (rule 7): a line run exactly as printed works
+    copy = leave._shell(os.path.join(home, "bin", "pitboard"))
+    return lines + ([f"Pit Board's own, open to other accounts: {len(own)}",          # short lines: never cut
+                     f"  to close them: {copy} setup --minimal --apply"] if own else [])
 
 
 def _status_line(home):
