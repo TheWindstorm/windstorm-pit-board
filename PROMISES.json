@@ -394,6 +394,30 @@
    "test": "",
    "proven": "",
    "issue": ""
+  },
+  {
+   "id": "P31",
+   "codon": "G3.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, the plugin at user scope on a shared workstation: in an hour and a half, eighteen headless or harness sessions started and ended without an ask. Each left a nameless `session-<id>` row in `lanes.json` and an empty `lanes/session-<id>.lock` that nothing removed.",
+   "promise": "A session that starts and ends without recording an ask leaves no row in the lane map and no lock file behind. A session that does record one keeps its lane as before.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P32",
+   "codon": "G7.7",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, a harness session on a machine with the plugin at user scope: the harness's permissions refused `pitboard add`, and the agent's first message to the person opened with a sentence about the refused call.",
+   "promise": "The reminder's `Rules:` line says that when `pitboard add` itself is refused or fails, the agent asks in the chat as usual and says nothing to the person about the tool.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [

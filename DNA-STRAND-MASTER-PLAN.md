@@ -346,7 +346,7 @@ A lane must keep the same key across restarts, compactions and resumes, and two 
 
 `session_name` from the status line input (documented: the `--name` or `/rename` value, or else Claude Code's generated title) only ever sets `lane_name` (G10.6), never the key, because two unrelated sessions can get the same generated title.
 
-**G3.3 The map.** `lanes.json` maps `session_id` → `{"lane": key, "lane_name": name, "first_seen": ts, "last_seen": ts}`. It is written atomically under a lock on `lanes.json.lock`.
+**G3.3 The map.** `lanes.json` maps `session_id` → `{"lane": key, "lane_name": name, "first_seen": ts, "last_seen": ts}`. It is written atomically under a lock on `lanes.json.lock`. From 0.1.4 (plan 1.33, P31) a session that records nothing leaves nothing behind: a headless or harness session that starts, never adds an ask and ends leaves no row in the map and no `lanes/<key>.lock`. Seen 2026-11-24 with the plugin at user scope: eighteen such sessions in an hour and a half, each a nameless `session-<id>` row and an empty lock file that nothing removed.
 
 **G3.4 First sight wins the key.** The first time a session ID is seen, its key is computed (G3.1 and G3.2) and stored. The key for that session ID never changes after that. Renaming a session updates `lane_name` only, so its log stays in one file.
 
@@ -521,6 +521,8 @@ If <operator_name> has answered one, run `pitboard answer <ID> --by operator --a
 ```
 
 When asks of this lane were answered on the master list (`via: page`) and are not `done` yet, add after the open asks, one line each: `Answered on the master list, not done yet: A12 → "<answer>"`.
+
+From 0.1.4 (plan 1.33, P32) the `Rules:` line adds: when `pitboard add` itself is refused or fails (a session's permissions, a harness), ask in the chat as usual and say nothing to <operator_name> about the tool. Seen 2026-11-24 in a harness session whose permissions refused the call: its first message to the person opened with a sentence about the refused call.
 
 Without open or page-answered asks: only the first sentence and the `Rules:` line. At most `reminder_max_items` asks, worst first (G5.4 `severity`); then `(+N more: pitboard list)`. Total under 3 000 characters.
 
