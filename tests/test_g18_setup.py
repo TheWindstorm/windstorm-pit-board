@@ -158,15 +158,30 @@ def test_G10_5_wrapper_joins_the_operator_line_and_the_segment(world, own):
         assert seg in first and rest == "L1\nL2"
 
 
-@pytest.mark.skipif(not (shutil.which("timeout") or shutil.which("gtimeout")), reason="no timeout command here")
-@pytest.mark.parametrize("fault", ["sleep 5; printf 'LATE'", "printf 'HALF'; exit 1"])
-def test_G10_5_wrapper_fails_soft_slow_or_broken_segment(world, fault):
+def _bare_path(tmp_path):
+    """P52: a PATH with what the wrapper and its stand-ins use and no timeout program, as on macOS 13 as it comes."""
+    bare = tmp_path / "bare-bin"
+    bare.mkdir()
+    for name in ("sh", "bash", "cat", "sleep", "python3"):
+        found = shutil.which(name)
+        if found:
+            os.symlink(found, bare / name)
+    assert not shutil.which("timeout", path=str(bare)) and not shutil.which("gtimeout", path=str(bare))
+    return str(bare)
+
+
+@pytest.mark.parametrize("bare", [False, True])                  # with this machine's PATH, and with no timeout program
+@pytest.mark.parametrize("fault", ["sleep 5; printf 'LATE'", "printf 'HALF'; exit 1", "(sleep 5; echo LATER) &"])
+def test_G10_5_wrapper_fails_soft_slow_or_broken_segment(world, fault, bare, tmp_path):
+    """G10.5 and P52 (seen on a real Mac with neither timeout nor gtimeout: an 8 s hang held the status line 8.1 s):
+    a slow, broken or half-detached Pit Board part is cut at the cap whether or not the machine has a timeout
+    program; the operator's own line prints alone."""
     home, pb = world
     settings(home, {"statusLine": {"type": "command", "command": "printf 'MINE'"}})
     run("setup", "--minimal", "--apply")
     launcher = pb / "bin" / "pitboard"
     launcher.write_text("#!/bin/sh\ncat >/dev/null\n" + fault + "\n")     # a hung or broken Pit Board
-    env = dict(os.environ, HOME=str(home))
+    env = dict(os.environ, HOME=str(home), **({"PATH": _bare_path(tmp_path)} if bare else {}))
     import time
     t = time.monotonic()
     out = subprocess.run([str(pb / "statusline.sh")], input='{"session_id": "x"}', capture_output=True,
@@ -589,3 +604,17 @@ def test_G18_1_every_setup_line_pit_board_prints_runs_as_printed(short_tmp):
     assert r.returncode == 0, r.stdout + r.stderr
     assert stat.S_IMODE(os.stat(home / ".pitboard" / "pitboard").st_mode) & 0o022 == 0
     assert not [ln for ln in sh("pitboard version").stdout.splitlines() if ln.startswith("Pit Board's own")]
+
+
+@pytest.mark.parametrize("tail", ["", "\n", "\n\n"])
+def test_G10_5_P53_the_wrapper_hands_on_the_same_bytes(world, tail):
+    """P53 (seen on a real Mac: 163 bytes in, 162 to the person's script): the wrapper hands the person's own status
+    line command exactly the bytes Claude Code gave it, trailing newlines included."""
+    home, pb = world
+    count = "python3 -I -c 'import sys; print(len(sys.stdin.buffer.read()), end=\"\")'"
+    settings(home, {"statusLine": {"type": "command", "command": count}})
+    run("setup", "--minimal", "--apply")
+    given = json.dumps({"session_id": "s-bytes", "cwd": str(home), "model": {"display_name": "Opus"}}) + tail
+    out = subprocess.run([str(pb / "statusline.sh")], input=given.encode(), capture_output=True,
+                         env=dict(os.environ, HOME=str(home)), timeout=30).stdout.decode()
+    assert out.rsplit(" · ", 1)[-1] == str(len(given.encode())), (out, len(given.encode()))
