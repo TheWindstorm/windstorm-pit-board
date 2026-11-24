@@ -185,7 +185,7 @@ All under `PITBOARD_HOME` (default `~/.pitboard`):
   outbox/<ts>-<event_id>.json events waiting to go to the hub (G13)
   inbox.cursor                last hub event seen by this machine (G16)
   machine.token               this machine's hub token, mode 600 (G13)
-  logs/pitboard.log           diagnostics, rotated at 1 MB, 3 kept
+  logs/pitboard.log           diagnostics, rotated at 1 MB, 3 kept (not built: P33, due 0.1.4; until then it grows)
   outbox/rejected/            events the hub refused, kept for doctor (G13.2)
   outbox/.backoff             when the next sync may run (G13.4)
   update/last-check.json      result of the last update check (G21.3)

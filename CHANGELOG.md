@@ -36,6 +36,7 @@ Every release before this one still reads the same: the lane logs, the cache and
 
 - G3.3 (P31, due 0.1.4): a session that records nothing leaves nothing behind. Headless and harness sessions that start and end without an ask each left a nameless lane in the map, an empty lock file and two state files, eighteen in an hour and a half on one machine.
 - G7 hook log (P33, due 0.1.4): the plan's file list has always said `logs/pitboard.log` is rotated at 1 MB with 3 kept, and no code did it. The log is the record and stays when a session ends (the family's rule 26); 0.1.4 bounds it as the list says. P27's codon is G7 (the hook log is described there), not G6.
+- G2.1 home mode (P34, due 0.1.4): the first `pitboard setup` made the home with the default folder mode (775 on one shared workstation) instead of 700, because setup writes before the lane store does. Setup will make it 700; a home that already exists keeps its mode, and setup's plan names it.
 - G7.7 (P32, due 0.1.4): when `pitboard add` itself is refused or fails, the reminder says to ask in the chat as usual and say nothing to the person about the tool. Seen in a harness session whose first message to the person opened with the refused call.
 
 ## Plan 1.32 (2026-11-23)

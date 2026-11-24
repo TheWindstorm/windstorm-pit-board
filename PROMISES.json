@@ -430,6 +430,18 @@
    "test": "",
    "proven": "",
    "issue": ""
+  },
+  {
+   "id": "P34",
+   "codon": "G2.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24: on a shared workstation the home was mode 775. It was made by the first `pitboard setup`, whose file writes create missing folders with the process's default mode; the lane store creates its folders 700, but setup ran first. The asks, the log and the lane files sit in folders and files of their own modes; the home itself let others list it.",
+   "promise": "When `pitboard setup` makes the home, it makes it mode 700, as G2.1 says. A home that already exists keeps its mode: setup's plan names it and changes nothing.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [
