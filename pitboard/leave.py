@@ -14,6 +14,7 @@ count. The last thing printed is a census; a second run is safe.
 import hashlib
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -36,6 +37,90 @@ LOCK_WAIT_SECONDS = 3          # as G2.3 for commands
 TOOL = ("bin", "pitboard", WRAPPER, "config.json", "update", "state")   # what Pit Board made in a home, to go
 PERSON = ("lanes", "lanes.json", "logs", SETUP_RECORD)                   # the person's, to keep and count
 INCOMPLETE, BUSY, USAGE = 11, 7, 2
+# P40 (the family's rule 23): what Pit Board makes in its home, by name, one level into its own folders. A home that
+# holds anything else, or is the person's home folder, is not Pit Board's alone: setup refuses it and uninstall
+# removes nothing from it.
+_S = r"(\.prev|\.bak-[0-9-]+|\.tmp|\.[0-9]+\.tmp)?"
+OWN_NAMES = {
+    "": re.compile(r"(bin|pitboard|state|update|lanes|logs|statusline\.sh|config\.json|lanes\.json|lanes\.json\.lock|"
+                   r"setup-record\.json)" + _S + r"|\.refresh-.+"),
+    "bin": re.compile(r"pitboard" + _S),
+    "pitboard": re.compile(r"(launch\.py|leave\.py|copied-from|__pycache__)" + _S),
+    "state": re.compile(r"[a-z0-9][a-z0-9-]*\.(json|activity|wake|page-told|reminded)" + _S + r"|permission-open"),
+    "update": re.compile(r"(last-check\.json|good-versions|bad-versions|pin|minute|last-seen-version|generation-shown)"
+                         + _S),
+    "lanes": re.compile(r"[a-z0-9][a-z0-9-]*\.(jsonl|lock)" + _S),
+    "logs": re.compile(r"pitboard\.log(\.[0-9]+)?" + _S),
+    "pitboard/__pycache__": re.compile(r"[A-Za-z0-9_.-]+\.pyc"),
+    "update/generation-shown": re.compile(r"[A-Za-z0-9_.-]+"),
+}
+
+
+def is_home_folder(home):
+    try:
+        return os.path.realpath(home) == os.path.realpath(_home_dir())
+    except OSError:
+        return True                                           # cannot tell: treat it as the person's
+
+
+def foreign(home):
+    """P40: the paths in `home`, relative to it, that Pit Board does not make, read one level into its own folders.
+    A folder that cannot be listed is named as could not be read: never taken for empty."""
+    out = []
+
+    def walk(rel):
+        here = os.path.join(home, rel) if rel else home
+        try:
+            names = sorted(os.listdir(here))
+        except FileNotFoundError:
+            return
+        except OSError as e:
+            out.append(f"{rel or '.'} (could not be read: {type(e).__name__})")
+            return
+        pat = OWN_NAMES.get(rel)
+        for n in names:
+            sub = f"{rel}/{n}" if rel else n
+            full = os.path.join(here, n)
+            if pat is None or not pat.fullmatch(n) or os.path.islink(full):
+                out.append(sub)
+            elif os.path.isdir(full):
+                if sub in OWN_NAMES:
+                    walk(sub)
+                elif not sub.startswith(".refresh-"):
+                    out.append(sub + "/")
+    walk("")
+    return out
+
+
+MARKS = {"bin/pitboard": "# Windstorm Pit Board", "pitboard/launch.py": '"""Pit Board launcher',
+         "pitboard/leave.py": '"""pitboard uninstall', "statusline.sh": "# Written by pitboard setup"}
+_SUFFIX = re.compile(_S + "$")
+
+
+def marked(home, rel):
+    """P40: the file carries Pit Board's own first lines (its copies .prev, .bak- and .tmp too). Read, never assumed."""
+    want = MARKS.get(_SUFFIX.sub("", rel, count=1))
+    if not want:
+        return False
+    try:
+        with open(os.path.join(home, rel), "rb") as f:
+            return want.encode() in f.read(400)
+    except OSError:
+        return False
+
+
+def recorded(home, rel):
+    """P40: setup's record lists this file as one setup made (from 0.1.3)."""
+    try:
+        rec = read_object(os.path.join(home, SETUP_RECORD)) or {}
+    except Unread:
+        return False
+    return rel in [m for m in rec.get("made") or [] if isinstance(m, str)]
+
+
+def foreign_text(found, most=5):
+    more = f" and {len(found) - most} more" if len(found) > most else ""
+    return ", ".join(found[:most]) + more
 
 
 # ------------------------------------------------------------------ three answers
@@ -449,9 +534,33 @@ def _is_tool(name):
             or name in ("lanes.json.lock", "lanes.json.tmp"))
 
 
+def _remove(path, census, apply, label=None):
+    """One file, or one folder only when it is empty (rule 23: a folder goes only when empty)."""
+    try:
+        if apply:
+            os.rmdir(path) if os.path.isdir(path) and not os.path.islink(path) else os.remove(path)
+        if label:
+            census.gone(label)
+        return True
+    except OSError as e:
+        census.kept(_short(path), f"could not be removed ({type(e).__name__})", INCOMPLETE)
+        return False
+
+
+def _files_in(home, rel):
+    """Every path under home/rel, deepest first (files before their folders), relative to home."""
+    out = []
+    for d, dirs, files in os.walk(os.path.join(home, rel), topdown=False):
+        r = os.path.relpath(d, home)
+        out += [os.path.join(r, f) for f in sorted(files)] + [os.path.join(r, x) for x in sorted(dirs)]
+    return out
+
+
 def home_off(home, census, apply, blocked=""):
-    """G18.3 point 5: the tool's files go; the person's stay and are counted. Returns the kept line, if any.
-    `blocked` names an earlier step that was not finished: then the stable copy stays, to run uninstall again."""
+    """G18.3 point 5 and P40 (rules 23 and 8). What carries Pit Board's mark, or setup's record lists, goes wherever it
+    is. Pit Board's other files go only from folders that hold nothing but Pit Board's own names; a folder goes only
+    when it is empty. Anything else stays and is named, with whose it is. A home that is not Pit Board's alone never
+    stops the leave: everything outside it already came off. Returns the kept line, if any."""
     try:
         names = sorted(os.listdir(home))
     except FileNotFoundError:
@@ -475,37 +584,72 @@ def home_off(home, census, apply, blocked=""):
             census.kept(f"Pit Board's files in {_short(home)}", f"a session is writing to lane {held} now; "
                         "run uninstall again in a moment", BUSY)
             return None
+    yours_folder = is_home_folder(home)
+    found = foreign(home)
+    top_foreign = [f for f in found if "/" not in f.rstrip("/")]
+    shared = {f.split("/", 1)[0] for f in found if "/" in f.rstrip("/")}   # Pit Board's folders holding another's
+    alone = not yours_folder and not top_foreign              # the home itself is Pit Board's alone
+    why_top = "your home folder" if yours_folder else ", ".join(top_foreign[:3]) + (" and more" if len(top_foreign) > 3 else "")
+    left = False
     for name in names:
         path = os.path.join(home, name)
-        if name == "lanes":
-            try:
-                for n in os.listdir(path):
-                    if n.endswith(".lock") and apply:
-                        os.remove(os.path.join(path, n))
-            except OSError:
-                pass
+        if name in top_foreign:
+            census.kept(_short(path), "not made by Pit Board; yours")
+            left = True
+            continue
+        if os.path.isdir(path) and not os.path.islink(path):
+            if name in ("lanes", "logs"):                     # the person's asks and log: kept and counted below
+                if name == "lanes" and not yours_folder and name not in shared:
+                    for rel in _files_in(home, name):
+                        if rel.endswith(".lock"):
+                            _remove(os.path.join(home, rel), census, apply)
+                continue
+            mine_only = not yours_folder and name not in shared     # this folder holds only Pit Board's names
+            gone_all = True
+            for rel in _files_in(home, name):
+                full = os.path.join(home, rel)
+                if os.path.isdir(full):
+                    if mine_only or not os.listdir(full) and not yours_folder:
+                        gone_all = _remove(full, census, apply) and gone_all
+                    else:
+                        gone_all = False
+                elif marked(home, rel) or mine_only:
+                    gone_all = _remove(full, census, apply) and gone_all
+                else:
+                    gone_all = False
+            if mine_only or (not yours_folder and gone_all):
+                if _remove(path, census, apply, _short(path)) is False:
+                    left = True
+            else:
+                theirs = [f for f in found if f.startswith(name + "/")]
+                census.kept(_short(path), "Pit Board's, left because " + (
+                    f"{', '.join(theirs[:3])} in it is not" if theirs else "it is in your home folder")
+                    + "; yours to delete after looking inside")
+                left = True
             continue
         if name in PERSON:
             continue
-        if not _is_tool(name):
-            census.kept(_short(path), "not made by Pit Board")
-            continue
-        try:
-            if apply:
-                shutil.rmtree(path) if os.path.isdir(path) and not os.path.islink(path) else os.remove(path)
-            census.gone(_short(path))
-        except OSError as e:
-            census.kept(_short(path), f"could not be removed ({type(e).__name__})", INCOMPLETE)
+        if marked(home, name) or (name == "config.json" and recorded(home, name)) or alone:
+            _remove(path, census, apply, _short(path))
+        else:
+            census.kept(_short(path), "Pit Board's, left because " + (
+                "it is in your home folder" if yours_folder else f"{why_top} beside it is not")
+                + "; yours to delete after looking at it")
+            left = True
     kept = [n for n in PERSON if os.path.exists(os.path.join(home, n))]
-    if not kept:
-        if apply:
+    if not kept and not left:
+        if apply and not yours_folder:
             try:
                 os.rmdir(home)
             except OSError:
                 pass
         return None
-    census.kept(f"{_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')}, and the log of what Pit Board did, "
-                f"in {_short(home)}", "yours")                    # one row with the count; the line below says how
+    if kept:
+        census.kept(f"{_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')}, and the log of what Pit Board did, "
+                    f"in {_short(home)}", "yours")                # one row with the count; the line below says how
+    if left:                                                  # P40: no command for a folder that is not Pit Board's alone
+        return (f"Pit Board is off this computer. What it left in {_short(home)}, and why, is named above; it is "
+                "yours, to keep or delete after you look at it.")
     copy = os.path.join(home, "bin", "pitboard")             # rule 7: only a line run as printed, this computer's way
     return ("They are yours. When you are sure, you can delete them yourself, at your own terminal: "  # the person's act
             + (f"{_shell(copy)} uninstall --apply --delete-asks-and-log" if os.path.isfile(copy) else f"rm -r {_shell(home)}"))
@@ -516,7 +660,7 @@ def ask_count(homes, stdin, stdout):
     {} when there is nothing to delete, None when they did not (then nothing at all changes)."""
     found = {}
     for h in homes:
-        if os.path.isdir(h) and any(os.path.exists(os.path.join(h, n)) for n in PERSON):
+        if os.path.isdir(h) and any(os.path.exists(os.path.join(h, n)) for n in PERSON) and not foreign(h) and not is_home_folder(h):
             found[h] = count_asks(h)                          # Unread goes up: nothing changes
     if not found:
         return {}
@@ -543,6 +687,10 @@ def delete_kept(home, expected, census):
         return
     if now != expected:
         census.kept(mine, f"there are {now} asks now, not the {expected} you typed; nothing deleted")
+        return
+    found = ["your home folder"] if is_home_folder(home) else foreign(home)
+    if found:                                                 # P40: checked again at the moment of deleting
+        census.kept(mine, f"{foreign_text(found)} is there too, and is not Pit Board's; nothing deleted")
         return
     for n in PERSON:
         p = os.path.join(home, n)
@@ -751,6 +899,16 @@ def main(argv=None, stdin=None, stdout=None, stderr=None, run=None):
         for h, expected in counted.items():
             delete_kept(h, expected, census)
             kept_lines = [ln for ln in kept_lines if _short(h) not in ln or os.path.isdir(h)]
+    if delete:                                                # P40: say why a home's asks were not offered for deleting
+        for h in homes:
+            if h in (counted or {}) or not any(os.path.exists(os.path.join(h, n)) for n in PERSON):
+                continue
+            why = "it is your home folder" if is_home_folder(h) else (
+                "it holds " + foreign_text(foreign(h)) + ", which Pit Board did not make" if foreign(h) else "")
+            if why:
+                census.kept(f"your asks and the log of what Pit Board did, in {_short(h)}",
+                            f"you asked to delete them, but {why}; so nothing there was deleted. Yours to delete "
+                            "after you look inside")
     text = list(out)
     if not any(state in ("gone", "would go") for state, _, _ in census.rows) and census.code == 0:
         text.append("nothing of Pit Board is here")

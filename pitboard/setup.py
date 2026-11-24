@@ -160,7 +160,7 @@ def plan_minimal(home=None, settings_path=None, root=None):
     return items
 
 
-def note(home, settings=None, folder=None, backup=None):
+def note(home, settings=None, folder=None, backup=None, made=None):
     """G18.3: the record of what setup did, `setup-record.json` in the home, for `pitboard uninstall`.
     settings = (path, bytes before or None, mode before or None, bytes after): the earliest `before` stays while the
     file is still what Pit Board last wrote. backup = the name of the backup setup made of it: the census counts only
@@ -188,6 +188,9 @@ def note(home, settings=None, folder=None, backup=None):
     if folder:
         folders = [f for f in rec.get("folders") or [] if isinstance(f, str)]
         rec["folders"] = folders + ([folder] if folder not in folders else [])
+    if made:                                                  # P40: what setup made in the home, for uninstall
+        had = [m for m in rec.get("made") or [] if isinstance(m, str)]
+        rec["made"] = had + [m for m in made if m not in had]
     os.makedirs(home, exist_ok=True)
     leave.write_atomic(path, json.dumps(rec, indent=1, ensure_ascii=False) + "\n")
 
@@ -203,6 +206,7 @@ def apply(items, home=None):
         if it.action.startswith("keep"):
             continue
         os.makedirs(os.path.dirname(it.path), exist_ok=True)
+        new_here = not os.path.exists(it.path)
         before = leave.read_bytes(it.path) if it.json_obj is not None else None
         before_mode = os.stat(it.path).st_mode & 0o777 if before is not None else None
         bak = None
@@ -221,6 +225,8 @@ def apply(items, home=None):
         os.chmod(tmp, mode)
         os.replace(tmp, it.path)
         done.append(it)
+        if new_here and home and it.json_obj is None and os.path.dirname(it.path) == home:
+            note(home, made=[os.path.basename(it.path)])       # P40: config.json and the wrapper, by record
         if it.json_obj is not None and home:
             note(home, settings=(it.path, before, before_mode, content), backup=bak)
     return done
