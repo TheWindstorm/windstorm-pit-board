@@ -575,10 +575,20 @@ def cmd_setup(args):
         raise Fail(6, f"pitboard: setup: {e}")
     applied = None
     if args.apply:
-        store.ensure_home()
+        _make_home(setup_mod)
         applied = setup_mod.apply(items)
     return Out(setup_mod.describe(items, applied), data={"items": [i.as_dict() for i in items],
                                                          "applied": args.apply})
+
+
+def _make_home(setup_mod):
+    """P48 (the family's rules 23 and 8): setup records that it made the home, before its first write in it, so the
+    leave takes away only a home Pit Board made; a folder that was there before setup is the person's."""
+    fresh = not os.path.lexists(store.home())
+    h = store.ensure_home()
+    if fresh:
+        setup_mod.note(h, made_home=True)
+    return h
 
 
 def _setup_folder(args):
@@ -587,7 +597,8 @@ def _setup_folder(args):
     plugin = args.plugin or folder_mod.PLUGIN           # --undo with --folder: main() hands it to uninstall
     try:
         if args.apply:
-            store.ensure_home()
+            from . import setup as setup_mod
+            _make_home(setup_mod)
             lines = folder_mod.apply(args.folder, plugin=plugin)
         else:
             lines = folder_mod.plan(args.folder, plugin=plugin) + ["Nothing changed. Run again with --apply to do it."]
