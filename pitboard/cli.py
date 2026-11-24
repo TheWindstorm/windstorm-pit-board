@@ -9,7 +9,6 @@ import importlib.util
 import json
 import os
 import re
-import shlex
 import sys
 
 from . import __version__, contract, flags, lane, launch, render, stablecopy, store, timefmt
@@ -709,8 +708,8 @@ def _open_lines(home):
     """P41: said again while it stays open: a folder on the way (with its command), Pit Board's own entries."""
     from . import setup as setup_mod
     try:
-        lines = [ln for w, m, why in setup_mod.way_open(home, setup_mod.claude_settings_path())
-                 for ln in (f"open to other accounts: {w} ({m:o})", f"  {why}", f"  to close it: chmod go-w {shlex.quote(w)}")]
+        lines = [ln for w, m, why, fix in setup_mod.way_open(home, setup_mod.claude_settings_path())
+                 for ln in [f"open to other accounts: {w} ({m:o})", f"  {why}"] + ([f"  to close it: {fix}"] if fix else [])]
         own = setup_mod.own_open(home)
     except Exception:  # noqa: BLE001                  # never fails `version`
         return []

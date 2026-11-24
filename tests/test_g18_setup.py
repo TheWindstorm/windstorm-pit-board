@@ -362,14 +362,65 @@ def test_G2_a_folder_of_the_persons_is_named_only_when_another_account_can_reach
     os.chmod(home, 0o755)
     gid = claude.stat().st_gid
     monkeypatch.setattr(S, "_other_members", lambda g, owner: set())
-    assert str(claude) not in {w for w, _, _ in S.way_open(str(pb), settings_path)}     # a group of one
+    assert str(claude) not in {w for w, _, _, _ in S.way_open(str(pb), settings_path)}     # a group of one
     monkeypatch.setattr(S, "_other_members", lambda g, owner: {4242} if g == gid else set())
     monkeypatch.setattr(S, "_groups", lambda uid: {gid})
-    named = {w: why for w, _, why in S.way_open(str(pb), settings_path)}
+    named = {w: why for w, _, why, _ in S.way_open(str(pb), settings_path)}
     assert named.get(str(claude)) == "account 4242 of its group can reach and write it"
     os.chmod(home, 0o700)                                        # a home at 700 keeps everyone out
-    assert str(claude) not in {w for w, _, _ in S.way_open(str(pb), settings_path)}
+    assert str(claude) not in {w for w, _, _, _ in S.way_open(str(pb), settings_path)}
     os.chmod(home, 0o755)
     monkeypatch.setattr(S, "_other_members", lambda g, owner: None)
-    named = {w: why for w, _, why in S.way_open(str(pb), settings_path)}
+    named = {w: why for w, _, why, _ in S.way_open(str(pb), settings_path)}
     assert named.get(str(claude)) == "its group's members could not be read"
+
+
+def test_G2_an_account_is_its_number_not_its_name(short_tmp, monkeypatch):
+    """The family's rule 28 (AN ACCOUNT IS ITS NUMBER, NOT ITS NAME): a second name with the person's own user number,
+    in the folder's group, is the person, not another account: a group-writable folder under a passable home is not
+    named. Seen on a fleet machine: two names with one user number, one primary group, one home."""
+    import grp
+    import pwd
+    home, pb = short_tmp / "home", short_tmp / "pb"
+    claude = home / ".claude"
+    claude.mkdir(parents=True)
+    os.chmod(short_tmp, 0o755)
+    os.chmod(home, 0o755)
+    os.chmod(claude, 0o775)
+    me, gid = os.getuid(), claude.stat().st_gid
+    Pw = type("Pw", (), {})
+    def pw(name, uid, g):
+        e = Pw(); e.pw_name, e.pw_uid, e.pw_gid = name, uid, g; return e
+    people = [pw("person", me, gid), pw("person-alias", me, gid)]
+    monkeypatch.setattr(pwd, "getpwall", lambda: people)
+    monkeypatch.setattr(pwd, "getpwnam", lambda n: next(p for p in people if p.pw_name == n))
+    monkeypatch.setattr(grp, "getgrgid", lambda g: type("G", (), {"gr_mem": ["person-alias"], "gr_name": "person"})())
+    settings_path = str(claude / "settings.json")
+    assert S._other_members(gid, me) == set()
+    assert str(claude) not in {w for w, _, _, _ in S.way_open(str(pb), settings_path)}
+    people.append(pw("someone-else", me + 1, gid))                # control: a second NUMBER in the group is named
+    monkeypatch.setattr(S, "_groups", lambda uid: {gid})
+    assert str(claude) in {w for w, _, _, _ in S.way_open(str(pb), settings_path)}
+
+
+def test_G2_a_folder_another_account_owns_on_the_way_is_named_with_no_command(short_tmp, monkeypatch):
+    """P42 (the family's rule 28): a folder on the way that another account (not root) owns and can reach is named
+    with who owns it and that only an administrator can hand it back, and with no chmod: the person cannot change it.
+    Here the person is made a different number than the one that owns the folders."""
+    home, pb = short_tmp / "home", short_tmp / "pb"
+    claude = home / ".claude"
+    claude.mkdir(parents=True)
+    for d in (short_tmp, home, claude):
+        os.chmod(d, 0o755)
+    owner = os.getuid()
+    monkeypatch.setattr(S.os, "getuid", lambda: owner + 1)        # the person runs as another number
+    out = S.way_open(str(pb), str(claude / "settings.json"))
+    named = {w: (why, fix) for w, _, why, fix in out}
+    who = S._name(owner)
+    for d in (claude, home, short_tmp):
+        assert named[str(d)] == (f"owned by account {who}; only an administrator can hand it back", None), named
+    assert "/" not in named and "/tmp" not in named                     # root's: never named
+    items = S.closing_items(str(pb), str(claude / "settings.json"))
+    text = S.describe(items)
+    assert "chmod" not in text and "only an administrator can hand it back" in text
+    assert "access lists (ACLs) are not read" in text

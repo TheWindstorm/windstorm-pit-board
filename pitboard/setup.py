@@ -212,19 +212,50 @@ def _name(uid):
         return str(uid)
 
 
+def owned_by_another(path):
+    """P42 (the family's rule 28): the folders from `path` up to the root that an account other than this one and
+    root owns, and that account can reach (every folder above lets it pass): (folder, mode, owner's name)."""
+    try:
+        chain, p = [], os.path.abspath(path)
+        while True:
+            chain.append((p, os.stat(p)))
+            if os.path.dirname(p) == p:
+                break
+            p = os.path.dirname(p)
+    except OSError:
+        return []
+    me, out = os.getuid(), []
+    for i, (p, st) in enumerate(chain):
+        if st.st_uid in (me, 0):
+            continue
+        groups = _groups(st.st_uid) or set()
+        if all(_passes(st.st_uid, groups, a, 1) for _, a in chain[i + 1:]):
+            out.append((p, st.st_mode & 0o777, _name(st.st_uid)))
+    return out
+
+
 def way_open(home, settings_path):
     """P41: folders on the way that are not Pit Board's and that it cannot know it made: the folder above the settings
-    file, and the folder above a home that is not the default one. Named with the command, never changed, and only
-    when another account can really reach and write it: (path, mode, why)."""
+    file, and the folder above a home that is not the default one. Never changed; named only when another account can
+    really reach and write it, with the one command; and (P42) any folder on their way up that another account (not
+    root) owns and can reach, with no command: only an administrator can hand it back. (path, mode, why, command)."""
     way = [os.path.dirname(os.path.abspath(settings_path))]
     if os.path.abspath(home) != os.path.join(os.path.expanduser("~"), ".pitboard"):
         way.append(os.path.dirname(os.path.abspath(home)))
-    out = []
+    out, seen = [], set()
     for w in dict.fromkeys(way):
-        why = who_can_write(w)
+        for p, m, owner in owned_by_another(w):
+            if p not in seen:
+                seen.add(p)
+                out.append((p, m, f"owned by account {owner}; only an administrator can hand it back", None))
+        why = None if w in seen else who_can_write(w)
         if why:
-            out.append((w, os.lstat(w).st_mode & 0o777, why))
+            seen.add(w)
+            out.append((w, os.lstat(w).st_mode & 0o777, why, f"chmod go-w {shlex.quote(w)}"))
     return out
+
+
+READ_FROM = "read from its owner, group and mode; access lists (ACLs) are not read"
 
 
 def closing_items(home, settings_path):
@@ -235,10 +266,10 @@ def closing_items(home, settings_path):
         rel = [f"{os.path.relpath(p, home) if p != home else '.'} ({_open_mode(p):o})" for p in own]
         items.append(Item("Pit Board's own, open to other accounts", home,
                           "\n".join(["would close: group and other write taken off"] + rel), close=own))
-    for w, m, why in way_open(home, settings_path):
+    for w, m, why, fix in way_open(home, settings_path):
         items.append(Item("a folder on the way, not Pit Board's", w,
-                          f"{m:o}: {why}; setup does not change it\nto close it: chmod go-w {shlex.quote(w)}",
-                          name_only=True))
+                          "\n".join([f"{m:o}: {why}; setup does not change it", READ_FROM]
+                                    + ([f"to close it: {fix}"] if fix else [])), name_only=True))
     return items
 
 
