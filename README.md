@@ -40,6 +40,7 @@ Then, in a new Claude Code session, `pitboard setup` shows what it would change 
 **For one project folder only** (that folder's own settings, never yours), from a clone of the newest release tag:
 
 ```
+claude plugin marketplace add TheWindstorm/windstorm-pit-stop
 git clone --depth 1 --branch v0.1.2 https://github.com/TheWindstorm/windstorm-pit-board
 windstorm-pit-board/bin/pitboard setup --folder /path/to/your/project --apply
 ```
