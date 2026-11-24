@@ -116,3 +116,78 @@ def test_G20_6_ci_has_room_for_every_skip_reason(request):
 def test_G9_5_ci_runs_the_skill_format_gate():
     text = dict(workflows())["tests.yml"]
     assert "gh skill publish --dry-run" in text
+
+
+PLANTED = """import os, pwd, shutil, subprocess, sys
+REAL = os.path.realpath(pwd.getpwuid(os.getuid()).pw_dir)
+PROBE = "no-such-file-pit-board-guard-probe"           # a name that is never there: nothing real is read
+
+def test_reads_the_real_pit_board_home():
+    try:
+        open(os.path.join(REAL, ".pitboard", PROBE))
+    except OSError:
+        pass
+
+def test_reads_the_real_plugin_registry():
+    try:
+        open(os.path.join(REAL, ".claude", "plugins", PROBE))
+    except OSError:
+        pass
+
+def test_starts_a_child_with_no_home():
+    subprocess.run([sys.executable, "-I", "-c", "pass"], env={"PATH": os.environ["PATH"]})
+
+def test_starts_a_child_with_the_real_home():
+    subprocess.run([sys.executable, "-I", "-c", "pass"], env=dict(os.environ, HOME=REAL))
+
+def test_runs_this_machines_own_program():
+    real = shutil.which("systemctl", path="/usr/bin:/bin") or shutil.which("launchctl", path="/usr/bin:/bin")
+    assert real, "neither systemctl nor launchctl here"
+    subprocess.run([real, "--version" if real.endswith("systemctl") else "version"], capture_output=True)
+
+def test_the_stub_answers_first():
+    r = subprocess.run(["claude", "--version"], capture_output=True, text=True)
+    assert r.returncode == 97 and "rule 17 stub" in r.stderr
+
+def test_stays_in_its_own_home(tmp_path):
+    assert os.path.realpath(os.path.expanduser("~")) != REAL
+    (tmp_path / "x").write_text("x")
+"""
+CAUGHT = ("test_reads_the_real_pit_board_home", "test_reads_the_real_plugin_registry", "test_starts_a_child_with_no_home",
+          "test_starts_a_child_with_the_real_home", "test_runs_this_machines_own_program")
+
+
+def test_G20_P51_the_suites_guard_catches_each_kind_and_nothing_without_it(tmp_path):
+    """P51 (the family's rule 17, THE GUARD HAS FIVE PARTS): tests/conftest.py gives the run its own home, puts loud
+    stand-ins for claude, tmux, crontab, systemctl, loginctl and launchctl first on PATH, and its hook fails, in the
+    test's own result, a test that reaches the real Pit Board home or plugin registry (also when it swallows the
+    error), starts a child with no HOME or the real one, or runs this machine's own systemctl or launchctl. Control:
+    the same planted tests with the guard taken out all pass."""
+    import shutil
+    import subprocess
+    import sys
+    here = os.path.dirname(os.path.abspath(__file__))
+    root = tmp_path / "planted"
+    (root / "tests").mkdir(parents=True)
+    shutil.copy(os.path.join(here, "conftest.py"), root / "tests" / "conftest.py")
+    (root / "tests" / "test_planted.py").write_text(PLANTED)
+
+    def go():
+        r = subprocess.run([sys.executable, "-m", "pytest", "-v", "-p", "no:cacheprovider", "--rootdir", str(root),
+                            "-c", os.devnull, str(root / "tests")], cwd=str(root), capture_output=True, text=True,
+                           timeout=120, stdin=subprocess.DEVNULL)
+        return r.stdout + r.stderr
+
+    out = go()
+    verdict = {ln.split("::", 1)[1].split()[0]: ln.split()[1] for ln in out.splitlines()
+               if "test_planted.py::" in ln and ln.split()[1:2] in (["PASSED"], ["FAILED"])}
+    assert verdict == {**{n: "FAILED" for n in CAUGHT}, "test_the_stub_answers_first": "PASSED",
+                       "test_stays_in_its_own_home": "PASSED"}, out[-4000:]
+    assert "5 failed, 2 passed" in out and "rule 17: this test reached the home or the tools" in out, out[-4000:]
+    for said in (".pitboard/" + "no-such-file", "plugins/no-such-file", "a child with no HOME", "a child with the real HOME",
+                 "this machine's own"):
+        assert said in out, (said, out[-4000:])
+    conf = root / "tests" / "conftest.py"                                # the control: no guard, nothing caught
+    conf.write_text(conf.read_text().replace("sys.addaudithook(_audit)", "pass"))
+    out = go()
+    assert "rule 17:" not in out and "7 passed" in out, out[-4000:]

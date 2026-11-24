@@ -403,8 +403,9 @@ def test_G21_14_the_gate_has_a_time_limit_and_leaves_nothing_behind(tmp_path, mo
     assert [n for n in set(os.listdir(tempfile.gettempdir())) - before if n.startswith("pitboard-gate-")] == []
 
 
-def test_G21_14_the_time_limit_never_stops_the_suites_own_group(monkeypatch):
+def test_G21_14_the_time_limit_never_stops_the_suites_own_group(monkeypatch, tmp_path):
     """If the child did not get its own process group, only the child is stopped, by its exact process id."""
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))                   # P51: never the real home, even to sleep
     child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"], stdout=subprocess.PIPE)  # suite's group
     groups = []
     monkeypatch.setattr(os, "killpg", lambda g, sig: groups.append(g))

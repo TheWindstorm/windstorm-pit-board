@@ -177,8 +177,9 @@ def test_G21_1_the_readme_clone_line_names_the_release_a_person_can_paste(tmp_pa
     assert "README.md could not be read: FileNotFoundError" in version_problems(_tree(tmp_path, clone=None))
 
 
-def test_G21_1_a_tags_clone_is_refused_unless_its_name_is_every_version_label(tmp_path):
+def test_G21_1_a_tags_clone_is_refused_unless_its_name_is_every_version_label(tmp_path, monkeypatch):
     """The release step (plan 1.23): run in a fresh clone of a tag, this refuses it unless the tag names every label."""
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))                       # P51: git runs with the test's home
     for tag in release_tags_at_head(ROOT):                                   # only in a tag's checkout
         assert tag_problems(ROOT, tag) == [], tag
         problems, listed = promise_problems_at_tag(ROOT, tag)
@@ -196,10 +197,11 @@ def test_G21_1_a_tags_clone_is_refused_unless_its_name_is_every_version_label(tm
 
 
 @pytest.mark.skipif(not shutil.which("git"), reason="no git here")
-def test_G21_1_a_fresh_clone_of_a_tag_finds_its_tag(tmp_path):
+def test_G21_1_a_fresh_clone_of_a_tag_finds_its_tag(tmp_path, monkeypatch):
     """`git clone --branch <tag>` checks out the tag's commit with the tag, so the check above runs there."""
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))                       # P51: git runs with the test's home
     src = _tree(tmp_path)
-    env = dict(os.environ, GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_SYSTEM=os.devnull, GIT_AUTHOR_NAME="t",
+    env = dict(os.environ, HOME=str(tmp_path / "home"), GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_SYSTEM=os.devnull, GIT_AUTHOR_NAME="t",
                GIT_AUTHOR_EMAIL="t@example.invalid", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.invalid")
     for cmd in (["init", "-q"], ["add", "-A"], ["commit", "-q", "-m", "release"], ["tag", "v0.1.2"]):
         subprocess.run(["git", "-C", src] + cmd, check=True, env=env, capture_output=True, timeout=30)
