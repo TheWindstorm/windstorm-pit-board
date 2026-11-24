@@ -766,6 +766,18 @@
    "test": "",
    "proven": "",
    "issue": 126
+  },
+  {
+   "id": "P62",
+   "codon": "G10.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, in a real Claude Code (2.1.331, Linux, a throwaway session with no sign-in): a status line run still going when the next update comes is cancelled, by SIGTERM to the run's whole process group (13 of 13 runs got TERM, 0 ended; Claude Code's own documentation says the in-flight script is cancelled). Read in the code, not seen: every file `pitboard status` writes (the kept segment, the lane's state cache, statusline-seen.json, lanes.json) is written to `<name>.<pid>.tmp` and renamed, and its locks are flock locks the kernel frees when the process ends; a run cut between the write and the rename leaves the temporary file, which nothing reads and nothing clears except uninstall (or a later run with the same process id). No test ends a run at each write.",
+   "promise": "A status line run of ours can be cut at any point and nothing it leaves is read or needs a person: a later run removes Pit Board's own `<name>.<pid>.tmp` leftovers older than a minute, in the folders it writes; a test ends the run at each of its writes and shows that the next run reads a whole file or none and that the leftover goes.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [
