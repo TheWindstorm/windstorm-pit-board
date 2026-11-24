@@ -83,10 +83,8 @@ def mark_activity(key, word):
     """G16.4: state/<key>.activity = 'busy <ts>' or 'idle <ts>'."""
     path = os.path.join(store.home(), "state", key + ".activity")
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        f.write(f"{word} {contract.now_ts()}\n")
-    os.replace(tmp, path)
+    from . import leave                                  # P41: opened new, 600 (it was 666 under umask 000)
+    leave.write_atomic(path, f"{word} {contract.now_ts()}\n", 0o600)
 
 
 def _context(event, lines):

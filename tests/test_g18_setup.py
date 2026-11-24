@@ -199,3 +199,75 @@ def test_G18_1_the_plan_says_what_happens_to_the_settings_files_mode(world, befo
     assert stat.S_IMODE(p.stat().st_mode) == 0o600
     baks = sorted((home / ".claude").glob("settings.json.bak-*"))
     assert [stat.S_IMODE(b.stat().st_mode) for b in baks] == ([] if before is None else [before])
+
+
+def test_G2_nothing_pit_board_makes_is_writable_by_another_account_whatever_the_umask(tmp_path):
+    """The family's rule 28 (seen 2026-11-23: a wrapper started a skill under umask 000). Pit Board started under umask
+    000: setup twice, a session's hooks, one ask, the status line. Every entry it made is read back: none writable by
+    group or others (bin/ and pitboard/ were 777 and state/*.activity 666 before). The second setup is not refused,
+    nor is a third in a home an older start left with 777 folders (P40's guard counts names, never modes)."""
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    home = tmp_path / "home"
+    (home / ".claude").mkdir(parents=True)
+    env = {"HOME": str(home), "PATH": os.environ.get("PATH", "/usr/bin:/bin"), "PITBOARD_MACHINE": "studio-1"}
+    launcher = os.path.join(root, "bin", "pitboard")
+
+    def go(*argv, stdin="", script=None):
+        return subprocess.run(["sh", script or launcher, *argv], input=stdin, env=env, capture_output=True, text=True,
+                              timeout=60, preexec_fn=lambda: os.umask(0))
+
+    for n in (1, 2):
+        r = go("setup", "--minimal", "--apply")
+        assert r.returncode == 0 and "refused" not in r.stdout + r.stderr, (n, r.stdout, r.stderr)
+    pb = home / ".pitboard"
+    hook_in = json.dumps({"session_id": "s1", "cwd": str(tmp_path), "transcript_path": "", "source": "startup",
+                          "prompt": "go on"})
+    assert go("hook", "session-start", stdin=hook_in).returncode == 0
+    r = go("add", "--lane", "umask", "--title", "Umask?", "--suggested", "yes")
+    assert r.returncode == 0, r.stderr
+    for ev in ("user-prompt-submit", "stop"):
+        assert go("hook", ev, stdin=hook_in).returncode == 0
+    subprocess.run([str(pb / "statusline.sh")], input=json.dumps({"session_id": "s1", "cwd": str(tmp_path)}), env=env,
+                   capture_output=True, text=True, timeout=60, preexec_fn=lambda: os.umask(0))
+    made = [p for p in home.rglob("*") if p != home / ".claude"]
+    assert len(made) > 15 and (pb / "state").is_dir() and any((pb / "state").glob("*.activity"))
+    loose = sorted(f"{stat.S_IMODE(p.lstat().st_mode):o} {p.relative_to(home)}" for p in made
+                   if stat.S_IMODE(p.lstat().st_mode) & 0o022)
+    assert loose == []
+    for d in [pb] + [p for p in pb.rglob("*") if p.is_dir()]:
+        os.chmod(d, 0o777)                                       # what an older start under umask 000 left
+    r = go("setup", "--minimal", "--apply")
+    assert r.returncode == 0 and "refused" not in r.stdout + r.stderr, (r.stdout, r.stderr)
+
+
+def test_G2_a_private_file_is_opened_new_never_written_into_a_temp_file_left_before(world, monkeypatch):
+    """P41 (the family's rule 28): a temp file an earlier run left (here 666, under both names Pit Board has used) is
+    never written into: before, the lane map came out 666 that way and the settings file was written and then
+    narrowed to 600. A backup is opened new at the mode the file had (664, P25) and never over an earlier backup."""
+    from pitboard import leave, store
+    home, pb = world
+    pb.mkdir(mode=0o700)
+    target = pb / "lanes.json"
+    for leftover in (f"{target}.tmp", f"{target}.{os.getpid()}.tmp"):
+        with open(leftover, "w") as f:
+            f.write("old")
+        os.chmod(leftover, 0o666)
+    store.write_json_atomic(str(target), {"a": 1})
+    assert stat.S_IMODE(target.stat().st_mode) == 0o600 and json.loads(target.read_text()) == {"a": 1}
+    assert not os.path.exists(f"{target}.{os.getpid()}.tmp")
+    with pytest.raises(FileExistsError):                          # write_new never writes over a file that is there
+        leave.write_new(str(target), b"x", 0o600)
+    assert json.loads(target.read_text()) == {"a": 1}
+    p = settings(home, {"model": "x"}) and home / ".claude" / "settings.json"
+    os.chmod(p, 0o664)
+    left = home / ".claude" / f"settings.json.{os.getpid()}.tmp"
+    left.write_text("old"); os.chmod(left, 0o666)
+    code, _, _ = run("setup", "--minimal", "--apply")
+    assert code == 0 and stat.S_IMODE(p.stat().st_mode) == 0o600 and not left.exists()
+    baks = sorted((home / ".claude").glob("settings.json.bak-*"))
+    assert [stat.S_IMODE(b.stat().st_mode) for b in baks] == [0o664] and json.loads(baks[0].read_text()) == {"model": "x"}
+    earlier, stamp = baks[0].read_bytes(), baks[0].name.split(".bak-")[1]
+    monkeypatch.setattr(S, "_stamp", lambda: stamp)              # a second write in the same second
+    S.apply([S.Item("again", str(p), "set", b"{}\n", 0o600)])
+    assert baks[0].read_bytes() == earlier                       # an earlier backup is never written over
+    assert (home / ".claude" / f"settings.json.bak-{stamp}-2").exists()

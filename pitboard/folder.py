@@ -92,11 +92,7 @@ _drop = leave._drop   # one implementation: uninstall's (G18.3)
 
 
 def _write_atomic(path, text, mode=0o600):
-    tmp = path + ".tmp"
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        f.write(text)
-    os.replace(tmp, path)
+    leave.write_atomic(path, text, mode)                 # P41: opened new at its mode
 
 
 error_text = leave.error_text   # G18.1 step 6 (P9), shared with uninstall
