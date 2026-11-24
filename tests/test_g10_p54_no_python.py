@@ -108,7 +108,7 @@ def quiet(starts):
 @pytest.mark.parametrize("shell", SHELLS, ids=" ".join)
 @pytest.mark.parametrize("asks", [0, 1])
 @pytest.mark.parametrize("inp", ["no-name.json", "name-1.json"])
-def test_P54_a_redraw_with_nothing_changed_starts_only_cat_and_date(world, shell, asks, inp):
+def test_G10_5_P54_a_redraw_with_nothing_changed_starts_only_cat_and_date(world, shell, asks, inp):
     for _ in range(asks):
         add()
     data = fixture(inp)
@@ -126,7 +126,7 @@ def test_P54_a_redraw_with_nothing_changed_starts_only_cat_and_date(world, shell
 
 @pytest.mark.parametrize("shell", SHELLS, ids=" ".join)
 @pytest.mark.parametrize("missing", ["config.json", "lane log", "update"])
-def test_P54_an_input_that_is_not_there_is_not_a_change_under_any_shell(world, shell, missing):
+def test_G10_5_P54_an_input_that_is_not_there_is_not_a_change_under_any_shell(world, shell, missing):
     """Seen 2026-11-24: `[ file -nt missing ]` is false in dash and true in bash. Existence is tested by itself: an
     input missing when the file was kept and still missing is quiet; one that appears runs Pit Board."""
     p = {"config.json": world["pb"] / "config.json", "lane log": world["pb"] / "lanes" / "api-server.jsonl",
@@ -152,7 +152,7 @@ def test_P54_an_input_that_is_not_there_is_not_a_change_under_any_shell(world, s
 
 @pytest.mark.parametrize("change", ["ask added", "ask answered", "lane map", "config", "update folder",
                                     "plugin registry", "launcher copy", "NO_COLOR"])
-def test_P54_each_change_runs_pit_board_once_then_quiet_again(world, change):
+def test_G10_5_P54_each_change_runs_pit_board_once_then_quiet_again(world, change):
     add()
     data = fixture("name-1.json")
     settle(world, data)
@@ -188,7 +188,7 @@ def test_P54_each_change_runs_pit_board_once_then_quiet_again(world, change):
     assert quiet(redraw(world, data, **env)[1]), change
 
 
-def test_P54_an_input_of_the_same_time_as_the_file_counts_as_changed(world):
+def test_G10_5_P54_an_input_of_the_same_time_as_the_file_counts_as_changed(world):
     data = fixture("no-name.json")
     redraw(world, data)
     st = os.stat(segfile(world))
@@ -196,7 +196,7 @@ def test_P54_an_input_of_the_same_time_as_the_file_counts_as_changed(world):
     assert "python3" in redraw(world, data)[1]
 
 
-def test_P54_an_ask_that_lands_between_the_read_and_the_write_is_never_hidden(world, monkeypatch):
+def test_G10_5_P54_an_ask_that_lands_between_the_read_and_the_write_is_never_hidden(world, monkeypatch):
     """The status command reads its inputs, an ask lands, then the file is written. The file carries the moment the
     launcher started, so the new ask's log is newer than it and the next redraw runs Pit Board."""
     from pitboard import store
@@ -227,7 +227,7 @@ def test_P54_an_ask_that_lands_between_the_read_and_the_write_is_never_hidden(wo
 
 @pytest.mark.parametrize("spoil", ["garbage", "cut short", "unreadable", "written in the future", "past its time",
                                    "other session name", "one input line less"])
-def test_P54_a_file_that_cannot_be_trusted_runs_pit_board(world, spoil):
+def test_G10_5_P54_a_file_that_cannot_be_trusted_runs_pit_board(world, spoil):
     add()
     data = fixture("name-1.json")
     good = settle(world, data)
@@ -258,7 +258,7 @@ def test_P54_a_file_that_cannot_be_trusted_runs_pit_board(world, spoil):
     assert out == good                                                      # Pit Board's own answer, never nothing
 
 
-def test_P54_a_pit_board_that_fails_shows_nothing_of_its_own_and_keeps_no_file(world):
+def test_G10_5_P54_a_pit_board_that_fails_shows_nothing_of_its_own_and_keeps_no_file(world):
     s = world["home"] / ".claude" / "settings.json"
     d = json.loads(s.read_text())
     assert d["statusLine"]["command"] == str(world["pb"] / "statusline.sh")
@@ -267,7 +267,7 @@ def test_P54_a_pit_board_that_fails_shows_nothing_of_its_own_and_keeps_no_file(w
     assert out == b"" and not segfile(world).exists()
 
 
-def test_P54_the_name_is_one_text_the_wrapper_cut_and_a_rename_after_an_escaped_quote_is_seen(world):
+def test_G10_5_P54_the_name_is_one_text_the_wrapper_cut_and_a_rename_after_an_escaped_quote_is_seen(world):
     """Claude Code sends the name JSON-escaped (captured: "Pit \\"Bo\\\\ard\\" é·1"). The wrapper cuts it up to its
     first quote not escaped and hands that text to Pit Board, which stores it as it came."""
     add()
@@ -295,7 +295,7 @@ def test_P54_the_name_is_one_text_the_wrapper_cut_and_a_rename_after_an_escaped_
 
 
 @pytest.mark.parametrize("key", ["session_name", "session_id"])
-def test_P54_a_key_given_twice_keeps_no_file_and_always_runs_pit_board(world, key):
+def test_G10_5_P54_a_key_given_twice_keeps_no_file_and_always_runs_pit_board(world, key):
     add()
     t = fixture("name-1.json").decode()
     twice = t.replace('"cwd":', f'"{key}":"{SID if key == "session_id" else "x"}","cwd":', 1).encode()
@@ -304,7 +304,7 @@ def test_P54_a_key_given_twice_keeps_no_file_and_always_runs_pit_board(world, ke
     assert "python3" in s1 and "python3" in s2 and not segfile(world).exists()
 
 
-def test_P54_the_file_is_private_holds_no_asks_words_and_never_outlives_its_version(world):
+def test_G10_5_P54_the_file_is_private_holds_no_asks_words_and_never_outlives_its_version(world):
     add("Secret plan words?")
     data = fixture("no-name.json")
     redraw(world, data)
@@ -319,7 +319,7 @@ def test_P54_the_file_is_private_holds_no_asks_words_and_never_outlives_its_vers
     assert "python3" in redraw(world, data)[1]
 
 
-def test_P54_old_files_go_and_only_ours(world):
+def test_G10_5_P54_old_files_go_and_only_ours(world):
     """The folder does not grow without end: a file of another version, or older than a week, goes when Pit Board
     next keeps one; a file not of our name or first line, or one that cannot be read, stays."""
     state = world["pb"] / "state"
@@ -366,7 +366,7 @@ def _ask(n, asked, **kw):
     [(5, {"deadline": 24 * 60 + 3})],                                   # a deadline about to come within a day
     [(5, {"kind": "hand"}), (30, {"deadline": 25 * 60})],
 ])
-def test_P54_the_segment_is_the_same_text_until_the_time_kept(asks):
+def test_G10_5_P54_the_segment_is_the_same_text_until_the_time_kept(asks):
     st = {"asks": [_ask(i, NOW - timedelta(minutes=m),
                         **({"deadline": c.ts_of(NOW + timedelta(minutes=kw["deadline"]))} if "deadline" in kw else
                            {k: v for k, v in kw.items()}))
@@ -384,3 +384,41 @@ def test_P54_the_segment_is_the_same_text_until_the_time_kept(asks):
         t += max(timedelta(seconds=1), (end - NOW) / 200)
     later = datetime.fromtimestamp(until + 1, timezone.utc)
     assert R.status_segment(st, later) != seg or R.segment_until(st, later) > until    # the time was not too early
+
+
+SHELL_OWN = {"SHLVL", "_", "PWD", "OLDPWD"}               # what a shell sets for itself, with or without Pit Board
+
+
+@pytest.mark.parametrize("shell", SHELLS, ids=" ".join)
+@pytest.mark.parametrize("asks", [0, 1])
+def test_G10_5_P54_rule2_the_persons_status_script_gets_the_environment_and_input_it_gets_without_pit_board(
+        world, shell, asks):
+    """Family rule 2 (A PERSON'S MACHINE IS FULL WHERE A STOCK ONE IS EMPTY), part 2 for the wrapper: the person's own
+    status line command is run with the environment Claude Code gave the wrapper, nothing added and nothing taken
+    (the wrapper's own names go only to Pit Board's part, after the person's line has run), and with the same bytes
+    on stdin (P53). Lived-in: a token and tool settings exported, a value with a newline and one not ASCII."""
+    for _ in range(asks):
+        add()
+    s = world["home"] / ".claude" / "settings.json"
+    own = ("python3 -I -c 'import json,os,sys; b=sys.stdin.buffer.read(); "
+           "print(json.dumps({\"env\": dict(os.environ), \"n\": len(b)}), end=\"\")'")
+    d = json.loads(s.read_text())
+    d["statusLine"]["command"] = own
+    s.write_text(json.dumps(d))
+    assert run("setup", "--minimal", "--apply")[0] == 0
+    lived = {"GH_TOKEN": "ghp_short", "GIT_CONFIG_GLOBAL": str(world["tmp"] / "gitconfig"), "EDITOR": "vim",
+             "LANG": "en_US.UTF-8", "MY_NOTE": "line one\nline two", "MY_NAME": "Zoë", "NO_COLOR": "1"}
+    env = {"HOME": str(world["home"]), "PATH": os.environ["PATH"], **lived}
+    data = fixture("name-1.json")
+    direct = subprocess.run(["bash", "-c", own], input=data, capture_output=True, env=env, timeout=30).stdout
+    for _ in range(3):                                               # Pit Board run, then the quiet road
+        r = subprocess.run([shutil.which(shell[0]), *shell[1:], str(world["pb"] / "statusline.sh")], input=data,
+                           capture_output=True, env=env, timeout=30).stdout
+        text = r.decode()
+        assert (" ask · oldest " in text) == bool(asks)                      # Pit Board's segment, then the person's
+        got = json.loads(text[text.index("{"):])
+        want = json.loads(direct)
+        assert got["n"] == want["n"] == len(data)
+        strip = lambda e: {k: v for k, v in e.items() if k not in SHELL_OWN}   # noqa: E731
+        assert strip(got["env"]) == strip(want["env"])
+        assert not [k for k in got["env"] if k.startswith("PITBOARD_")]

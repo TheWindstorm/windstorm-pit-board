@@ -670,6 +670,54 @@
    "test": "test_G10_5_P53_the_wrapper_hands_on_the_same_bytes",
    "proven": "",
    "issue": ""
+  },
+  {
+   "id": "P54",
+   "codon": "G10.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, on a real Mac's test account: one status line redraw through the wrapper takes about 130 to 150 ms under Apple's python3, against 11 ms for the person's own script; five sessions redrawing every 5 s come to about 13 to 15% of one core, all of the time, though nothing Pit Board shows has changed.",
+   "promise": "A status line redraw starts no Python when nothing it shows could have changed. The wrapper shows the segment Pit Board kept for the session and starts only cat (its input) and date (the clock), when: the session id and name it finds are the ones the segment was kept for (one text decides: the wrapper's own cut, stored as it came); NO_COLOR is as it was; the clock is before the time the text stays true until (the oldest ask's age moves once a minute under an hour, once an hour under two days, then once a day; a flag at its own time) and not before the moment it was kept; and every input (the lane map, the config, the lane's log, the plugin registry, the update folder, the launcher copy) is there or not as it was and, if there, strictly older than that moment. Pit Board runs as before on the first redraw of a session, after any of those changes (once more after a session's name is noted in the lane map), and on a file that is missing, unreadable or not of its shape; the count it read is never shown after a change that came after the read. The file is one per session, mode 600, holds the count and the age the segment shows and never an ask's words, goes when another version wrote it or after a week, and only files of its own name and first line are ever removed. Under dash, bash and bash --posix.",
+   "test": "test_G10_5_P54_a_redraw_with_nothing_changed_starts_only_cat_and_date",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P55",
+   "codon": "G10.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 2 (A PERSON'S MACHINE IS FULL WHERE A STOCK ONE IS EMPTY), part 2: the wrapper runs a program of the person's, their own status line command. P53 holds the bytes it is handed; the environment was not yet said.",
+   "promise": "The person's own status line command is run with the environment Claude Code gave the wrapper, nothing added and nothing taken (only what a shell sets for itself differs: SHLVL, _, PWD, OLDPWD), and the same bytes on stdin, with the lived-in environment of tests/LIVED-IN.md, under dash, bash and bash --posix. The names the wrapper hands Pit Board's part are set after the person's line has run.",
+   "test": "test_G10_5_P54_rule2_the_persons_status_script_gets_the_environment_and_input_it_gets_without_pit_board",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P56",
+   "codon": "G21.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, the family's rule 2, parts 1 and 2: Pit Board starts no long-running program, but its own short ones (the launcher from the wrapper and the cap, python3 -I) are handed the whole environment Claude Code gave the hook or the status line; and setup and uninstall run Claude Code's own `claude plugin` commands, a program of the person's whose road their settings can move.",
+   "promise": "Pit Board's own programs get an environment Pit Board built, by name: what they need (HOME, PATH, the settings the README names, the facts Claude Code and the terminal give), never the person's whole environment. The `claude plugin` commands setup and uninstall run have their road fixed where Claude Code allows it; where the person's settings can still move it, Pit Board reads what the command will really do, does not act on \"not as set\" or \"could not be read\", and says so with the one next step.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P57",
+   "codon": "G21.14",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 2, part 3: every stock machine and test account had hidden what a person's full settings show. Pit Board's case C on a real Mac (ten keys, mode 600, a status line of four keys) was the start of a lived-in list.",
+   "promise": "Before each tag, after the stock round, one round runs lived-in: the same stock test account carrying the lines of tests/LIVED-IN.md, which is kept beside the tests and gets a dated line the day a person's machine shows one it lacked. A proven line says stock or lived-in and which lines were in it; a lived-in pass never stands in for the stock one.",
+   "test": "test_G21_14_P57_the_lived_in_list_is_kept_beside_the_tests",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [
