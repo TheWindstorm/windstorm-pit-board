@@ -15,6 +15,10 @@ from . import __version__, launch, leave, stablecopy, store
 MARK = "# pitboard-original-command: "
 WRAPPER_NAME = "statusline.sh"
 STATUS_CAP_SECONDS = 1   # G10.5: past this, the operator's own line prints alone
+# P52: the cap, needing no program the machine may lack: no single quote in it, so it can be quoted for the shell.
+CAP_RUNNER = ("import os,signal,subprocess,sys;p=subprocess.Popen(sys.argv[2:],start_new_session=True,stdout=subprocess.PIPE)\n"
+              "try:\n o=p.communicate(timeout=float(sys.argv[1]))[0]\nexcept subprocess.TimeoutExpired:\n"
+              " os.killpg(p.pid,signal.SIGKILL);sys.exit(124)\nsys.stdout.buffer.write(o);sys.exit(p.returncode)")
 
 
 def claude_settings_path():
@@ -61,14 +65,18 @@ def wrapper_text(original, home):
     """G10.5: run the operator's status line and Pit Board's segment with the same input, and
     print the segment first: before a one-line status line, joined with ' · ', or on its own
     first line above a status line of several lines, so it is never pushed past the right edge.
-    Pit Board's part runs under a cap (timeout, or gtimeout on macOS, when either exists); on an
-    error or the cap only the operator's line is printed (G10.4)."""
+    Pit Board's part runs under a cap (P52): a few lines of python3, the one program Pit Board needs anyway, that start
+    it in its own process group and stop the whole group at the cap, so a child it left behind cannot hold the line
+    either. Before, the cap was timeout or gtimeout when either existed and none at all on a machine with neither
+    (macOS 13 as it comes), and a child left behind held the line past it. On an error or the cap only the operator's
+    line is printed (G10.4). The input is read whole, a trailing newline included (P53), and handed on to both byte for
+    byte."""
     launcher = os.path.join(home, "bin", "pitboard")
     lines = [
         "#!/bin/sh",
         "# Written by pitboard setup (plan G10.5). Runs your own status line and Pit Board's segment; prints the segment first.",
         MARK + json.dumps(original or ""),
-        "in=$(cat)",
+        "in=$(cat; printf x); in=${in%x}",
         "SH=sh; command -v bash >/dev/null 2>&1 && SH=bash",
     ]
     if original:
@@ -76,10 +84,8 @@ def wrapper_text(original, home):
     else:
         lines.append("own=")
     lines += [
-        "CAP=",
-        f"if command -v timeout >/dev/null 2>&1; then CAP='timeout {STATUS_CAP_SECONDS}'; "
-        f"elif command -v gtimeout >/dev/null 2>&1; then CAP='gtimeout {STATUS_CAP_SECONDS}'; fi",
-        f"pb=$(printf '%s' \"$in\" | PITBOARD_HOME={shlex.quote(home)} $CAP {shlex.quote(launcher)} status 2>/dev/null) || pb=",
+        f"cap() {{ python3 -I -c {shlex.quote(CAP_RUNNER)} {STATUS_CAP_SECONDS} \"$@\"; }}",
+        f"pb=$(export PITBOARD_HOME={shlex.quote(home)}; printf '%s' \"$in\" | cap {shlex.quote(launcher)} status 2>/dev/null) || pb=",
         "nl='\n'",
         'if [ -n "$own" ] && [ -n "$pb" ]; then',
         '  case "$own" in *"$nl"*) printf \'%s\\n%s\' "$pb" "$own" ;; *) printf \'%s · %s\' "$pb" "$own" ;; esac',
