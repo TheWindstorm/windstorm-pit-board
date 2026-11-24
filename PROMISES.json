@@ -442,6 +442,18 @@
    "test": "",
    "proven": "",
    "issue": ""
+  },
+  {
+   "id": "P35",
+   "codon": "G7.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, from the family's rule 24 (a reload loads too; seen once on Claude Code 2.1.331 in a sibling skill's probe session): `/reload-plugins` loads a plugin installed since the session started, and its other hooks run from the next turn while its session-start hook never runs. Read in the code and run on 0.1.2 in a scratch home: the first prompt hook makes the lane row on first sight, an ask recorded with no --lane finds the lane through the session id, stop and cwd-changed do their work. But the model is never given the rules or the open asks, so a session that got Pit Board by a reload does not know to record its asks. On one shared workstation that night, every lane row (79) had been made by a session-start; none by a reload yet.",
+   "promise": "In a session whose session-start hook never ran, the first prompt hook gives the model the same reminder session-start gives (the rules and the open asks), once in that session, and the log says it came by the prompt hook. A session that did run session-start gets nothing more from it.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [
