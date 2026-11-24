@@ -134,6 +134,27 @@ def test_reads_the_real_plugin_registry():
     except OSError:
         pass
 
+def test_reads_elsewhere_in_the_home():
+    try:
+        open(os.path.join(REAL, ".local", "bin", PROBE))
+    except OSError:
+        pass
+
+def test_renames_into_the_home(tmp_path):
+    (tmp_path / "x").write_text("x")
+    try:                                    # a folder that is never there: the rename fails, the guard saw it
+        os.rename(tmp_path / "x", os.path.join(REAL, PROBE + "-dir", "x"))
+    except OSError:
+        pass
+
+def test_python_libraries_and_the_checkout_are_left_out():
+    import site
+    for d in (site.getusersitepackages(), os.path.dirname(os.path.abspath(__file__))):
+        try:
+            open(os.path.join(d, PROBE))
+        except OSError:
+            pass
+
 def test_starts_a_child_with_no_home():
     subprocess.run([sys.executable, "-I", "-c", "pass"], env={"PATH": os.environ["PATH"]})
 
@@ -153,8 +174,9 @@ def test_stays_in_its_own_home(tmp_path):
     assert os.path.realpath(os.path.expanduser("~")) != REAL
     (tmp_path / "x").write_text("x")
 """
-CAUGHT = ("test_reads_the_real_pit_board_home", "test_reads_the_real_plugin_registry", "test_starts_a_child_with_no_home",
-          "test_starts_a_child_with_the_real_home", "test_runs_this_machines_own_program")
+CAUGHT = ("test_reads_the_real_pit_board_home", "test_reads_the_real_plugin_registry", "test_reads_elsewhere_in_the_home",
+          "test_renames_into_the_home", "test_starts_a_child_with_no_home", "test_starts_a_child_with_the_real_home",
+          "test_runs_this_machines_own_program")
 
 
 def test_G20_P51_the_suites_guard_catches_each_kind_and_nothing_without_it(tmp_path):
@@ -182,12 +204,41 @@ def test_G20_P51_the_suites_guard_catches_each_kind_and_nothing_without_it(tmp_p
     verdict = {ln.split("::", 1)[1].split()[0]: ln.split()[1] for ln in out.splitlines()
                if "test_planted.py::" in ln and ln.split()[1:2] in (["PASSED"], ["FAILED"])}
     assert verdict == {**{n: "FAILED" for n in CAUGHT}, "test_the_stub_answers_first": "PASSED",
-                       "test_stays_in_its_own_home": "PASSED"}, out[-4000:]
-    assert "5 failed, 2 passed" in out and "rule 17: this test reached the home or the tools" in out, out[-4000:]
-    for said in (".pitboard/" + "no-such-file", "plugins/no-such-file", "a child with no HOME", "a child with the real HOME",
-                 "this machine's own"):
+                       "test_stays_in_its_own_home": "PASSED",
+                       "test_python_libraries_and_the_checkout_are_left_out": "PASSED"}, out[-4000:]
+    assert "7 failed, 3 passed" in out and "rule 17: this test reached the home or the tools" in out, out[-4000:]
+    for said in (".pitboard/" + "no-such-file", "plugins/no-such-file", ".local/bin/no-such-file", "-dir/x",
+                 "a child with no HOME", "a child with the real HOME", "this machine's own"):
         assert said in out, (said, out[-4000:])
     conf = root / "tests" / "conftest.py"                                # the control: no guard, nothing caught
     conf.write_text(conf.read_text().replace("sys.addaudithook(_audit)", "pass"))
     out = go()
-    assert "rule 17:" not in out and "7 passed" in out, out[-4000:]
+    assert "rule 17:" not in out and "10 passed" in out, out[-4000:]
+
+
+def test_G20_P51_the_guard_has_no_switch():
+    """P51 (the family's rule 17, THE GUARD HAS NO SWITCH): tests/conftest.py reads no setting that could take the guard
+    out of the suite's own run or send the run to the real home. Its hook and its own home are set at the top of the
+    file, under no condition; the only setting it reads from the environment it was started with is PATH (to put the
+    stand-ins first) and the user base (so a child finds the same pytest). The gate test above takes the hook out only
+    by editing its own planted copy of the file."""
+    import ast
+    src = open(os.path.join(ROOT, "tests", "conftest.py"), encoding="utf-8").read()
+    tree = ast.parse(src)
+    top = [ast.unparse(n) for n in tree.body if isinstance(n, ast.Expr)]
+    assert "sys.addaudithook(_audit)" in top                              # never under an if, a try or a function
+    assert any(t.startswith("os.environ.update(HOME=") for t in top)
+    read = []
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute):
+            f = ast.unparse(n.func)
+            if f in ("os.environ.get", "os.getenv", "os.environ.setdefault", "os.environ.pop"):
+                read.append((f, ast.literal_eval(n.args[0]) if n.args and isinstance(n.args[0], ast.Constant) else
+                             ast.unparse(n.args[0])))
+        if isinstance(n, ast.Subscript) and ast.unparse(n.value) == "os.environ" and isinstance(n.ctx, ast.Load):
+            read.append(("os.environ[]", ast.unparse(n.slice)))
+        if isinstance(n, ast.Compare) and any(ast.unparse(c) == "os.environ" for c in n.comparators):
+            read.append(("in os.environ", ast.unparse(n.left)))
+    reads = sorted({(f, k) for f, k in read if f != "os.environ.pop"})   # pop only takes the shell's settings away
+    assert reads == [("os.environ.get", "PATH"), ("os.environ.setdefault", "PYTHONUSERBASE"), ("os.environ[]", "'HOME'"),
+                     ("os.environ[]", "'TMUX_TMPDIR'")], reads
