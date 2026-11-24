@@ -972,11 +972,7 @@ def test_G18_3_P50_the_readmes_by_hand_line_runs_as_printed_and_keeps_the_mode(t
     monkeypatch.setenv("PATH", "/usr/bin:/bin")
     assert run_cli("setup", "--minimal", "--apply")[0] == 0
     os.chmod(st, mode)                                         # as the file was left: 600 by setup, or the person's
-    readme = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "README.md"),
-                  encoding="utf-8").read()
-    block = readme.split("**A home set up before 0.1.3**", 1)[1].split("```\n", 2)[1]
-    line = block.split("\n```", 1)[0].strip()
-    assert line.startswith("python3 -c '") and "\n" not in line
+    line, = _by_hand_lines()
     r = subprocess.run(["bash", "-c", line], env=_scrubbed(home), capture_output=True, text=True, timeout=60,
                        cwd=str(home), stdin=subprocess.DEVNULL)
     assert r.returncode == 0 and r.stdout == "" and r.stderr == "", r
@@ -985,3 +981,11 @@ def test_G18_3_P50_the_readmes_by_hand_line_runs_as_printed_and_keeps_the_mode(t
         k: v for k, v in mine.items() if k != "statusLine"}
     assert stat.S_IMODE(os.stat(st).st_mode) == mode, oct(os.stat(st).st_mode)
     assert not (home / ".claude" / "settings.json.tmp").exists()
+    (home / ".claude" / "settings.json.tmp").write_text("left by something else")       # a leftover: never written
+    before = st.read_bytes()                                                               # through, never widened
+    assert run_cli("setup", "--minimal", "--apply")[0] == 0
+    os.chmod(st, mode)
+    r = subprocess.run(["bash", "-c", line], env=_scrubbed(home), capture_output=True, text=True, timeout=60,
+                       cwd=str(home), stdin=subprocess.DEVNULL)
+    assert r.returncode != 0 and (home / ".claude" / "settings.json.tmp").read_text() == "left by something else"
+    assert json.loads(st.read_text())["statusLine"]["command"].endswith("statusline.sh") and before != st.read_bytes()
