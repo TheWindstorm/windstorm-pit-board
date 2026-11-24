@@ -7,9 +7,10 @@ runs it for `uninstall`; `cli.main()` does too, for a launcher copy from before 
 
 Plan first; `--apply` does it. Every read a step hangs on answers yes, no or could not be read; on the third
 nothing is deleted, emptied or reported gone (exit 11). What is the person's stays and is counted: their asks
-(lanes/, lanes.json) and the record of what Pit Board did (logs/, setup-record.json, setup's backups of their
-settings files). `--delete-asks-and-log` deletes the asks and the log, only at a terminal, when the person types the
-count. The last thing printed is a census; a second run is safe.
+(lanes/, lanes.json) and the record of what Pit Board did (logs/, setup's backups of their settings files). Setup's
+own record (setup-record.json) is Pit Board's: it goes last, once every step before it was done, and then the home
+too when it is empty (P48). `--delete-asks-and-log` deletes the asks and the log, only at a terminal, when the person
+types the count. No line printed is a recursive delete. The last thing printed is a census; a second run is safe.
 """
 import hashlib
 import json
@@ -693,15 +694,29 @@ def home_off(home, census, apply, blocked=""):
                 "it is in your home folder" if yours_folder else f"{why_top} beside it is not")
                 + "; yours to delete after looking at it")
             left = True
-    kept = [n for n in PERSON if os.path.exists(os.path.join(home, n))
+    rec = os.path.join(home, SETUP_RECORD)                   # P48 (rule 8): setup's record is Pit Board's; it goes
+    record_goes = alone and os.path.lexists(rec) and census.code == 0     # last, once every step above was done
+    try:                                                      # rule 23: a home a setting names is Pit Board's only
+        ours = (read_object(rec) or {}).get("made_home") is True     # when setup made it, or it is the default
+    except Unread:
+        ours = False
+    ours = ours or os.path.realpath(home) == os.path.realpath(default_home())
+    if record_goes and _remove(rec, census, apply):
+        census.gone(_short(rec), "setup's record; last, once every step above was done")
+    kept = [n for n in PERSON if os.path.lexists(os.path.join(home, n)) and not (n == SETUP_RECORD and record_goes)
             and not (n in ("logs", "lanes") and os.path.isdir(os.path.join(home, n))
                      and not os.listdir(os.path.join(home, n)))]
     if not kept and not left:
-        if apply and not yours_folder:
+        if not yours_folder and not ours:
+            census.kept(_short(home), "empty; it was there before setup made anything in it, so it is yours")
+        elif not yours_folder:                                # P48 (rule 8): the home goes too, named, when empty
             try:
-                os.rmdir(home)
-            except OSError:
-                pass
+                if apply:
+                    os.rmdir(home)
+                census.gone(_short(home), "Pit Board's home, empty" + ("" if apply else " by then"))
+            except OSError as e:
+                census.kept(_short(home), f"could not be removed ({type(e).__name__}): something is in it now; "
+                            "yours to look at")
         return None
     if kept:                                                  # P43: only what is there is named
         parts = ([f"{_n(asks, 'ask')} ({open_} open) in {_n(logs, 'lane log')}"]
@@ -714,8 +729,10 @@ def home_off(home, census, apply, blocked=""):
         return (f"Pit Board is off this computer. What it left in {_short(home)}, and why, is named above; it is "
                 "yours, to keep or delete after you look at it.")
     copy = os.path.join(home, "bin", "pitboard")             # rule 7: only a line run as printed, this computer's way
-    return ("They are yours. When you are sure, you can delete them yourself, at your own terminal: "  # the person's act
-            + (f"{_shell(copy)} uninstall --apply --delete-asks-and-log" if os.path.isfile(copy) else f"rm -r {_shell(home)}"))
+    if not apply and os.path.isfile(copy):                    # P48 (rule 23): the one way offered is Pit Board's own
+        return ("They are yours. When you are sure, you can delete them yourself, at your own terminal: "  # flag; no
+                f"{_shell(copy)} uninstall --apply --delete-asks-and-log")                   # line is ever `rm -r`
+    return "They are yours, to keep or delete after you look at them."
 
 
 def ask_count(homes, stdin, stdout):
@@ -790,6 +807,11 @@ def _backups(path):
         return sorted(n for n in os.listdir(d) if n.startswith(base + ".bak-"))
     except OSError:
         return []
+
+
+def _set_up(home):
+    """Pit Board's own files are still in this home (a 0.1.2 home has them and no record; a home left has neither)."""
+    return any(os.path.lexists(os.path.join(home, n)) for n in TOOL)
 
 
 def _homes(extra=()):
@@ -867,7 +889,7 @@ def uninstall(apply=True, folder=None, run=None, census=None):
                 if baks:
                     census.kept(f"{_n(len(baks), 'backup')} setup made of {_short(p)}",
                                 "yours: " + ", ".join(_short(os.path.join(d, b)) for b in baks))
-            elif e is not None or not rec:                    # no list then; a file setup never changed has none
+            elif e is not None or not rec and _set_up(h):     # no list then (P48: a home already left has none)
                 others = _backups(p)
                 if others:
                     census.kept(f"{_n(len(others), 'file')} named {_short(p)}.bak-*",
