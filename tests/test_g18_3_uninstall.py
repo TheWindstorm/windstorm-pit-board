@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import threading
@@ -951,3 +952,36 @@ def test_G18_3_P48_a_home_a_setting_names_goes_only_when_setup_made_it(tmp_path,
         assert census(out)[-1] == f"  kept: {pbh} (empty; it was there before setup made anything in it, so it is yours)"
     else:
         assert listing(tmp_path) == before and census(out)[-1] == f"  gone: {pbh} (Pit Board's home, empty)"
+
+
+@pytest.mark.parametrize("mode", [0o600, 0o644])
+def test_G18_3_P50_the_readmes_by_hand_line_runs_as_printed_and_keeps_the_mode(tmp_path, monkeypatch, mode):
+    """P50 (seen with a real Claude Code on a real Mac, 2026-11-24): the README's by-hand line for a home set up before
+    0.1.3 wrote the settings file anew with the default mode, so a settings file of mode 600 (the shape of a real
+    account: a status line of four keys, ten keys in all) came back 644. Run exactly as printed it now puts the person's
+    own status line back with its other keys, changes no other key, and keeps the file's mode."""
+    home = tmp_path / "home"
+    (home / ".claude").mkdir(parents=True)
+    st = home / ".claude" / "settings.json"
+    own = {"type": "command", "command": str(home / ".claude" / "my-status.sh"), "padding": 0, "refreshInterval": 5}
+    mine = {"env": {"MY_SETTING": "1"}, "model": "opus", "statusLine": own, "theme": "dark"}
+    st.write_text(json.dumps(mine, indent=2) + "\n")
+    os.chmod(st, mode)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.delenv("PITBOARD_HOME", raising=False)
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    assert run_cli("setup", "--minimal", "--apply")[0] == 0
+    os.chmod(st, mode)                                         # as the file was left: 600 by setup, or the person's
+    readme = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "README.md"),
+                  encoding="utf-8").read()
+    block = readme.split("**A home set up before 0.1.3**", 1)[1].split("```\n", 2)[1]
+    line = block.split("\n```", 1)[0].strip()
+    assert line.startswith("python3 -c '") and "\n" not in line
+    r = subprocess.run(["bash", "-c", line], env=_scrubbed(home), capture_output=True, text=True, timeout=60,
+                       cwd=str(home), stdin=subprocess.DEVNULL)
+    assert r.returncode == 0 and r.stdout == "" and r.stderr == "", r
+    now = json.loads(st.read_text())
+    assert now["statusLine"] == own and {k: v for k, v in now.items() if k != "statusLine"} == {
+        k: v for k, v in mine.items() if k != "statusLine"}
+    assert stat.S_IMODE(os.stat(st).st_mode) == mode, oct(os.stat(st).st_mode)
+    assert not (home / ".claude" / "settings.json.tmp").exists()
