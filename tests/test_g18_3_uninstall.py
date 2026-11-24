@@ -524,7 +524,7 @@ def test_G18_3_leave_is_standard_library_only_and_imports_no_pit_board_code():
         elif isinstance(node, ast.ImportFrom):
             assert node.level == 0, "a relative import"
             names.add(node.module.split(".")[0])
-    assert names <= {"fcntl", "hashlib", "json", "os", "shlex", "shutil", "subprocess", "sys", "textwrap", "time"}, names
+    assert names <= {"fcntl", "hashlib", "json", "os", "re", "shlex", "shutil", "subprocess", "sys", "textwrap", "time"}, names
 
 
 def test_G18_3_json_is_one_object(world):
@@ -670,3 +670,125 @@ def test_G18_3_an_unreadable_catalog_list_is_said_not_guessed(world):
     assert ("  kept: the plugin catalog thewindstorm (~/.claude/plugins/known_marketplaces.json could not be read "
             "(PermissionError), so Pit Board cannot say whether Claude Code still lists it)") in rows
     assert P30_CATALOG not in rows
+
+
+# ---------------------------------------------------------------- P40: a home that is not Pit Board's alone
+
+def _put(folder, rels):
+    for rel in rels:
+        (folder / rel).parent.mkdir(parents=True, exist_ok=True)
+        (folder / rel).write_text("mine\n")
+    return {rel: "mine\n" for rel in rels}
+
+
+def _still(folder, mine):
+    return {rel: (folder / rel).read_text() for rel in mine if (folder / rel).exists()} == mine
+
+
+@pytest.mark.parametrize("where", ["your home folder", "a folder with your things", "the folder option"])
+def test_G18_1_setup_refuses_a_home_that_is_not_pit_boards_alone(tmp_path, monkeypatch, where):
+    """P40: before any write, plan or --apply, --minimal or --folder."""
+    home = tmp_path / "home"
+    (home / ".claude").mkdir(parents=True)
+    (home / ".claude" / "settings.json").write_text(MINE_TEXT)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    if where == "your home folder":
+        target, mine = home, _put(home, ["Documents/letter.txt"])
+    else:
+        target = tmp_path / "mine"
+        mine = _put(target, ["notes.txt", "bin/my-script.sh"])
+    monkeypatch.setenv("PITBOARD_HOME", str(target))
+    before = tree(tmp_path)
+    argv = [["setup", "--minimal"], ["setup", "--minimal", "--apply"]]
+    if where == "the folder option":
+        (tmp_path / "proj").mkdir()
+        before = tree(tmp_path)
+        argv = [["setup", "--folder", str(tmp_path / "proj"), "--apply"]]
+    for a in argv:
+        code, out, err = run_cli(*a)
+        assert code == 2 and "setup refused" in err and "not a folder for Pit Board alone" in err, (code, out, err)
+        assert ("it is your home folder" if where == "your home folder" else "notes.txt") in err
+        assert err.rstrip().endswith("Nothing changed.")
+    assert tree(tmp_path) == before and _still(target, mine)
+
+
+def test_G18_3_a_file_of_yours_put_in_the_home_after_setup_never_stops_the_leave(world):
+    """P40 and rule 8: the default home gained a file of the person's after setup. Uninstall still takes Pit Board off:
+    the status line is theirs again, what carries Pit Board's mark or setup's record is gone, Pit Board's folders that
+    hold only its own files are gone; the person's file stays, named, with no command offered; exit 0."""
+    home, pb, st = world
+    mine = _put(pb, ["notes.txt"])
+    code, out, _ = run("--apply")
+    rows = census(out)
+    assert code == 0, out
+    assert st.read_text() == MINE_TEXT                                            # the status line is theirs again
+    for gone in ("bin", "pitboard", "statusline.sh", "config.json", "state"):
+        assert not (pb / gone).exists(), gone
+    assert _still(pb, mine) and "  kept: ~/.pitboard/notes.txt (not made by Pit Board; yours)" in rows
+    assert (pb / "lanes" / "api.jsonl").exists() and (pb / "logs" / "pitboard.log").exists()
+    assert out.splitlines()[-1] == ("Pit Board is off this computer. What it left in ~/.pitboard, and why, is named "
+                                    "above; it is yours, to keep or delete after you look at it.")
+    assert "rm -r" not in out and "--delete-asks-and-log" not in out
+
+
+def test_G18_3_a_file_of_yours_in_pit_boards_own_folder_stays_with_its_folder(world):
+    """Inside a folder of Pit Board's own name only what Pit Board wrote goes: bin/pitboard carries its mark and goes;
+    the person's script beside it stays, and so does the folder, named with the reason."""
+    home, pb, st = world
+    mine = _put(pb, ["bin/my-script.sh", "state/my-state"])
+    code, out, _ = run("--apply")
+    rows = census(out)
+    assert code == 0 and _still(pb, mine), out
+    assert not (pb / "bin" / "pitboard").exists() and not (pb / "pitboard").exists()
+    assert ("  kept: ~/.pitboard/bin (Pit Board's, left because bin/my-script.sh in it is not; yours to delete after "
+            "looking inside)") in rows
+    assert sorted(p.name for p in (pb / "state").iterdir()) == ["my-state"]      # Pit Board's own state files went
+
+
+def test_G18_3_pit_board_in_your_home_folder_takes_only_what_carries_its_mark_or_record(world, monkeypatch):
+    """PITBOARD_HOME set to the person's home folder (setup refuses that now; a home from before 0.1.3 may be so):
+    only marked and recorded files go; nothing else in the home folder is touched, and the home folder stays."""
+    home, pb, st = world
+    shutil.rmtree(pb)                                       # a home set up in the home folder, before 0.1.3's refusal
+    st.write_text(MINE_TEXT)                                # the person's own settings, as before any setup
+    monkeypatch.setenv("PITBOARD_HOME", str(home))
+    monkeypatch.setattr(L, "is_home_folder", lambda h: False)
+    monkeypatch.setattr(L, "foreign", lambda h: [])
+    assert run_cli("setup", "--minimal", "--apply")[0] == 0
+    (home / "lanes").mkdir(exist_ok=True)
+    (home / "lanes" / "api.jsonl").write_text('{"type": "asked", "uid": "u1"}\n')
+    monkeypatch.undo()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    monkeypatch.setenv("PITBOARD_HOME", str(home))
+    mine = _put(home, ["Documents/letter.txt", "state/my-state", "logs/my.log"])
+    code, out, _ = run("--apply")
+    assert code == 0, out
+    assert st.read_text() == MINE_TEXT and _still(home, mine)
+    assert not (home / "bin" / "pitboard").exists() and not (home / "statusline.sh").exists()
+    assert not (home / "pitboard" / "launch.py").exists() and not (home / "config.json").exists()   # mark, record
+    assert (home / "state").is_dir() and (home / "lanes" / "api.jsonl").exists() and home.is_dir()
+    assert "rm -r" not in out
+
+
+def test_G18_3_asks_and_log_are_never_deleted_from_a_home_that_is_not_pit_boards_alone(world):
+    home, pb, st = world
+    mine = _put(pb, ["logs/my.log", "notes.txt"])
+    code, out, _ = run("--apply", "--delete-asks-and-log", stdin=Tty("2\n"), stdout=Tty())
+    assert _still(pb, mine) and (pb / "lanes" / "api.jsonl").exists() and st.read_text() == MINE_TEXT, out
+    assert "This deletes" not in out and "rm -r" not in out
+    assert ("  kept: your asks and the log of what Pit Board did, in ~/.pitboard (you asked to delete them, but it holds "
+            "logs/my.log, notes.txt, which Pit Board did not make; so nothing there was deleted. Yours to delete after you "
+            "look inside)") in census(out), census(out)
+
+
+def test_G18_3_a_home_of_pit_boards_alone_still_goes_whole_file_by_file(world):
+    """The copies a long-lived home holds (.prev, a bytecode folder) are Pit Board's; the home goes but the asks."""
+    home, pb, st = world
+    (pb / "pitboard" / "launch.py.prev").write_text((pb / "pitboard" / "launch.py").read_text())
+    (pb / "pitboard" / "__pycache__").mkdir()
+    (pb / "pitboard" / "__pycache__" / "leave.cpython-312.pyc").write_bytes(b"\0")
+    code, out, _ = run("--apply")
+    assert code == 0 and sorted(os.listdir(pb)) == ["lanes", "logs", "setup-record.json"], out
+    assert out.splitlines()[-1].startswith("They are yours. When you are sure")

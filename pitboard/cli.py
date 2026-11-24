@@ -553,7 +553,15 @@ def cmd_status(args, stdin=None):
 
 def cmd_setup(args):
     """G18.1: a numbered plan; nothing changes without --apply. Milestone 1 has --minimal only."""
-    from . import setup as setup_mod
+    from . import leave, setup as setup_mod
+    if not (args.folder and args.undo):                       # P40: a home for Pit Board alone, before any write
+        h = store.home()
+        why = "it is your home folder" if leave.is_home_folder(h) else (
+            "it holds things that are not Pit Board's: " + leave.foreign_text(leave.foreign(h)) if leave.foreign(h) else "")
+        if why:                                               # short lines: the reason is never cut off
+            raise Fail(2, "pitboard: setup refused: Pit Board's home is not a folder for Pit Board alone.\n"
+                          f"  why: {why}\n  home: {leave._short(h)}\n"
+                          "Unset PITBOARD_HOME, or set it to a new, empty folder. Nothing changed.")
     if args.folder:
         return _setup_folder(args)
     if args.undo:
