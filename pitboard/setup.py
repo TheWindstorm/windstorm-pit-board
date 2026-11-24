@@ -347,7 +347,7 @@ def plan_minimal(home=None, settings_path=None, root=None):
     return items + closing_items(home, settings_path)
 
 
-def note(home, settings=None, folder=None, backup=None, made=None):
+def note(home, settings=None, folder=None, backup=None, made=None, made_dirs=None):
     """G18.3: the record of what setup did, `setup-record.json` in the home, for `pitboard uninstall`.
     settings = (path, bytes before or None, mode before or None, bytes after): the earliest `before` stays while the
     file is still what Pit Board last wrote. backup = the name of the backup setup made of it: the census counts only
@@ -369,6 +369,9 @@ def note(home, settings=None, folder=None, backup=None, made=None):
             entry = {"path": spath, "before": None if before is None else before.decode("utf-8"),
                      "before_mode": mode}
         entry["after_sha256"] = leave.sha256(after)
+        dirs = [x for x in (old or {}).get("made_dirs") or [] if isinstance(x, str)]
+        if made_dirs or dirs:                                 # P46: folders setup made for this file, deepest first
+            entry["made_dirs"] = dirs + [x for x in made_dirs or [] if x not in dirs]
         made = [b for b in (old or {}).get("backups") or [] if isinstance(b, str)]
         entry["backups"] = made + ([os.path.basename(backup)] if backup and os.path.basename(backup) not in made else [])
         rec["files"] = [e for e in files if e.get("path") != spath] + [entry]
@@ -400,6 +403,10 @@ def apply(items, home=None):
             it.action = it.action.replace("would close", "closed", 1)
             done.append(it)
             continue
+        made_dirs, d = [], os.path.dirname(os.path.abspath(it.path))
+        while not os.path.lexists(d) and os.path.dirname(d) != d:   # P46: the folders this makes, deepest first
+            made_dirs.append(d)
+            d = os.path.dirname(d)
         os.makedirs(os.path.dirname(it.path), exist_ok=True)
         new_here = not os.path.exists(it.path)
         before = leave.read_bytes(it.path) if it.json_obj is not None else None
@@ -423,7 +430,7 @@ def apply(items, home=None):
         if new_here and home and it.json_obj is None and os.path.dirname(it.path) == home:
             note(home, made=[os.path.basename(it.path)])       # P40: config.json and the wrapper, by record
         if it.json_obj is not None and home:
-            note(home, settings=(it.path, before, before_mode, content), backup=bak)
+            note(home, settings=(it.path, before, before_mode, content), backup=bak, made_dirs=made_dirs)
     return done
 
 

@@ -808,3 +808,41 @@ def test_G18_3_the_kept_line_names_only_what_is_there_and_an_empty_logs_folder_g
     assert code == 0 and not (pb / "logs").exists() and "  gone: ~/.pitboard/logs" in rows
     assert "  kept: 2 asks (1 open) in 1 lane log, and setup's record (setup-record.json) in ~/.pitboard (yours)" in rows
     assert not [r for r in rows if "the log of what Pit Board did" in r]
+
+
+def _no_claude_home(tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.delenv("PITBOARD_HOME", raising=False)
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    assert run_cli("setup", "--minimal", "--apply")[0] == 0
+    assert (home / ".claude" / "settings.json").exists()
+    return home
+
+
+def test_G18_3_a_folder_setup_made_for_the_settings_file_goes_when_empty(tmp_path, monkeypatch):
+    """P46 (seen on a real Mac, 2026-11-24, an account with no Claude Code): setup made ~/.claude for the settings
+    file; uninstall removed the file ("there was none before") and left the empty ~/.claude, named nowhere. Empty
+    lanes/ and logs/ go too: the home keeps only setup's record, which the census names."""
+    home = _no_claude_home(tmp_path, monkeypatch)
+    code, out, _ = run()
+    assert code == 0 and "  would go: ~/.claude (made by setup when there was none; empty)" in census(out)
+    assert (home / ".claude").is_dir()
+    code, out, _ = run("--apply")
+    rows = census(out)
+    assert code == 0 and "  gone: ~/.claude (made by setup when there was none; empty)" in rows
+    assert not (home / ".claude").exists()
+    assert sorted(os.listdir(home)) == [".pitboard"] and os.listdir(home / ".pitboard") == ["setup-record.json"]
+    assert "  kept: setup's record (setup-record.json) in ~/.pitboard (yours)" in rows
+    assert not [r for r in rows if "asks" in r or "the log of" in r]
+
+
+def test_G18_3_a_folder_setup_made_that_holds_the_persons_file_is_named_and_kept(tmp_path, monkeypatch):
+    home = _no_claude_home(tmp_path, monkeypatch)
+    (home / ".claude" / "mine.txt").write_text("mine")
+    code, out, _ = run()
+    assert "  kept: ~/.claude (made by setup when there was none; left because mine.txt in it is not Pit Board's; yours)" in census(out)
+    code, out, _ = run("--apply")
+    assert code == 0 and (home / ".claude" / "mine.txt").read_text() == "mine"
+    assert "  kept: ~/.claude (made by setup when there was none; left because mine.txt in it is not Pit Board's; yours)" in census(out)
