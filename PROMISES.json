@@ -1356,6 +1356,18 @@
    "test": "",
    "proven": "",
    "issue": 194
+  },
+  {
+   "id": "P112",
+   "codon": "G9.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25, reading the README of the 0.1.3 release head as an agent would that was handed the repository and no plugin: it says \"Any agent that can run a shell command or use MCP can use it too\" and names no file for that agent to read. The rules an agent follows (record every ask before it is asked, the ask's words in single quotes, what to do with an answer) are in `skills/pit-board/SKILL.md`, which Claude Code loads for its own sessions; an agent that reads only the README finds the commands and not the rules.",
+   "promise": "The README has one sentence, under the heading where it says who Pit Board is built for, that sends an agent to `skills/pit-board/SKILL.md` before it records its first ask, by that path. A test reads the README for the path and finds the file there in the same tree.",
+   "test": "",
+   "proven": "",
+   "issue": 195
   }
  ],
  "declined": [

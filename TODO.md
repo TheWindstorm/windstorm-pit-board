@@ -61,6 +61,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] 2026-11-25 P109 (#192, G18.1, due 0.1.5): setup --folder's plan, the README and uninstall's census name the git ignore file in the person's home (`~/.config/git/ignore`, one line) that Claude Code's own one-folder install makes; Pit Board never edits it (seen on a Mac and on Linux: made at setup --folder --apply, left and unnamed by both uninstalls).
 - [ ] 2026-11-25 P110 (#193, G18.3, due 0.1.5): uninstall's kept line names the lane map (lanes.json) beside the lane logs and the log; a test finds every entry left in the home named (seen in a stock guest: the map stayed and no line named it).
 - [ ] 2026-11-25 P111 (#194, G20.8, due 0.1.5): P22's named test reads the workflow files itself and is seen red by a planted `latest` label (seen: the plant turned its neighbour red and left the named test green).
+- [ ] 2026-11-25 P112 (#195, G9.1, due 0.1.5): the README sends an agent to skills/pit-board/SKILL.md by its path, and a test finds the path in the README and the file in the tree (seen: the README names the commands and no file for an agent to read).
 
 ## Waiting on
 - [ ] 2026-11-17 Plan 1.5: G7.5 ignores PermissionRequest for AskUserQuestion (C7 finding, docs/CONTRACTS.md); before G7.5 is built (M2).
