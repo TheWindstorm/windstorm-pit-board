@@ -1027,7 +1027,7 @@
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.4",
    "seen": "Seen 2026-11-25 by the skill's owner on their own machine, the first time they used the board: the red count of open asks showed in Claude Code's status line, they clicked it, and nothing opened. Nothing on the screen said how to open the asks. Typing `pb` into the session does show the board without taking a turn from the agent, but it types into the session, and nothing said it was there. Read the same day: Claude Code's status line passes OSC 8 links (Ctrl+click, or Cmd+click on macOS) when the terminal supports them. Its documentation names iTerm2, Kitty and WezTerm, says Terminal.app does not, and gives `FORCE_HYPERLINK=1` for a terminal it does not detect. A terminal multiplexer may strip the link: tmux 3.4 passes one only when `hyperlinks` is in its terminal features, and the default list there does not hold it.",
-   "promise": "(a) The count is a door. In a terminal that passes links, the count is an OSC 8 link to a page Pit Board keeps in its own home: every lane's open asks on this machine, each one whole (P89, P90). Opening it is one action that types nothing into a session and takes no turn from an agent. The page is rebuilt on every write, and uninstall removes it. (b) Where no link can pass, the way to open the asks is said beside the count or one step away, as the command for another terminal. (c) Setup's plan says whether this terminal and multiplexer will pass the link, and the one line that turns it on. Setup never changes the terminal's or the multiplexer's own settings by itself (as G12.2). A test reads the status output for the link and its target and opens the page from it, and is seen red first. The row is proven only when the skill's owner opens the asks from the count on their own machine, and it moves only by their word.",
+   "promise": "(a) The count is a door. In a terminal that passes links, the count is an OSC 8 link to a page Pit Board keeps in its own home: every lane's open asks on this machine, each one whole (P89, P90). Opening it is one action that types nothing into a session and takes no turn from an agent. The page is rebuilt on every write, and uninstall removes it. (b) Where no link can pass, the way to open the asks is said beside the count or one step away, as the command for another terminal. (c) Setup's plan says whether this terminal and multiplexer will pass the link, and the one line that turns it on. Setup never changes the terminal's or the multiplexer's own settings by itself (as G12.2). (d) The page is one file of mode 600 (asks can hold sensitive words), with no script and no outside address; a page that could not be rebuilt says how old it is (an error is never an absence). (e) Which door is built, and where, follows P95's read of the owner's own views. A test reads the status output for the link and its target and opens the page from it, and is seen red first. The row is proven only when the skill's owner opens the asks from the count on their own machine, and it moves only by their word.",
    "test": "",
    "proven": "",
    "issue": 171
@@ -1055,6 +1055,66 @@
    "test": "",
    "proven": "",
    "issue": 173
+  },
+  {
+   "id": "P91",
+   "codon": "G1.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 by the skill's owner on their own machine, after typing `pb` in several lanes: the board would be better if it showed the lane's recommendations as options, \"whether it's a yes or no or ... something else\". Today an ask carries one `suggested` answer (G1.3), and the person answers with `ok`, `no` or their own words.",
+   "promise": "(a) An ask that is a choice may carry up to three options, the lane's recommended one first, plus \"something else\". The board, the page and the reminder show them numbered in that order. (b) One short answer picks any option (for example `A3 2`). `ok` still takes the recommended one, `no` still declines, and words of the person's own are still an answer. (c) An ask with one suggestion stays valid, and readers before 0.1.5 ignore the new field (G1.13). No ask is ever answered by a default or by time. A test plants an ask with three options, answers it each way, and is seen red first. It moves only by the owner's word.",
+   "test": "",
+   "proven": "",
+   "issue": 175
+  },
+  {
+   "id": "P92",
+   "codon": "G11.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 by the skill's owner on their own machine: they want \"at least two categories\", the ones the agent \"can get to work on right away\" once a person decides, and the ones that \"require my fingerprints\". With four of one and seven of the other in \"a big long list\", seeing them apart is \"helpful rather than having them all commingled\". The four kinds already hold that split (G1.3): question, decision and permission wait on a word; hand waits on a person's hands. The screen does not show it yet.",
+   "promise": "(a) The board, the page and the SessionStart reminder show two lists, each with its count: YOUR WORD (question, decision and permission: the lane goes to work the moment the person answers) and YOUR HANDS (hand: only a person can do it). They are never mixed in one list, and there are never more than two. A permission ask is marked as one inside the first list. (b) The status line's count says both numbers when there is room. A test plants every kind across two lanes, reads the board, the page, the reminder and the status line, and is seen red first. It moves only by the owner's word.",
+   "test": "",
+   "proven": "",
+   "issue": 176
+  },
+  {
+   "id": "P93",
+   "codon": "G6.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 by the skill's owner on their own machine: asks the agent files as needing a person are often things the agent can do itself; \"it just needs ... told that it has authority to do it\". The ask should \"say, hey, I can do this for you, but you got to directly give me authorization\". Today a hand ask needs steps (G6.5) but no reason why a person must do it.",
+   "promise": "(a) The skill's words tell the agent, before it files a hand ask, to try what it can do itself, and to say why the thing is a person's. The reason comes from a closed list: your card or money; your signature, or your consent on a terms screen; your own login; your own device or your presence; a new account in your name; or \"other: ...\" in a few words. (b) When the only thing missing is authority, the ask is kind permission, and it says exactly what the agent will do on yes. (c) `pitboard add --kind hand` refuses an ask with no reason (exit 6), and the board shows the reason on the hand ask's line. Nothing here lets an agent do on its own a thing it filed as permission; the answer is still the person's. A test reads the skill's words and plants each refusal, and is seen red first. It moves only by the owner's word.",
+   "test": "",
+   "proven": "",
+   "issue": 178
+  },
+  {
+   "id": "P94",
+   "codon": "G5.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 by the skill's owner on their own machine: asks should be \"ranked in the order of how much they're blocking progress\", with \"something that's causing no progress ... at the very top\". Every line should carry how long it has been waiting, in \"weeks, days, hours, minutes\", so that they see \"it's been waiting a week on me\". Read the same day: the three severities (G1.3) are not those levels. `urgent` is about time, not about what is stopped; `blocking` says something is stopped but not what; `can-wait` is \"nothing yet\". The board shows an age (`40h`), but in one unit, and only on the board.",
+   "promise": "(a) Inside each list (P92), the order is by what is stopped: all of the lane's work, then one named piece of work, then nothing yet. Within a level, the longest waiting comes first. There are three levels only. (b) A level above \"nothing yet\" needs the lane to name what is stopped, in a few words. `blocking` and `urgent` asks carry that name, and `add` refuses one without it. A deadline still shows its flag (G5.1) but does not reorder the levels. That changes P84's default order (deadline first), and this row, being the owner's word, takes it. (c) Every line, in every view, carries its waiting time in plain units (13 days, 4 h, 25 min) and what it stops, in a few words. A test plants asks at each level and age, reads the order and the units, and is seen red first. It moves only by the owner's word.",
+   "test": "",
+   "proven": "",
+   "issue": 177
+  },
+  {
+   "id": "P95",
+   "codon": "G12.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 by the skill's owner on their own machine: \"I have a little red dot in the bottom of my terminal. It'd be great if I could just click on that.\" The tab app they use \"we can customize ... or soft fork\", and: \"you want it to work with ... anybody's harness, so if pb is a better way to make it harness blind that's fine, I don't want to remove that\". They also read lanes from a phone app and from another computer, where a link to a file on this machine opens nothing.",
+   "promise": "(a) `pb` stays the door that works in every harness. (b) Beside it, one click or one key in the owner's own view opens every lane's open asks (P90) and types nothing into a session. What the tab app already offers is read first (its key bindings, panes, notifications, integrations and API); P88's link is built only where that read shows no better door, and P88's page is the one this opens. (c) It says, for each of the owner's views (the terminal on this machine, the tab app, the phone app, another computer), whether the door opens there. (d) This skill forks no tab app, starts no server, and changes no setting of a terminal, tmux or the tab app. It prints the one line, and the person or the machine's keeper sets it. Seen first: a link carried end to end through a tmux server of the maintainer's own, with the one line that lets it through. It moves only by the owner's word.",
+   "test": "",
+   "proven": "",
+   "issue": 174
   }
  ],
  "declined": [
