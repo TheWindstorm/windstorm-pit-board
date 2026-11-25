@@ -273,7 +273,7 @@
    "promise": "Every stop and need-you line names what happened and the one next step, and the words for the person are one numbered block printed by the tool (`tell the person 1 of N`), the last thing before the stop. Every clause in a tell line is something the person must hear; what is only good to know stays in the README. A test reads them all.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 144
   },
   {
    "id": "P21",
@@ -285,7 +285,7 @@
    "promise": "The skills carry trigger evals and with-skill against without-skill evals in the skill-creator style, and their results are read before a release.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 159
   },
   {
    "id": "P22",
@@ -309,7 +309,7 @@
    "promise": "Every other read a decision hangs on has three answers (yes, no, could not be read). Nothing is deleted, emptied, started or reported gone on the third, and one test fails each read in turn.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 145
   },
   {
    "id": "P24",
@@ -321,7 +321,7 @@
    "promise": "With no lane given, a command says how many lanes the computer has. Its one next step leads the agent to its own key first, from where it was told it: the session's first Pit Board line (`you are lane ... (key ...)`), or the `PITBOARD_LANE` the SessionStart hook set for this session. It names `pitboard lanes` only as the person's way to see them all. Lane names are printed only when the person asks with `pitboard lanes`, which the plan names.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 146
   },
   {
    "id": "P25",
@@ -345,7 +345,7 @@
    "promise": "Setup keeps the mode a settings file had when it changes it. For a file an earlier setup made private (600), uninstall puts the recorded mode back when the file's mode is still 600; when the person changed the mode since, it leaves it and the census says so.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 147
   },
   {
    "id": "P27",
@@ -357,7 +357,7 @@
    "promise": "The `session-start` line in `logs/pitboard.log` names the session (the first 8 characters of its id) next to the version that ran (P15), so which version runs in which session is read from the log alone.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 148
   },
   {
    "id": "P28",
@@ -369,7 +369,7 @@
    "promise": "What a person must hear before `setup --apply` or `uninstall --apply` changes anything is printed by that command, and at a real terminal it goes on only when they press a key. With no terminal (an agent's tool call) it does not wait and does not hang, and the must-hear block is still the last thing it prints.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 149
   },
   {
    "id": "P29",
@@ -405,7 +405,7 @@
    "promise": "A session that starts and ends without recording an ask leaves nothing of its own behind: no row in the lane map, no lock file, no state files. A session that does record one keeps its lane as before. The README says what a session writes and when each piece goes.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 150
   },
   {
    "id": "P32",
@@ -417,7 +417,7 @@
    "promise": "The reminder's `Rules:` line says that when `pitboard add` itself is refused or fails, the agent asks in the chat as usual and says nothing to the person about the tool.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 151
   },
   {
    "id": "P33",
@@ -429,7 +429,7 @@
    "promise": "`logs/pitboard.log` is rotated at 1 MB and 3 old files are kept, also when several hooks write at once; no line is lost or split by a rotation; the README names the log as what stays and says its bound; uninstall counts the rotated files with the log.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 152
   },
   {
    "id": "P34",
@@ -437,11 +437,11 @@
    "owner": "maintainer",
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.4",
-   "seen": "2026-11-24: one home made on 2026-11-17, before the first release, was mode 775. Released code does not do that: `pitboard setup` makes the home through the store's 700 path before it writes, in every release, and a fresh setup of 0.1.2 on a fleet Linux machine with umask 0002 made it 700. Every hook, run first into an empty home under umask 0002, made it 700 in 0.1.0, 0.1.1 and 0.1.2. Nothing in a released version was seen to make a home other than 700. Read in the code, not run: `pitboard pin` (0.1.2) makes its folder with the default mode, so as the very first command it would make the home that way. And setup's plan says nothing about the mode of a home that already exists.",
+   "seen": "2026-11-24: one home made on 2026-11-17, before the first release, was mode 775. Released code does not do that: `pitboard setup` makes the home through the store's 700 path before it writes, in every release, and a fresh setup of 0.1.2 on a fleet Linux machine with umask 0002 made it 700. Every hook, run first into an empty home under umask 0002, made it 700 in 0.1.0, 0.1.1 and 0.1.2. Nothing in a released version was seen to make a home other than 700. Read in the code: `pitboard pin` (0.1.2) makes its folder with the default mode, so as the very first command it would make the home that way. Seen 2026-11-25 with the 0.1.3 release head's code, in a made home under umask 0002 with a stand-in install of 0.1.2 and 0.1.3: `pitboard self-update --pin 0.1.2` as the very first Pit Board command made the home 755 and update/ 755 (the launcher's 022 takes off only group write), the pin file 600; setup's plan afterwards named nothing about the home's mode, and after --apply the home was still 755. And setup's plan says nothing about the mode of a home that already exists.",
    "promise": "A home that Pit Board makes is 700, whichever command or hook writes first (setup's is pinned by a test; `pin` joins it). A home that already exists with another mode is named in setup's plan and never changed.",
    "test": "",
    "proven": "The half released code already keeps, only: 2026-11-24 02:52Z, a stock Ubuntu 24.04.5 virtual machine, a fresh user with umask 0002, Claude Code 2.1.331: `pitboard setup --minimal --apply` (run by hand) made ~/.pitboard 700, and lanes/, state/ and logs/ 700. The other half (setup's plan names an existing home's mode; `pin` makes the home 700) is not built and not seen.",
-   "issue": ""
+   "issue": 153
   },
   {
    "id": "P35",
@@ -453,7 +453,7 @@
    "promise": "In a session whose session-start hook never ran, the first prompt hook gives the model the same reminder session-start gives (the rules and the open asks), once in that session, and the log says it came by the prompt hook. A session that did run session-start gets nothing more from it.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 154
   },
   {
    "id": "P36",
@@ -501,7 +501,7 @@
    "promise": "A command whose result a setting changed says so: `pitboard add` always names the lane it wrote to (an ask filed in the wrong lane by a `PITBOARD_LANE` left in a shell is otherwise the one mistake a person cannot see); `pitboard board` and the reminder name the home when it is not `~/.pitboard`; `pitboard version` says self-update is off whenever it is off.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 155
   },
   {
    "id": "P40",
@@ -705,7 +705,7 @@
    "promise": "Pit Board's own programs get an environment Pit Board built, by name: what they need (HOME, PATH, the settings the README names, the facts Claude Code and the terminal give), never the person's whole environment. The `claude plugin` commands setup and uninstall run have their road fixed where Claude Code allows it; where the person's settings can still move it, Pit Board reads what the command will really do, does not act on \"not as set\" or \"could not be read\", and says so with the one next step.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 156
   },
   {
    "id": "P57",
@@ -729,7 +729,7 @@
    "promise": "The leave tells three answers apart: `claude` runs; it is not on the PATH but is at one of Claude Code's own install places (it names that path and the one line to run); Claude Code is not on the account, and then Pit Board's own files go by its record as in a full leave, while Claude Code's registry row and plugin cache stay and are named with the line for the day Claude Code comes back. The asks and the log stay as always. A place that could not be read is never taken as \"Claude Code is not here\". Proven in a Mac round with and without Claude Code.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 157
   },
   {
    "id": "P59",
@@ -886,6 +886,18 @@
    "test": "",
    "proven": "",
    "issue": 143
+  },
+  {
+   "id": "P77",
+   "codon": "G21.14",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-25, read in PROMISES.json on the rows branch for 0.1.4: 14 of the 27 rows due in 0.1.4 had no tracking issue (P20, P23, P24, P26, P27, P28, P31, P32, P33, P34, P35, P39, P56, P58), so a stranger could not follow them; each now has one. Nothing in the promise gate looks at the issue field.",
+   "promise": "Every row not yet built carries its tracking issue. From 0.1.4 the promise gate refuses a row due in the next version whose issue is empty, and its message names the row. Its test reads the file's own rows, then a planted row with no issue, seen red first on that row.",
+   "test": "",
+   "proven": "",
+   "issue": 158
   }
  ],
  "declined": [
