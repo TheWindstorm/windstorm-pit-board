@@ -1019,6 +1019,42 @@
    "test": "",
    "proven": "",
    "issue": 164
+  },
+  {
+   "id": "P83",
+   "codon": "G7.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 in real use on 0.1.2, in two staff lanes of one machine. In the skill owner's lane, a message from another agent named that agent's own asks A1, A2 and A3, which are recorded in its own lane. The prompt hook added: \"this message answers or mentions A1, A2, A3. If it answers one, run: pitboard answer <ID> --by operator ...\". The receiving lane holds an A1, an A2 and an A3 of its own, and nobody had answered them. In the maintainer's lane the same hint came twice that morning, on two messages from another agent that only named asks. Nobody ran the command. A model that followed the hint would have marked the operator's asks answered, by the operator, on a peer's sentence. Read in the code: the hint matches any text shaped like an ID (A followed by a number) against this lane's open asks. It cannot tell whose ask the writer meant. \"ok A3\" and \"no A3\" act only when they are the whole message, so a wrapped peer message cannot approve or decline anything. In the session's own transcript a peer message is marked as one (an origin of kind \"peer\") and its text opens with the words that wrap it. Whether the hook's input carries either is not read; the recorded hook inputs hold no such field.",
+   "promise": "A message that did not come from the operator never leads to \"--by operator\". A text that names another lane's ask is not taken for this lane's ask. The hook decides a message's source from what its input carries, read and recorded first on the Claude Code versions in use; where the source cannot be read, the hint does not suggest \"--by operator\". The operator's own \"ok A3\" and \"no A3\" work as before, and an agent recording another agent's answer (--by agent) is unchanged. A test is seen red first with two shapes: a peer's message naming IDs this lane also holds, and the operator's own message naming them (the control, which must still work).",
+   "test": "",
+   "proven": "",
+   "issue": 165
+  },
+  {
+   "id": "P84",
+   "codon": "G11.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25: a coordinator lane keeps a numbered list for the operator, and has agreed to put a Pit Board ID on every line of that list, so the list and the board become one. Before its list could be printed from the board, it says the tool lacks one printed list across every lane on a machine, each line led by lane and ID, with times in the operator's own time zone. Read in 0.1.3's code: `pitboard export --all-lanes --format csv` already gives one line per ask across every lane, led by lane, lane name, machine and ID, but its times are UTC (ISO) and it is a data file, not a printed list. The board, the list and the reminder each show one lane only. Only the board prints times in the operator's zone.",
+   "promise": "One printed list of every lane's asks on a machine, each line led by the lane's name and the ask's ID, with every time in the operator's own zone as the board prints it. It changes nothing in any lane log.",
+   "test": "",
+   "proven": "",
+   "issue": 166
+  },
+  {
+   "id": "P85",
+   "codon": "G1.13",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25: the coordinator lane in P84, which keeps a numbered list for the operator, says two more things are lacking before its list and the board can be one: (c) an order key it can set, its own list numbers, so its numbers and the IDs sit side by side; (d) a \"relayed for\" field, for an ask one lane holds on another's behalf. Read in 0.1.3's code: no ask has either field. Both would be new data in a lane log, which older copies also read; the format lets readers ignore unknown fields (G1.13).",
+   "promise": "(c) An ask can carry an order key that its recorder sets, and the printed list of P84 can sort by it. (d) An ask can name the lane it is held for. Both are optional fields. A log written with them is read the same as before by 0.1.2 and 0.1.3, seen in a made home before the release.",
+   "test": "",
+   "proven": "",
+   "issue": 167
   }
  ],
  "declined": [
