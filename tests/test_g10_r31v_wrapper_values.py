@@ -16,6 +16,7 @@ OWN = [
     "echo L1\necho L2",                                   # a command of two lines
     "printf 'x\rCR'",                                     # a carriage return
     "printf 'a\\\\b'",                                    # a backslash
+    "printf '%s' '%d %% \\n \\c'",                         # prints a format's own characters, as plain text
 ]
 HOMES = [
     "pb home 'q' $(touch HOMESUB) `touch HOMETICK`",
