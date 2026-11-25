@@ -60,9 +60,9 @@
    "first_ship_in": "0.1.1",
    "ship_in": "0.1.2",
    "test": "test_G9_1_pit_board_body_is_appendix_A5_word_for_word",
-   "proven": "Proven 2026-11-25 on one machine, a shared Linux workstation. The set: every lane there whose session carried 0.1.2's reminder, each counted from its own first session with it, the maintainer's own lane left out. A product lane outside the skill family recorded asks for the operator with pitboard add, by the agent, at 2026-11-24T14:33:20.759Z and 2026-11-25T11:44:30.434Z: two Eastern days, 21 h 11 min apart. Four more lanes outside the family recorded asks on those days, 12 asks in 5 lanes in all. Read from the tool's own records (ids and times, never an ask's text), counted by the maintainer and read by the skill's owner; nothing was told to any lane about the count. What it does not show: in the same days, steps only the operator could take were also named on the shared board with no ask recorded (P13, P81).",
+   "proven": "Proven 2026-11-25 on one machine, a shared Linux workstation. The set: every lane there whose session carried 0.1.2's reminder, each counted from its own first session with it, the maintainer's own lane left out. A product lane outside the skill family recorded asks for the operator with pitboard add, by the agent, at 2026-11-24T14:33:20.759Z and 2026-11-25T11:44:30.434Z: two Eastern days, 21 h 11 min apart. Four more lanes outside the family recorded asks on those days: 13 asks in 5 lanes in all, the \"asked\" events by the agent from 2026-11-24T14:33:20.759Z to the window's end, 2026-11-25T11:44:30.434Z (2 + 4 + 1 + 1 + 5). Read from the tool's own records (ids and times, never an ask's text), counted by the maintainer and read by the skill's owner; nothing was told to any lane about the count. What it does not show: in the same days, steps only the operator could take were also named on the shared board with no ask recorded (P13, P81).",
    "issue": null,
-   "moved_why": "Moved from 0.1.1 to 0.1.2 on 2026-11-23 by the skills' department head. In M2a, under 0.1.1's words, the one real ask in the week's sample was not recorded (it went to the shared board), so the promise as shipped was not kept. P13 changes the words in 0.1.2. P4's two days count from the day all three pilot lanes run 0.1.2, and its proof then holds back 0.1.3, not 0.1.2.",
+   "moved_why": "Moved from 0.1.1 to 0.1.2 on 2026-11-23 by the skill's owner. In M2a, under 0.1.1's words, the one real ask in the week's sample was not recorded (it went to the shared board), so the promise as shipped was not kept. P13 changes the words in 0.1.2. P4's two days count from the day all three pilot lanes run 0.1.2, and its proof then holds back 0.1.3, not 0.1.2.",
    "moved_by_person": "",
    "proof_needed": "Two calendar days, each with at least one real ask recorded unprompted in a pilot lane, counted from the day all three pilot lanes run 0.1.2; name the dates and the lanes."
   },
@@ -187,9 +187,9 @@
    "promise": "The reminder (G7.7) and the skill (G9.1) say that an ask only the operator can answer (the operator's own login, consent, signature, money or name, or another person's account on the operator's machine) is recorded with pitboard add by the agent that has it, also when the agent sends it to another agent (a coordinator, a reviewer) or a shared board instead of the chat. The ask's ID and one line travel in that message: answer under the ID, or say 'not mine to answer' under it. An answer given under the ID is written with who gave it; otherwise the operator is asked in chat under the same ID. The skill no longer says not to record questions to other agents, only those they can answer themselves.",
    "test": "test_G7_7_an_ask_sent_to_another_agent_or_a_board_is_recorded_too",
    "proven": "",
-   "proof_needed": "P4's proof (ruled by the skills' department head, 2026-11-23): a wording row is not proven by a test of its words. Proven when P4 is: two calendar days, each with a real ask recorded unprompted in a pilot lane, with all three lanes on 0.1.2.",
+   "proof_needed": "P4's proof (ruled by the skill's owner, 2026-11-23): a wording row is not proven by a test of its words. Proven when P4 is: two calendar days, each with a real ask recorded unprompted in a pilot lane, with all three lanes on 0.1.2.",
    "issue": "",
-   "moved_why": "Moved from 0.1.2 to 0.1.4 on 2026-11-25 by the skills' department head: its words shipped and were kept where a lane had no other list, and not where it had one. Seen in part is not proof (the family's rule 32). No wording change in 0.1.3: what was seen is P81, due 0.1.4."
+   "moved_why": "Moved from 0.1.2 to 0.1.4 on 2026-11-25 by the skill's owner: its words shipped and were kept where a lane had no other list, and not where it had one. Seen in part is not proof (the family's rule 32). No wording change in 0.1.3: what was seen is P81, due 0.1.4."
   },
   {
    "id": "P14",
@@ -978,8 +978,8 @@
    "owner": "maintainer",
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.4",
-   "seen": "Seen 2026-11-25: a coordinator lane keeps a numbered list for the operator, and has agreed to put a Pit Board ID on every line of that list, so the list and the board become one. Before its list could be printed from the board, it says the tool lacks one printed list across every lane on a machine, each line led by lane and ID, with times in the operator's own time zone. Read in 0.1.3's code: `pitboard export --all-lanes --format csv` already gives one line per ask across every lane, led by lane, lane name, machine and ID, but its times are UTC (ISO) and it is a data file, not a printed list. The board, the list and the reminder each show one lane only. Only the board prints times in the operator's zone.",
-   "promise": "One printed list of every lane's asks on a machine, each line led by the lane's name and the ask's ID, with every time in the operator's own zone as the board prints it. It changes nothing in any lane log.",
+   "seen": "Seen 2026-11-25: a coordinator lane keeps a numbered list for the operator, and has agreed to put a Pit Board ID on every line of that list, so the list and the board become one. Before its list could be printed from the board, it says the tool lacks one printed list across every lane on a machine, each line led by lane and ID, with times in the operator's own time zone. Once that printed list exists the coordinator's own list numbers retire, and lane and ID become the only name for an ask. So the coordinator asked for the list's default order, which is what is left of its numbers: by deadline first, then severity, then lane, with asks that have no deadline last. Read in 0.1.3's code: `pitboard export --all-lanes --format csv` already gives one line per ask across every lane, led by lane, lane name, machine and ID, but its times are UTC (ISO) and it is a data file, not a printed list. The board, the list and the reminder each show one lane only. Only the board prints times in the operator's zone.",
+   "promise": "One printed list of every lane's asks on a machine, each line led by the lane's name and the ask's ID, with every time in the operator's own zone as the board prints it. Its default order is by deadline first, then severity, then lane, with asks that have no deadline last. It changes nothing in any lane log.",
    "test": "",
    "proven": "",
    "issue": 166
@@ -988,13 +988,25 @@
    "id": "P85",
    "codon": "G1.13",
    "owner": "maintainer",
-   "first_ship_in": "0.1.4",
-   "ship_in": "0.1.4",
-   "seen": "Seen 2026-11-25: the coordinator lane in P84, which keeps a numbered list for the operator, says two more things are lacking before its list and the board can be one: (c) an order key it can set, its own list numbers, so its numbers and the IDs sit side by side; (d) a \"relayed for\" field, for an ask one lane holds on another's behalf. Read in 0.1.3's code: no ask has either field. Both would be new data in a lane log, which older copies also read; the format lets readers ignore unknown fields (G1.13).",
-   "promise": "(c) An ask can carry an order key that its recorder sets, and the printed list of P84 can sort by it. (d) An ask can name the lane it is held for. Both are optional fields. A log written with them is read the same as before by 0.1.2 and 0.1.3, seen in a made home before the release.",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25: the coordinator lane in P84, which keeps a numbered list for the operator, says one more thing is lacking before its list and the board can be one: a \"relayed for\" field, for an ask one lane holds on another's behalf. It had also asked for an order key it could set (its own list numbers). It withdrew that the same day, once the printed list of P84 was promised, because its own numbers then retire. Read in 0.1.3's code: no ask has such a field. It would be new data in a lane log, which older copies also read; the format lets readers ignore unknown fields (G1.13).",
+   "promise": "An ask can name the lane it is held for, as an optional field. A log written with it is read the same as before by 0.1.2, 0.1.3 and 0.1.4, seen in a made home before the release.",
    "test": "",
    "proven": "",
    "issue": 167
+  },
+  {
+   "id": "P86",
+   "codon": "G10.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 on one loaded shared Linux machine (load about 18), measuring `pitboard status` as the status line runs it, the median of runs 2 to 10 of ten alternating rounds on a warm disk: 0.1.2 30 ms; 0.1.3 as shipped 48 ms (max 66); 0.1.3 with bytecode allowed 30 ms. A session start, measured the same way at load about 14: 0.1.2 46 ms; 0.1.3 as shipped 80 ms; 0.1.3 with bytecode allowed 53 ms. The cause: 0.1.3 writes no bytecode (P37), so every call compiles Pit Board's modules from source. The plan's G10.3 says status finishes in under 50 ms on a warm disk.",
+   "promise": "`pitboard status` and each hook call start as fast as 0.1.2's did, compared on the same machine in the same run, within a margin proposed with the first cut. Bytecode goes only into a folder of Pit Board's own that uninstall removes and its census names; nothing is compiled into the plugin's cache folder or anywhere else in the home, and P37 holds as written. The test compares against 0.1.2 in the same run and never rests on a fixed number alone.",
+   "test": "",
+   "proven": "",
+   "issue": 168
   }
  ],
  "declined": [
