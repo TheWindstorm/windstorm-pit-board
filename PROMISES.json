@@ -1423,11 +1423,23 @@
    "owner": "maintainer",
    "first_ship_in": "0.1.5",
    "ship_in": "0.1.5",
-   "seen": "Seen 2026-11-25 on the 0.1.3 release head: P50's test runs the README's by-hand line, for a home set up before 0.1.3, against a settings file of mode 600 and one of mode 644, and passes when the shell's umask is 022. Started under umask 077 the file of mode 644 comes back 600, and under umask 027 it comes back 640. The line opens its temporary file at the settings file's mode, and the umask of the shell that runs the line takes its own bits from that mode. A file of mode 600 kept its mode under each of the three, and the file was never left wider than it was. P50 promised that the line keeps the file's mode: that holds only for the bits the umask does not take. Each proof of P50 on a real machine used a settings file of mode 600, which no umask narrows. Found while building P116, by starting the whole suite under umask 077.",
-   "promise": "The README's by-hand line, run exactly as printed, leaves the settings file with the mode it had, whatever the umask of the shell that runs it: the line sets the temporary file's mode after it opened it and before the file takes the settings file's place. One test, named for this row, runs a file of mode 600 and one of mode 644, each under umask 022, 027 and 077, and reads the mode after; seen red first on the release's code.",
+   "seen": "Seen 2026-11-25 on the 0.1.3 release head: P50's test runs the README's by-hand line, for a home set up before 0.1.3, against a settings file of mode 600 and one of mode 644, and passes when the shell's umask is 022. Started under umask 077 the file of mode 644 comes back 600, and under umask 027 it comes back 640. The line opens its temporary file at the settings file's mode, and the umask of the shell that runs the line takes its own bits from that mode. A file of mode 600 kept its mode under each of the three, and the file was never left wider than it was. P50 promised that the line keeps the file's mode: that holds only for the bits the umask does not take. Each proof of P50 on a real machine used a settings file of mode 600, which no umask narrows. Found while building P116, by starting the whole suite under umask 077. A second try the same day, with the line cut from the README and run as printed in made homes, showed one case more: a file of mode 664 comes back 644 under the plain umask 022, and stays 664 under umask 002.",
+   "promise": "The README's by-hand line, run exactly as printed, leaves the settings file with the mode it had, whatever the umask of the shell that runs it: the line sets the temporary file's mode after it opened it and before the file takes the settings file's place. One test, named for this row, runs a file of mode 600, one of mode 644 and one of mode 664, each under umask 002, 022, 027 and 077, and reads the mode after; seen red first on the release's code.",
    "test": "",
    "proven": "",
    "issue": 200
+  },
+  {
+   "id": "P118",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 on the 0.1.3 release head, with the by-hand line for a home set up before 0.1.3 cut from the README and run as printed in made homes: the README says of the line that it \"touches nothing else in the file\". The line reads the settings file and writes it anew. In a file written with four spaces, a letter outside ASCII and a last line break, the value of every other key was the same afterwards and the bytes were not: two spaces, no last line break, the letter written as an escape. P50's proofs compared the keys, their values and their order; neither says that the line changes the file's layout.",
+   "promise": "The README's sentence beside the by-hand line says what the line does: it puts the person's own status line back and keeps the value of every other setting; it writes the file anew, so the file's layout may change. It no longer says that nothing else in the file is touched. One test plants a settings file written with four spaces, a letter outside ASCII and a last line break, runs the line exactly as printed, reads that every other key has the same value after, and reads the README's sentence for both halves; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 201
   }
  ],
  "declined": [
