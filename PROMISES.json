@@ -1272,6 +1272,78 @@
    "test": "",
    "proven": "",
    "issue": 187
+  },
+  {
+   "id": "P105",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a scratch home on the 0.1.3 release head, with a stand-in for `claude` that ends with exit code 0 and changes nothing: `pitboard uninstall --apply` said \"gone: plugin windstorm-pit-board@thewindstorm (user scope)\" while Claude Code's plugin list still named it. By the code, the census says gone when `claude plugin uninstall` ends with exit code 0, and the list is not read again after. In every round with a real Claude Code so far the list was empty after, so the line was true each time; nothing checks it.",
+   "promise": "Uninstall says a plugin is gone only when Claude Code's plugin list, read after its uninstall ran, no longer names it for that scope. The list still names it: the census says kept, with what Claude Code answered and the one command to run by hand, and the run ends as not complete. The list cannot be read after: the census says that, never gone. One test plants each of the three (a stand-in that ends with 0 and takes the row off, one that ends with 0 and leaves it, a list that cannot be read after) and reads the census line; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 188
+  },
+  {
+   "id": "P106",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a scratch home on the 0.1.3 release head: with Claude Code's plugin list cut short (not JSON), or without read permission, the plan of `pitboard setup --folder DIR` was the same, line for line, as with a list that could be read and held no install for that folder: it offered `claude plugin install --scope local`, and no line said that the list could not be read. By the code, \"already installed here: kept\" and \"installed for DIR only\" are decided by the list alone. This is P64's lesson on the one-folder road; it has a row of its own because each promise has a test of its own that the gate counts by name.",
+   "promise": "`setup --folder` says \"already installed here\" or offers the install only when it read the plugin list. A list that is there and cannot be read is said in a line of its own, in the plan and at `--apply`, and `--apply` then changes nothing in that folder. A list that is not there is still \"not installed\". One test fails the read each way (not JSON, no permission) and reads the plan's line and the folder's files unchanged; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 189
+  },
+  {
+   "id": "P107",
+   "codon": "G2.10",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a scratch home on the 0.1.3 release head: config.json held the person's own time zone (`display_tz`) and name. Cut short (not JSON), or without read permission, the board showed its times in the computer's own zone, `pitboard version` and the status line said nothing of it, and setup's plan said \"config file: keep (already there)\". Every setting ran on its default, in silence. By the code, a config file that cannot be read is read as an empty one. This is P66's lesson for the config file; it has a row of its own because each promise has a test of its own that the gate counts by name.",
+   "promise": "A config.json that is there and cannot be read is never taken for an empty one in silence: `pitboard version` says in one line that it could not be read and that the defaults are in use, setup's plan says the same in place of \"keep\", and neither writes over the file. Hooks and the status line go on with the defaults (an ask is never lost to a config fault) and add no line on every prompt. A config that is not there is still the defaults. One test fails the read each way, reads version's line and the plan's, and reads the file's bytes unchanged; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 190
+  },
+  {
+   "id": "P108",
+   "codon": "G21.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a scratch home on the 0.1.3 release head: with the plugin's folder in Claude Code's plugin cache made unreadable (mode 000) while the plugin list still named 0.1.3, the stable copy's `pitboard version` and `pitboard board` each ended with exit code 1 and \"pitboard: no installed version found\". The folder was there; it could not be read. P64 names the plugin list; this is the folder the launcher looks in. It has a row of its own because each promise has a test of its own that the gate counts by name.",
+   "promise": "The launcher says \"no installed version found\" only when it read the plugin's folder in Claude Code's plugin cache and found no version there. A folder that is there and cannot be read is said as that: Claude Code's plugin cache could not be read, in words, never by the path of a version folder (P68); the status line shows the launcher's short could-not-read segment for it. One test fails the read each way (the plugin's folder, the one version folder the list names) and reads the line; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 191
+  },
+  {
+   "id": "P109",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a test account on a Mac (macOS 13, Claude Code 2.1.332, no sign-in) and again in a scratch home on Linux, on the 0.1.3 release head: after `pitboard setup --folder DIR --apply` the person's home held a new file, `~/.config/git/ignore`, with one line, `**/.claude/settings.local.json`; on the Mac its folder `~/.config/git` was new too. Neither was there before, and none of the steps before it made them (adding the catalog, the install for every project, `setup --minimal --apply`). Pit Board's code names no such file: it came with Claude Code's own install for one folder, which setup runs. `pitboard uninstall --folder DIR --apply` and `pitboard uninstall --apply` both left it, and no line of either named it. The README says of the one-folder road: that folder's own settings, never yours. Not tried: a home that already has a git ignore file, and git told to use another one.",
+   "promise": "The one-folder road says what it leaves outside the folder. The plan of `setup --folder` names the git ignore file in the person's home that Claude Code's own one-folder install may make or add a line to, as Claude Code's doing; the README's sentence on the one-folder road says the same; setup's record keeps whether the file was there before; and uninstall's census names it as kept and Claude Code's, with that. Pit Board never edits or removes it. One test with a stand-in that makes the file as Claude Code was seen to, and before the tag a round on a real Claude Code, on Linux and on a Mac, with a home that already has such a file as well.",
+   "test": "",
+   "proven": "",
+   "issue": 192
+  },
+  {
+   "id": "P110",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a stock Linux guest on the 0.1.3 release head, with a real Claude Code: after `pitboard uninstall --apply` with asks kept, Pit Board's home held `lanes/`, `logs/` and `lanes.json`, the lane map. The census said \"kept: 4 asks (3 open) in 1 lane log, and the log of what Pit Board did\": it named the lane log and the log, and no line named the lane map, which stayed. The plan before it named the lane map in neither of its lists. By the code, the map is counted with the asks and not said.",
+   "promise": "The way out names every file of Pit Board's own that it leaves: the kept line names the lane map beside the lane logs and the log, in the plan and at `--apply`. A test lists Pit Board's home after an uninstall that kept asks and finds every entry left there named in a kept line; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 193
   }
  ],
  "declined": [
