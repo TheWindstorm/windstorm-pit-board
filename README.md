@@ -128,6 +128,7 @@ Each line is something this version does today, and when that is wrong. The fix 
 - `logs/pitboard.log` is not rotated: every hook in every session adds a line (seen: about 21 KB in an hour and a half on a busy shared machine) (0.1.4).
 - In a session where Pit Board was installed after it started (`/reload-plugins`), the session reminder was not given (seen once, on Claude Code 2.1.331); asks were still caught (0.1.4).
 - When `pitboard add` itself is refused (a harness that blocks the call), the reminder does not tell the agent to ask in the chat without mentioning the tool (0.1.4).
+- The reminder speaks of new asks, so an ask that already waited on you before Pit Board came to a lane is not asked for. And where a team keeps another list for you, lanes were seen sending your steps to that list over a shared board and recording no ask (seen on one shared machine) (0.1.4).
 - Pit Board's own programs get the whole environment Claude Code hands a hook or the status line, not one built for them (0.1.4).
 - A stop that says "lane busy ... (try again)" does not say what will differ at the next try (0.1.4).
 - When a Claude Code plugin command fails, setup and uninstall recognize its error lines in English only; in another language the hint for a failed clone may not show, though the error itself still does (0.1.4).
