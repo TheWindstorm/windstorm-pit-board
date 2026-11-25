@@ -125,6 +125,7 @@ Each line is something this version does today, and when that is wrong. The fix 
 - Setup's "Done: N change(s)." counts the steps it applied; it does not check afterwards that Pit Board's commands run (0.1.4).
 - With no asks, uninstall's census says "kept: 0 asks" when what it keeps is the lane map and the log (0.1.4).
 - A session that starts and ends without an ask leaves a row in `lanes.json` and a few small state files behind, which nothing removes (0.1.4). Measured on one machine, a hook call took about as long with 5000 such rows in the map as with none, under a tenth of a second.
+- The status line and each hook start more slowly than in 0.1.2, because 0.1.3 keeps no compiled Python code: `pitboard status` took 48 ms against 0.1.2's 30 ms, seen on one loaded shared machine (0.1.4).
 - `logs/pitboard.log` is not rotated: every hook in every session adds a line (seen: about 21 KB in an hour and a half on a busy shared machine) (0.1.4).
 - In a session where Pit Board was installed after it started (`/reload-plugins`), the session reminder was not given (seen once, on Claude Code 2.1.331); asks were still caught (0.1.4).
 - When `pitboard add` itself is refused (a harness that blocks the call), the reminder does not tell the agent to ask in the chat without mentioning the tool (0.1.4).
