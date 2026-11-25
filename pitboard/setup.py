@@ -467,7 +467,7 @@ def plan_minimal(home=None, settings_path=None, root=None, setting=True):
             was, more = "as one word", ["an older setup wrote it in a form that is not read as one path here"] + more
         elif current:                                   # never the person's command itself: it can hold a secret
             was = "your own status line command is kept"
-            more = ["the wrapper runs your own command on; the command itself also stays in", OWN_KEPT] + more
+            more = ["the wrapper keeps running your own command; the command itself also stays in", OWN_KEPT] + more
         else:
             was = "no status line before"
         items.append(Item("status line setting", settings_path,
