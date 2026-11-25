@@ -211,9 +211,9 @@ def test_G7_7_operator_name_limit_and_3000_chars():
     asks = [{"uid": f"{n:032x}", "ask": f"A{n}", "status": "open", "kind": "question", "severity": "blocking",
              "title": "x" * 110, "suggested": "y" * 400, "asked_at": c.ts_of(now - timedelta(hours=1))}
             for n in range(1, 41)]
-    text = R.reminder_text("k", "Lane", "m", asks, NY, now, cfg={"operator_name": "Grant",
+    text = R.reminder_text("k", "Lane", "m", asks, NY, now, cfg={"operator_name": "Sam",
                                                                     "reminder_max_items": 20})
-    assert len(text) < 3000 and "wait on Grant:" in text and "If Grant has answered one" in text
+    assert len(text) < 3000 and "wait on Sam:" in text and "If Sam has answered one" in text
     assert re.search(r"\(\+\d+ more: pitboard list\)", text)
     few = R.reminder_text("k", "Lane", "m", asks[:5], NY, now, cfg={"reminder_max_items": 3})
     assert "(+2 more: pitboard list)" in few and few.count("\n- A") == 3

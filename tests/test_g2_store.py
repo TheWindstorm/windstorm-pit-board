@@ -152,10 +152,10 @@ def test_G2_10_config_defaults_file_and_env(tmp_home, monkeypatch):
     assert c.MACHINE.match(cfg["machine"])
     s.ensure_home()
     with open(os.path.join(str(tmp_home), "config.json"), "w") as f:
-        json.dump({"operator_name": "Grant", "display_tz": "America/New_York", "machine": "Studio One!",
+        json.dump({"operator_name": "Sam", "display_tz": "America/New_York", "machine": "Studio One!",
                    "unknown_key": 1}, f)
     cfg = s.config()
-    assert cfg["operator_name"] == "Grant" and cfg["machine"] == "studio-one" and "unknown_key" not in cfg
+    assert cfg["operator_name"] == "Sam" and cfg["machine"] == "studio-one" and "unknown_key" not in cfg
     monkeypatch.setenv("PITBOARD_MACHINE", "box-2")
     monkeypatch.setenv("PITBOARD_TZ", "America/Chicago")
     monkeypatch.setenv("PITBOARD_HUB_URL", "http://100.64.0.5:8765")
