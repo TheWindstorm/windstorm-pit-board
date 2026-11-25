@@ -1344,6 +1344,18 @@
    "test": "",
    "proven": "",
    "issue": 193
+  },
+  {
+   "id": "P111",
+   "codon": "G20.8",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a copy of the 0.1.3 release head: a `latest` runner label planted in the workflow, once in the matrix list and once on a job's own line, turned the suite red each time, by `test_G20_8_standard_github_hosted_runners_only` (the first time by the matrix test beside it as well). The test that P22's row names, `test_G20_8_every_job_names_its_runner_image_never_latest`, stayed green both times: it tries the label reader on made-up workflow text and never reads the workflow files. P22's promise held, by the test beside the one its row names; the gate, which counts a row's test by name, was counting one that a broken workflow does not turn red. Found by planting the fault the row is about, which no run before had done for this row.",
+   "promise": "The test a row names goes red when that row's promise is broken in the tree. P22's named test reads the workflow files itself, with the label reader's own cases kept in it, and is seen red by a planted `latest` label, the output kept and named in the row.",
+   "test": "",
+   "proven": "",
+   "issue": 194
   }
  ],
  "declined": [
