@@ -744,6 +744,15 @@ def cmd_setup(args):
     if args.apply:
         _make_home(setup_mod)
         applied = setup_mod.apply(items)
+        left = any(i.name == "status line setting" and i.action.startswith("keep (it names") for i in items)
+        back = setup_mod.read_back(setup_mod.claude_settings_path(), setup_mod.wrapper_path())
+        if back is not True and not left:                     # P99 (b): Done only after the setting is read back
+            said = setup_mod.describe(items, applied).rsplit("\n", 1)[0]
+            where = leave._short(setup_mod.claude_settings_path())
+            raise Fail(6, said + "\nNOT done: the status line setting in " + where + (
+                " could not be read back." if back is None else
+                " was read back, and it is not taken as the path of Pit Board's wrapper.")
+                + "\nThe steps above were applied. `pitboard uninstall` shows how to take them back.")
     return Out(setup_mod.describe(items, applied), data={"items": [i.as_dict() for i in items],
                                                          "applied": args.apply})
 
@@ -886,7 +895,40 @@ def cmd_version(args):
         copy = None
     status = _status_line(store.home())
     return Out(f"{__version__} ({', '.join(parts)})" + (f"\n{copy}" if copy else "")
-               + "".join(f"\n{ln}" for ln in _open_lines(store.home())) + f"\n{status}", data=data)  # P15: status last
+               + "".join(f"\n{ln}" for ln in _open_lines(store.home()) + _setting_lines(store.home()))
+               + f"\n{status}", data=data)                                               # P15: status last
+
+
+def _setting_lines(home):
+    """P99 (b): the read setup makes before it says Done, made again: is the status line setting taken as the
+    wrapper's path? Nothing is said when it is, or when setup never set it; "could not be read" is the third answer."""
+    from . import leave, setup as setup_mod
+    try:
+        spath, wpath = setup_mod.claude_settings_path(), setup_mod.wrapper_path(home)
+        if not os.path.exists(wpath):
+            return []
+        try:
+            d = leave.read_object(spath) or {}
+        except leave.Unread:
+            return [f"status line setting: {leave._short(spath)} could not be read"]
+        sl = d.get("statusLine")
+        cmd = sl.get("command") if isinstance(sl, dict) else None
+        kind = leave.setting_kind(cmd, wpath)
+        if kind == "unread":
+            return [f"status line setting: statusLine.command in {leave._short(spath)} could not be read"]
+        if kind == "changed":
+            return ["status line setting: names the wrapper in a form setup did not write (yours, left as it is)"]
+        if kind == "ours" and leave.reads_as(cmd, wpath) is not True:
+            copy = leave._shell(os.path.join(home, "bin", "pitboard"))
+            return ["status line setting: written by an older setup, and not read as one path here",
+                    f"  to write it as one word: {copy} setup --minimal --apply"]
+        if kind == "other":
+            rec = leave.read_object(os.path.join(home, leave.SETUP_RECORD)) or {}
+            if any(isinstance(e, dict) and e.get("path") == spath for e in rec.get("files") or []):
+                return ["status line setting: not the wrapper any more (changed since setup)"]
+    except Exception:  # noqa: BLE001                  # never fails `version`
+        return []
+    return []
 
 
 def _open_lines(home):

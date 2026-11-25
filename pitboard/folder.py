@@ -187,11 +187,12 @@ def apply(folder, home=None, plugin=PLUGIN, sessions=None, root=None, run=None):
                 raise RuntimeError(f"claude plugin install failed\n{tail}")
             out.append(f"plugin {plugin}: installed for {folder} only")
         if not (os.path.exists(os.path.join(home, "bin", "pitboard")) and os.path.exists(setup_mod.wrapper_path(home))):
-            items = [i for i in setup_mod.plan_minimal(home=home, root=root) if i.name != "status line setting"]
+            items = setup_mod.plan_minimal(home=home, root=root, setting=False)
             setup_mod.apply(items)
             out.append(f"made the Pit Board home {home}; the user's own status line setting is not touched")
         _, now = _load(ls)
-        now["statusLine"] = {"type": "command", "command": setup_mod.wrapper_path(home), "padding": 0,
+        now["statusLine"] = {"type": "command", "command": setup_mod.leave.one_word(setup_mod.wrapper_path(home)),
+                             "padding": 0,   # P99: one shell word
                              "refreshInterval": 5}
         if home != default_home():   # the home rides in the folder's settings, so any restart keeps it
             now.setdefault("env", {})["PITBOARD_HOME"] = home
