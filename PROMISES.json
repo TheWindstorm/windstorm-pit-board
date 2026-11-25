@@ -947,6 +947,18 @@
    "test": "",
    "proven": "",
    "issue": 163
+  },
+  {
+   "id": "P82",
+   "codon": "G7.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 in a made home on 0.1.3's code, after the skill's owner asked what happens now that one machine's lanes hold several asks with the same ID (IDs are per lane). Three lanes were set up: alpha with A1 to A3, beta with A1 to A4, gamma with A1. \"ok A3\" typed in a session of gamma, which holds no A3: nothing was approved, the agent was told nothing, and the log line says \"nothing\". The operator's answer is lost without a word. \"ok A3\" typed in a session of beta: beta's own A3 was approved, whichever A3 the operator meant. The line to the agent (\"the operator approved A3\") does not name the lane. The board, the list and the reminder each show one lane only, with the lane's name in the board's header. Only `pitboard export --all-lanes` shows every lane's asks side by side.",
+   "promise": "(a) An \"ok\" or \"no\" with an ID that the session's lane does not hold is never silent. The agent is told that no ask of this lane has that ID, and which lanes on this machine hold an open ask by that ID. Nothing is written. (b) Every line that says an ask was approved or declined names the lane it was acted on in. A test plants the three lanes above and types \"ok A3\" and \"no A3\" from each one's session. It is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": 164
   }
  ],
  "declined": [
