@@ -1099,7 +1099,7 @@
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.4",
    "seen": "Seen 2026-11-25 by the skill's owner on their own machine: asks should be \"ranked in the order of how much they're blocking progress\", with \"something that's causing no progress ... at the very top\". Every line should carry how long it has been waiting, in \"weeks, days, hours, minutes\", so that they see \"it's been waiting a week on me\". Read the same day: the three severities (G1.3) are not those levels. `urgent` is about time, not about what is stopped; `blocking` says something is stopped but not what; `can-wait` is \"nothing yet\". The board shows an age (`40h`), but in one unit, and only on the board.",
-   "promise": "(a) Inside each list (P92), the order is by what is stopped: all of the lane's work, then one named piece of work, then nothing yet. Within a level, the longest waiting comes first. There are three levels only. (b) A level above \"nothing yet\" needs the lane to name what is stopped, in a few words. `blocking` and `urgent` asks carry that name, and `add` refuses one without it. A deadline still shows its flag (G5.1) but does not reorder the levels. That changes P84's default order (deadline first), and this row, being the owner's word, takes it. (c) Every line, in every view, carries its waiting time in plain units (13 days, 4 h, 25 min) and what it stops, in a few words. A test plants asks at each level and age, reads the order and the units, and is seen red first. It moves only by the owner's word.",
+   "promise": "(a) Inside each list (P92), the order is by what is stopped: all of the lane's work, then one named piece of work, then nothing yet. Within a level, see (b). There are three levels only. (b) A level above \"nothing yet\" needs the lane to name what is stopped, in a few words. `blocking` and `urgent` asks carry that name, and `add` refuses one without it. A deadline still shows its flag (G5.1) and never moves an ask to another level. Inside a level, an ask that is urgent or due within 24 hours stands before the others, and after that the longest waiting comes first: a deadline is the one thing a waiting time cannot say (the maintainer's ruling of 2026-11-25, which the owner can change when they see it). That changes P84's default order (deadline first), and this row, being the owner's word, takes it. (c) Every line, in every view, carries its waiting time in plain units (13 days, 4 h, 25 min) and what it stops, in a few words. A test plants asks at each level and age, reads the order and the units, and is seen red first. It moves only by the owner's word.",
    "test": "",
    "proven": "",
    "issue": 177
@@ -1127,6 +1127,18 @@
    "test": "",
    "proven": "",
    "issue": 179
+  },
+  {
+   "id": "P97",
+   "codon": "G10.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 in the search for the family's rule 31 (v): the status line wrapper is a shell script that holds two values Pit Board did not write, the person's own status line command and Pit Board's home folder. Both are quoted for the shell, and a trial held: the person's command ran exactly as it runs alone, and a home folder's name ran nothing. Under the maintainer's ruling (v.2), a value quoted for its language needs a planted-characters test in the suite, and none was there.",
+   "promise": "The suite plants characters a shell reads specially (both kinds of quotes, command substitutions, a backslash, a carriage return, a line break) in the person's command and in the home folder's name, and runs the wrapper under sh, bash and dash where present. It checks three things: the person's command gives the same output it gives alone; the command is kept whole for uninstall; and a home folder's name makes no file and runs nothing. Seen red first, with the values put in double quotes in place of the shell quoting: 12 of 33 failed.",
+   "test": "test_G10_5_P97_values_the_wrapper_did_not_write_stay_whole_and_run_nothing",
+   "proven": "",
+   "issue": 180
   }
  ],
  "declined": [
