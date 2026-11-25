@@ -2,12 +2,12 @@
 import json
 import os
 import stat
-import subprocess
 import sys
 from datetime import timedelta
 
 import pytest
 
+from children import run_children
 from pitboard import contract as c
 from pitboard import store as s
 
@@ -90,8 +90,7 @@ def test_G2_5_concurrent_writers_get_unique_ids(tmp_home):
         "'title':'t','suggested':'y','source':'agent'})\n"
         "for _ in range(15): s.append('api', b, lock_timeout=10)\n" % ROOT)
     env = dict(os.environ, PITBOARD_HOME=str(tmp_home), HOME=str(tmp_home) + "-home")   # P51: never the real home
-    procs = [subprocess.Popen([sys.executable, "-c", code], env=env) for _ in range(3)]
-    assert all(p.wait(timeout=60) == 0 for p in procs)
+    assert run_children([[sys.executable, "-c", code]] * 3, timeout=60, env=env) == []   # P102: a red names the child
     events, bad = s.read_log("api")
     ids = [e["ask"] for e in events]
     assert bad == 0 and len(ids) == 45 and len(set(ids)) == 45
