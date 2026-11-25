@@ -145,6 +145,10 @@ def check(folder, home=None, plugin=PLUGIN, sessions=None):
         raise Refused(f"{plugin} is already set here.\nNothing changed.")
     if (d.get("env") or {}).get("PITBOARD_HOME") not in (None, home):
         raise Refused("this folder's settings set another PITBOARD_HOME.\nNothing changed.")
+    try:
+        setup_mod.wrapper_word(home)                    # P99 (a): refused here, before the record is written
+    except ValueError as e:
+        raise Refused(str(e))
     return folder, text, d
 
 
@@ -161,9 +165,11 @@ def plan(folder, home=None, plugin=PLUGIN, sessions=None, root=None):
         lines += [f"{n}. Pit Board home: {home}", "   create: config file, stable launcher copy, status line wrapper "
                   "(the user's own status line setting is not touched)"]
         n += 1
-    extra = "" if home == default_home() else f", and env.PITBOARD_HOME = {home}"
-    lines += [f"{n}. folder status line: {ls}", f"   set statusLine to {setup_mod.wrapper_path(home)}{extra}"
-              + ("" if text is None else " (the rest of the file is kept)")]
+    lines += [f"{n}. folder status line: {ls}",
+              "   set statusLine.command to the wrapper, as one word" + ("" if text is None else " (the rest of the file is kept)"),
+              f"   the wrapper: {setup_mod.wrapper_path(home)}"]
+    if home != default_home():
+        lines.append(f"   and env.PITBOARD_HOME = {home}")
     return lines
 
 
@@ -191,12 +197,13 @@ def apply(folder, home=None, plugin=PLUGIN, sessions=None, root=None, run=None):
             setup_mod.apply(items)
             out.append(f"made the Pit Board home {home}; the user's own status line setting is not touched")
         _, now = _load(ls)
-        now["statusLine"] = {"type": "command", "command": setup_mod.leave.one_word(setup_mod.wrapper_path(home)),
-                             "padding": 0,   # P99: one shell word
-                             "refreshInterval": 5}
+        now["statusLine"] = {"type": "command", "command": setup_mod.wrapper_word(home),   # P99: one shell word
+                             "padding": 0, "refreshInterval": 5}
         if home != default_home():   # the home rides in the folder's settings, so any restart keeps it
             now.setdefault("env", {})["PITBOARD_HOME"] = home
         _write_atomic(ls, json.dumps(now, indent=2) + "\n")
+        if setup_mod.read_back(ls, setup_mod.wrapper_path(home)) is not True:   # P99 (b): said only after the read
+            raise RuntimeError("the folder's status line setting was not read back as the path of Pit Board's wrapper")
         out.append(f"folder status line: {ls}")
     except Exception as e:
         undo(folder, run=run)

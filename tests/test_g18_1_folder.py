@@ -4,6 +4,7 @@ import io
 import json
 import os
 import stat
+import subprocess
 
 import pytest
 
@@ -273,3 +274,47 @@ def test_G18_1_folder_names_a_key_github_refused():
                             "git@github.com: Permission denied (publickey).\nfatal: Could not read from remote repository.\n")
     assert unwrapped(text.splitlines())[0] == SSH_ONLY and unwrapped(text.splitlines())[2].startswith("✘")
     assert F.error_text("stand-in: install failed on purpose\n", "") == "stand-in: install failed on purpose"
+
+
+@pytest.mark.parametrize("name", ["pb home", "pb%home%s", "pb$HOME$x", 'pb"home', "pb\\home", "pb'home"])
+def test_G18_1_P99_the_one_folder_road_writes_the_setting_as_one_word(world, tmp_path, monkeypatch, name):
+    """P99 on the one-folder road: with a Pit Board home whose path holds a space, a percent sign, a dollar sign, a
+    quote of either kind or a backslash, the folder's statusLine.command is one shell word. Run the way Claude Code
+    runs it (/bin/sh -c, the setting as one string), it is the wrapper that runs: the person's own line comes out."""
+    home, pb, lane = world
+    (home / ".claude" / "settings.json").write_text('{"statusLine": {"type": "command", "command": "printf mine"}}')
+    other = str(tmp_path / name)
+    monkeypatch.setenv("PITBOARD_HOME", other)
+    rc, out, err = run("setup", "--folder", str(lane))
+    assert rc == 0, err
+    assert not (lane / ".claude").exists()
+    F.apply(str(lane), root=ROOT)
+    cmd = json.loads(ls_of(lane).read_text())["statusLine"]["command"]
+    r = subprocess.run(["/bin/sh", "-c", cmd], input=b'{"session_id":"s-p99","cwd":"/"}', capture_output=True, timeout=30,
+                       cwd=str(lane), env={"PATH": os.environ["PATH"], "HOME": str(home), "PITBOARD_HOME": other})
+    assert (r.returncode, r.stdout, r.stderr) == (0, b"mine", b"")
+    assert "   set statusLine.command to the wrapper, as one word\n   the wrapper: " in out
+    assert S.leave.reads_as(cmd, os.path.join(other, "statusline.sh")) is True
+    monkeypatch.delenv("PITBOARD_HOME")                 # the undo reads the home from the record
+    F.undo(str(lane))
+    assert not (lane / ".claude").exists()
+
+
+def test_G18_1_P99_the_one_folder_road_says_done_only_after_it_read_the_setting_back(world, tmp_path, monkeypatch):
+    """Two faults planted. The path written as it stands (what 0.1.3 did): refused before the folder is touched. A
+    setting that is not read back as the wrapper's path after the write: the step fails, the folder is put back."""
+    home, pb, lane = world
+    monkeypatch.setenv("PITBOARD_HOME", str(tmp_path / "pb home"))
+    with monkeypatch.context() as m:
+        m.setattr(S.leave, "one_word", lambda path: path)
+        with pytest.raises(F.Refused, match="cannot write as one word"):
+            F.apply(str(lane), root=ROOT)
+        assert not (lane / ".claude").exists()
+    with monkeypatch.context() as m:
+        m.setattr(S, "read_back", lambda settings_path, wpath: False)
+        with pytest.raises(RuntimeError, match="was not read back as the path of Pit Board's wrapper; undone"):
+            F.apply(str(lane), root=ROOT)
+        assert not (lane / ".claude").exists()
+    F.apply(str(lane), root=ROOT)                       # and with neither fault it goes through
+    assert S.read_back(str(ls_of(lane)), os.path.join(str(tmp_path / "pb home"), "statusline.sh")) is True
+

@@ -62,6 +62,18 @@ def read_back(settings_path, wpath):
     return False if cmd is None else leave.reads_as(cmd, wpath)
 
 
+def wrapper_word(home):
+    """P99 (a): the wrapper's path as the one shell word a status line setting holds. Refused before the first write,
+    the character named, when this version cannot write the path so that it is read back as that path."""
+    wpath = wrapper_path(home)
+    word = leave.one_word(wpath)
+    if leave.reads_as(word, wpath) is not True:
+        odd = next((c for c in wpath if c not in leave._PLAIN and not c.isalnum() and c not in " '\"$`\\"), "?")
+        raise ValueError(f"the path of Pit Board's home holds a character this version cannot write as one word: "
+                         f"{odd!r}\n  home: {leave._short(home)}\nNothing changed.")
+    return word
+
+
 def original_from_wrapper(path):
     """The operator's own status line command, as recorded in our wrapper (None if none)."""
     raw = _read(path)
@@ -401,11 +413,7 @@ def plan_minimal(home=None, settings_path=None, root=None, setting=True):
     root = root or _root()
     items = []
     wpath = wrapper_path(home)
-    word = leave.one_word(wpath)
-    if leave.reads_as(word, wpath) is not True:           # P99 (a): refused before the first write, the character named
-        odd = next((c for c in wpath if c not in leave._PLAIN and not c.isalnum() and c not in " '\"$`\\"), "?")
-        raise ValueError(f"the path of Pit Board's home holds a character this version cannot write as one word: "
-                         f"{odd!r}\n  home: {leave._short(home)}\nNothing changed.")
+    word = wrapper_word(home)
 
     cfg_path = os.path.join(home, "config.json")
     if os.path.exists(cfg_path):
