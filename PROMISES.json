@@ -1416,6 +1416,18 @@
    "test": "",
    "proven": "",
    "issue": 199
+  },
+  {
+   "id": "P117",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 on the 0.1.3 release head: P50's test runs the README's by-hand line, for a home set up before 0.1.3, against a settings file of mode 600 and one of mode 644, and passes when the shell's umask is 022. Started under umask 077 the file of mode 644 comes back 600, and under umask 027 it comes back 640. The line opens its temporary file at the settings file's mode, and the umask of the shell that runs the line takes its own bits from that mode. A file of mode 600 kept its mode under each of the three, and the file was never left wider than it was. P50 promised that the line keeps the file's mode: that holds only for the bits the umask does not take. Each proof of P50 on a real machine used a settings file of mode 600, which no umask narrows. Found while building P116, by starting the whole suite under umask 077.",
+   "promise": "The README's by-hand line, run exactly as printed, leaves the settings file with the mode it had, whatever the umask of the shell that runs it: the line sets the temporary file's mode after it opened it and before the file takes the settings file's place. P50's test runs a file of mode 600 and one of mode 644, each under umask 022, 027 and 077, and reads the mode after; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 200
   }
  ],
  "declined": [
