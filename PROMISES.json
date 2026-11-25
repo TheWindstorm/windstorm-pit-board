@@ -1007,6 +1007,54 @@
    "test": "",
    "proven": "",
    "issue": 168
+  },
+  {
+   "id": "P87",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 in made homes on 0.1.3's code (`setup --minimal`, then `--apply`), for the family's rule 11: what will refuse is asked before the first write. - Before any write, and nothing on disk after: a settings file that cannot be read, or that is not JSON, stops the plan and the apply alike with exit 6. The line names the error and the file but does not say that nothing changed. - After the first write: when Claude Code's settings folder cannot be written (the folder read-only, with or without a settings file in it), the plan reads clean and promises 7 steps. The apply makes Pit Board's home, the setup record, the config file, the launcher copies and the status line wrapper, then stops at step 7 with exit 1 and one line: \"pitboard: unexpected error: PermissionError: [Errno 13] Permission denied: <path>\". The person is not told that six steps were done, that their settings file is unchanged, or how to take the steps back. Running the apply again stops the same way. `pitboard uninstall --apply` does take every made thing away and leaves the settings file as it was. - A read-only settings file (mode 444) in a writable folder is written over at 600. The plan says so before the apply (\"the file is 444 now and is written private (600)\"), so that one is said first.",
+   "promise": "(a) The plan reads, before any write, whether every file and folder the apply will write can be written: Claude Code's settings folder and file, and Pit Board's home. What cannot be written is a refusal of the plan and of the apply alike, with the path, the reason and \"Nothing changed\". (b) A write that still fails during the apply is never \"unexpected error\". The person is told which steps were done, which step failed and why, that their settings file is as it was (when it is), and the one command that takes the done steps back. (c) A settings file that cannot be read or is not JSON gets a refusal that ends with \"Nothing changed\". A test plants each case above, is seen red first, and lists the home before and after.",
+   "test": "",
+   "proven": "",
+   "issue": 170
+  },
+  {
+   "id": "P88",
+   "codon": "G10.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 by the skill's owner on their own machine, the first time they used the board: the red count of open asks showed in Claude Code's status line, they clicked it, and nothing opened. Nothing on the screen said how to open the asks. Typing `pb` into the session does show the board without taking a turn from the agent, but it types into the session, and nothing said it was there. Read the same day: Claude Code's status line passes OSC 8 links (Ctrl+click, or Cmd+click on macOS) when the terminal supports them. Its documentation names iTerm2, Kitty and WezTerm, says Terminal.app does not, and gives `FORCE_HYPERLINK=1` for a terminal it does not detect. A terminal multiplexer may strip the link: tmux 3.4 passes one only when `hyperlinks` is in its terminal features, and the default list there does not hold it.",
+   "promise": "(a) The count is a door. In a terminal that passes links, the count is an OSC 8 link to a page Pit Board keeps in its own home: every lane's open asks on this machine, each one whole (P89, P90). Opening it is one action that types nothing into a session and takes no turn from an agent. The page is rebuilt on every write, and uninstall removes it. (b) Where no link can pass, the way to open the asks is said beside the count or one step away, as the command for another terminal. (c) Setup's plan says whether this terminal and multiplexer will pass the link, and the one line that turns it on. Setup never changes the terminal's or the multiplexer's own settings by itself (as G12.2). A test reads the status output for the link and its target and opens the page from it, and is seen red first. The row is proven only when the skill's owner opens the asks from the count on their own machine, and it moves only by their word.",
+   "test": "",
+   "proven": "",
+   "issue": 171
+  },
+  {
+   "id": "P89",
+   "codon": "G6.8",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 by the skill's owner on their own machine: an ask's title, its steps and its why end in \"…\" at about 100 columns, in `pitboard board` and in `pitboard show A1` alike, and `show` has no way to print a field whole. An ask whose steps are cut cannot be acted on. The cause is the plan's own rule G6.8: all text fits 100 columns, and longer text is cut with \"…\".",
+   "promise": "(a) `pitboard show ID` prints every word of the ask, every field, wrapped at the width and never cut, in a terminal and in a pipe alike. G6.8 is amended to say so. (b) The board, the list and the SessionStart reminder may stay short. Any line they cut ends with the way to read that ask whole (`pitboard show ID`). A test plants an ask with a 600-character title, steps and why, reads it whole at widths 40 and 100 and through a pipe, and is seen red first. The row is proven only when the skill's owner reads an ask whole on their own machine, and it moves only by their word.",
+   "test": "",
+   "proven": "",
+   "issue": 172
+  },
+  {
+   "id": "P90",
+   "codon": "G11.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 by the skill's owner on their own machine: they work across many lanes, but `pitboard board` and `pitboard list` show one lane, the session's own when no `--lane` is given. No view shows every lane's open asks, and one coordinator keeps a second list by hand for that.",
+   "promise": "One view of every lane's open asks on a machine, with the lane and the ask's ID on each line. P84's list is that view: it is built once, and P84's test covers its order and its times. This row adds the person's side. The view is what the count's door opens (P88), each ask in it can be read whole (P89), and it is proven only when the skill's owner reads every lane's asks in it on their own machine. It moves only by their word.",
+   "test": "",
+   "proven": "",
+   "issue": 173
   }
  ],
  "declined": [
