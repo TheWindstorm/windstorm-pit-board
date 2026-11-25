@@ -862,6 +862,18 @@
    "test": "",
    "proven": "",
    "issue": 138
+  },
+  {
+   "id": "P74",
+   "codon": "G21.14",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, the family's rule 32 (a proven line that still owes part is not proof), read in tests/test_g21_promises.py at the 0.1.3 release head: the gate after a release (unproven_problems, called by test_G21_14_the_version_after_needs_proof_on_a_real_machine) counts a row due in an earlier version as proven whenever its proven line is not empty. There is no field for what is still owed, and Pit Board has no second gate (none before a tag for a row whose test leans on a stand-in). A word search over the file's 40 proven lines finds 15 that mention \"steered\", \"not seen\" or \"half\" (P16, P17, P25, P29, P30, P34, P41, P42, P43, P45, P47, P48, P49, P50, P54); each is read one by one as owed on a machine we have, or kept as \"not seen\" with why and a date.",
+   "promise": "A row may carry proof_owed: words that say what is still to be seen on a real machine; absent, empty or only spaces means nothing is owed. The gate after a release counts a row as proven only when its proven line is not empty and its proof_owed holds nothing, and its message names what is owed; it is never decided by words found in the proven line. One function decides, called by the gate's own test and by the rule's test. The rule's test reads the file's own rows first, then rows it makes itself: owed with a proven line (refused, the message carries what is owed), owed with no proven line (refused), no field but the words \"not proven yet\" in the line (passes), an empty field, a field of spaces, a row that ships in the version itself (not looked at). Seen red first on a real row that owes. A proven line written while part is unseen says what was seen, and the rest goes into proof_owed in the same commit.",
+   "test": "",
+   "proven": "",
+   "issue": 141
   }
  ],
  "declined": [
