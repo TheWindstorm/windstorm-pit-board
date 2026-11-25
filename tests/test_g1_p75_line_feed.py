@@ -20,8 +20,16 @@ from pitboard import cli, contract as c, leave, lane as L, store as s
 SID = "00000000-0000-4000-8000-000000000075"
 KEY = "api-server"                  # the lane key of the session name "API Server"
 # every character str.splitlines() ends a line at; "\n" and "\r" are written escaped by json.dumps
-BREAKS = [" ", " ", "\u0085", "\x0b", "\x0c", "\x1c", "\x1d", "\x1e", "\r", "\n", "\r\n"]
-RAW_BEFORE = (" ", " ", "\u0085")   # the three the old writer left raw
+BREAKS = ["\u2028", "\u2029", "\u0085", "\x0b", "\x0c", "\x1c", "\x1d", "\x1e", "\r", "\n", "\r\n"]
+RAW_BEFORE = ("\u2028", "\u2029", "\u0085")   # the three the old writer left raw
+
+
+def test_G1_1_P75_the_planted_characters_are_the_ones_named():
+    """By code point, so a tool that tidies this file (turning a character into a space) fails here."""
+    assert [[ord(x) for x in b] for b in BREAKS] == [[0x2028], [0x2029], [0x85], [0x0B], [0x0C], [0x1C], [0x1D],
+                                                    [0x1E], [0x0D], [0x0A], [0x0D, 0x0A]]
+    assert [ord(x) for x in RAW_BEFORE] == [0x2028, 0x2029, 0x85]
+    assert all(len(f"x{b}y".splitlines()) == 2 for b in BREAKS)   # each one is a line end for splitlines()
 
 
 @pytest.fixture(autouse=True)
@@ -195,7 +203,7 @@ def older_cache_over_a_cut_event():
     """The log holds a cut event (as an older reader saw it) and the cache an older copy wrote: it matches the
     log's size, has no reader mark and no doubled list, and does not hold the cut ask."""
     with open(s.log_path(KEY), "ab") as f:
-        f.write(old_line(ask="A2", title="two MLOST"))
+        f.write(old_line(ask="A2", title="two\u2028MLOST"))
     st = s.read_json(s.state_path(KEY))
     st.pop("reader", None), st.pop("doubled", None)
     st["log_bytes"] = os.path.getsize(s.log_path(KEY))
@@ -228,8 +236,9 @@ def test_G1_1_P75_an_older_cache_then_an_answer_on_a_closed_id_keeps_the_lost_as
 def doubled_log():
     """An older copy's log after it lost A2, rebuilt and gave A2 out again (both written whole here)."""
     s.ensure_home()
-    lines = [old_line(ask="A1", title="one MPLAIN"), old_line(ask="A2", title="two MFIRST"),
-             old_line(ask="A2", title="three MLATER")]
+    lines = [old_line(ask="A1", title="one MPLAIN", suggested="yes one"),
+             old_line(ask="A2", title="two MFIRST", suggested="yes two"),
+             old_line(ask="A2", title="three MLATER", suggested="yes three")]
     with open(s.log_path(KEY), "ab") as f:
         f.write(b"".join(lines))
     uids = [json.loads(x)["uid"] for x in lines]
@@ -344,7 +353,7 @@ def test_G7_2_P75_the_operator_typing_ok_on_a_doubled_id_is_told_not_dropped(hom
 def test_G18_3_P75_uninstall_counts_an_ask_whose_title_holds_u2028(home):
     ok("add", "--title", "one MPLAIN", "--suggested", "y")
     with open(s.log_path(KEY), "ab") as f:
-        f.write(old_line(ask="A2", title="two MLOST") + old_line(ask="A3", title="three\u0085MNEL"))
+        f.write(old_line(ask="A2", title="two\u2028MLOST") + old_line(ask="A3", title="three\u0085MNEL"))
     assert leave.count_asks(s.home()) == (3, 3, 1)
 
 
@@ -352,9 +361,9 @@ def test_G3_2_P75_the_session_name_is_read_from_a_transcript_holding_raw_u2028(h
     t = home / "t.jsonl"
     with open(t, "wb") as f:
         f.write(json.dumps({"type": "custom-title", "customTitle": "Old Name", "sessionId": SID}).encode() + b"\n")
-        f.write(json.dumps({"type": "user", "text": "a b c\u0085d"}, ensure_ascii=False).encode() + b"\n")
+        f.write(json.dumps({"type": "user", "text": "a\u2028b\u2029c\u0085d"}, ensure_ascii=False).encode() + b"\n")
         f.write(json.dumps({"type": "custom-title", "customTitle": "API Server", "sessionId": SID}).encode() + b"\n")
-        f.write(json.dumps({"type": "user", "text": " " * 40}, ensure_ascii=False).encode() + b"\n")
+        f.write(json.dumps({"type": "user", "text": "\u2028" * 40}, ensure_ascii=False).encode() + b"\n")
     assert L.title_from_transcript(str(t)) == "API Server"
 
 
@@ -369,3 +378,41 @@ def test_G1_1_P75_a_line_that_starts_or_ends_with_one_is_still_read(home, edge):
     events, bad = c.read_events(log_bytes())
     assert [e["ask"] for e in events] == ["A1", "A2"] and bad == 0
     assert "MSTART" in ok("board", "--plain") and "MEND" in ok("board", "--plain")
+
+
+@pytest.mark.parametrize("mode", ("cache", "gone"))
+@pytest.mark.parametrize("which", ("first", "later"))
+@pytest.mark.parametrize("cmd", ("ok", "no"))
+def test_G1_1_P75_ok_and_no_by_uid_hand_back_the_ask_they_wrote(home, mode, which, cmd):
+    first, later = doubled_log()
+    state_of(mode)
+    target, other = (first, later) if which == "first" else (later, first)
+    out = js(cmd, target)
+    assert out["ok"] and [a["uid"] for a in out["asks"]] == [target], out
+    want = {"ok": "yes two" if target == first else "yes three", "no": "No."}[cmd]
+    assert out["asks"][0]["status"] == "answered" and out["asks"][0]["answer"] == want
+    assert target in out["message"] and other not in out["message"], out["message"]
+
+
+@pytest.mark.parametrize("mode", ("cache", "gone"))
+def test_G1_1_P75_ok_all_on_a_doubled_log_hands_back_each_ask_once_with_its_own_answer(home, mode):
+    first, later = doubled_log()
+    state_of(mode)
+    out = js("ok", "all")
+    got = {a["uid"]: a["answer"] for a in out["asks"]}
+    assert len(out["asks"]) == 3 and len(got) == 3, out["asks"]
+    assert got[first] == "yes two" and got[later] == "yes three"
+    assert first in out["message"] and later in out["message"], out["message"]
+
+
+def test_G7_2_P75_the_operator_typing_ok_all_on_a_doubled_log_hears_every_answer(home):
+    first, later = doubled_log()
+    t = home / "t.jsonl"
+    t.write_text(json.dumps({"type": "custom-title", "customTitle": "API Server", "sessionId": SID}) + "\n")
+    base = {"session_id": SID, "cwd": str(home), "transcript_path": str(t), "session_title": "API Server"}
+    run("hook", "session-start", stdin=json.dumps(dict(base, hook_event_name="SessionStart", source="startup")))
+    code, text = run("hook", "user-prompt-submit",
+                     stdin=json.dumps(dict(base, hook_event_name="UserPromptSubmit", prompt="ok all")))
+    told = json.loads(text)["hookSpecificOutput"]["additionalContext"]
+    assert code == 0 and '"yes one"' in told and '"yes two"' in told and '"yes three"' in told, told
+    assert f'A2 ({first}): "yes two"' in told and f'A2 ({later}): "yes three"' in told, told

@@ -317,14 +317,19 @@ def _write(ctx, build, full=False):
         raise Fail(7, f"pitboard: lane busy: {ctx.key} (try again)")
 
 
-def _asks_of(state, ids):
-    by_id = {a["ask"]: a for a in state["asks"]}
-    return [by_id[i] for i in ids if i in by_id]
-
-
 def _asks_by_uid(state, uids):
     by_uid = {a["uid"]: a for a in state["asks"]}
     return [by_uid[u] for u in uids if u in by_uid]
+
+
+def _label(a, state):
+    """P75: an ask's ID, with its uid when the lane holds two asks under that ID."""
+    return f"{a['ask']} ({a['uid']})" if a["ask"] in (state.get("doubled") or []) else a["ask"]
+
+
+def _apart(asks, state):
+    """P75: one line per written ask whose ID names two asks here, so a line of IDs tells them apart."""
+    return [f"  {a['ask']} {a['uid']}: {a['title']}" for a in asks if a["ask"] in (state.get("doubled") or [])]
 
 
 def _said(ctx, line):
@@ -362,7 +367,7 @@ def cmd_add(args):
                                    session_id=ctx.session_id, by="agent", data=data)
     written, state = _write(ctx, build)
     ev = written[0]
-    ask = _asks_of(state, [ev["ask"]])
+    ask = _asks_by_uid(state, [ev["uid"]])
     f = flags.flag(ask[0], escalate_after_hours=ctx.cfg["escalate_after_hours"],
                    urgent_deadline_hours=ctx.cfg["urgent_deadline_hours"]) if ask else flags.RED
     msg = f'{ev["ask"]} recorded ({flags.word(f)}). Ask it in chat as: "{ev["ask"]}: {ev["data"]["title"]}"'
@@ -417,16 +422,17 @@ def _ids(raw):
 
 def cmd_ok(args):
     ctx = _Ctx(args)
-    picked, skipped, state = approve(ctx, args.ids)
+    picked, skipped, state, asks = approve(ctx, args.ids)
     parts = [f"Approved: {', '.join(picked)}." if picked else "Nothing approved."]
     if skipped:
         parts.append(f"Skipped (no suggested answer): {', '.join(skipped)}.")
-    return Out(_said(ctx, " ".join(parts)), picked, _asks_of(state, picked), {"skipped": skipped})
+    text = "\n".join([" ".join(parts)] + _apart(asks, state))
+    return Out(_said(ctx, text), picked, asks, {"skipped": skipped})
 
 
 def approve(ctx, raw_ids):
     """The ok logic (G6.2), shared with the UserPromptSubmit hook (G7.2 step 2).
-    Returns (approved IDs, skipped IDs, state)."""
+    Returns (approved IDs, skipped IDs, state, the approved asks as written: found by uid, each once, P75)."""
     every = [r.lower() for r in raw_ids] == ["all"]
     ids = [] if every else _ids(raw_ids)
     picked, skipped = [], []
@@ -446,18 +452,20 @@ def approve(ctx, raw_ids):
             picked.append(a["ask"])
             events.append(ctx.event("answered", a, "operator", {"answer": a["suggested"], "via": "ok"}))
         return events
-    _, state = _write(ctx, build)
-    return list(picked), list(skipped), state
+    written, state = _write(ctx, build)
+    return list(picked), list(skipped), state, _asks_by_uid(state, [e["uid"] for e in written])
 
 
 def cmd_no(args):
     ctx = _Ctx(args)
-    ids, state = decline(ctx, args.ids)
-    return Out(_said(ctx, f"Declined: {', '.join(ids)}."), ids, _asks_of(state, ids))
+    ids, state, asks = decline(ctx, args.ids)
+    text = "\n".join([f"Declined: {', '.join(ids)}."] + _apart(asks, state))
+    return Out(_said(ctx, text), ids, asks)
 
 
 def decline(ctx, raw_ids):
-    """The no logic (G6.2), shared with the UserPromptSubmit hook (G7.2 step 3)."""
+    """The no logic (G6.2), shared with the UserPromptSubmit hook (G7.2 step 3).
+    Returns (declined IDs, state, the declined asks as written: found by uid, each once, P75)."""
     ids = _ids(raw_ids)
 
     def build(view):
@@ -468,7 +476,7 @@ def decline(ctx, raw_ids):
             events.append(ctx.event("answered", a, "operator", {"answer": "No.", "via": "no"}))
         return events
     written, state = _write(ctx, build)
-    return [e["ask"] for e in written], state
+    return [e["ask"] for e in written], state, _asks_by_uid(state, [e["uid"] for e in written])
 
 
 def _close(etype, word, allowed, data_of):
