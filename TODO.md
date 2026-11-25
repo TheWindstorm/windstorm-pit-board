@@ -52,6 +52,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] 2026-11-17 Plan 1.5: G7.5 ignores PermissionRequest for AskUserQuestion (C7 finding, docs/CONTRACTS.md); before G7.5 is built (M2).
 
 ## Later
+- [ ] Seen 2026-11-25 by the skills' department head, making an ask smaller (no row, no date): `pitboard update` took a new title, why, steps and deadline in place and kept the ID, which the operator needed. A step is held to 200 characters (contract.py STEP_MAX); a pre-filled link of 188 left five characters for words. If links in steps grow, that limit is the first thing they meet.
 - [ ] M2 every lane, updating itself · M3 master list (view only), with the harness matrix (G17.4 to G17.10) · M4 answers from the page · M5 public release and other harnesses.
 
 ## Done
