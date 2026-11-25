@@ -65,6 +65,7 @@ The plan is [DNA-STRAND-MASTER-PLAN.md](DNA-STRAND-MASTER-PLAN.md). This list tr
 - [ ] 2026-11-25 P113 (#196, G2, due 0.1.5): `version` and setup's plan say "other accounts" for Pit Board's own entries only where another account can really write (a group with another member, or everyone, and the way in open); else they say what was read, the mode (seen: "open to other accounts: 3" where each account's group has one member).
 - [ ] 2026-11-25 P114 (#197, G18.1, due 0.1.5): the line `version` prints to close open entries names everything its step changes, or closing gets a step of its own (seen: the step also replaced the status line wrapper, backup kept; settings untouched).
 - [ ] 2026-11-25 P115 (#198, G18.3, due 0.1.5): uninstall's census names each kept thing once (seen on a Mac with an install for every project and one for a folder: the same version folder line printed twice).
+- [ ] 2026-11-25 P116 (#199, G20.3, due 0.1.5): the suite sets the launcher's umask floor for the whole run and fails a test that leaves the umask changed (seen: six tests of test_g6_version_copy.py fail when run alone under umask 002, and pass in the whole suite only because an earlier test leaves the umask at 022; two fixtures put back 0 instead of the old umask).
 
 ## Waiting on
 - [ ] 2026-11-17 Plan 1.5: G7.5 ignores PermissionRequest for AskUserQuestion (C7 finding, docs/CONTRACTS.md); before G7.5 is built (M2).

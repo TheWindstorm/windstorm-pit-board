@@ -1404,6 +1404,18 @@
    "test": "",
    "proven": "",
    "issue": 198
+  },
+  {
+   "id": "P116",
+   "codon": "G20.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 on the 0.1.3 release head, on a machine whose shells start with umask 002: `tests/test_g6_version_copy.py` run by itself fails all six of its tests (each reads two extra lines from `pitboard version`: `Pit Board's own, open to other accounts: N` and the command under it), and passes when the shell's umask is 022. In the whole suite the six pass, and a trace of the umask at the start of every test says why. The run starts with the shell's umask. The fixture of `tests/test_g10_p54_no_python.py` means to add 022 for its own test and to put the old umask back, and puts back 0, so every test after its first runs with umask 0 (the fixture of `tests/test_g18_setup.py` is written the same way). Then one test of `tests/test_g21_floor.py` runs the launcher's first act inside the test's own process; that act adds 022, and the test leaves it so, and every test after it, the six among them, runs with 022. CI's runners start with 022 and run the whole suite, so every leg was green. The tool is not at fault here: the launcher adds 022 before every command, hook and status line; these tests call a command inside the test's own process, past the launcher.",
+   "promise": "The suite gives the whole run the umask the launcher gives every command (022 added to the shell's), before anything imports the tool, and no test leaves the process umask changed for the next one: a test that does fails in its own result, and the umask is put back. A gate test runs `tests/test_g6_version_copy.py` by itself in a child started under umask 000, 002 and 077 and sees it pass each time, and plants a test that leaves the umask changed and sees it caught; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 199
   }
  ],
  "declined": [
