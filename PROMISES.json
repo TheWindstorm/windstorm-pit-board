@@ -1392,6 +1392,18 @@
    "test": "",
    "proven": "",
    "issue": 197
+  },
+  {
+   "id": "P115",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a test account on a Mac (macOS 13, Claude Code 2.1.332, the 0.1.3 release head), with Pit Board installed for every project and for one folder as well: after `pitboard uninstall --apply` the census printed the same line twice, one under the other: \"kept: ~/.claude/plugins/cache/thewindstorm/windstorm-pit-board/0.1.3 (Pit Board's code, a version folder Claude Code keeps in its plugin cache ...)\". By the code, the version folders are listed once for each install that was taken off, and both installs keep their code in the same folder. In a guest with the one install for every project each folder was named once.",
+   "promise": "The census names a kept thing once, however many installs led to it. A test takes Pit Board off a home with an install for every project and one for a folder, and finds no two census lines alike; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 198
   }
  ],
  "declined": [
