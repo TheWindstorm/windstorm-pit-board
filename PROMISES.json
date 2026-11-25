@@ -1212,6 +1212,30 @@
    "test": "",
    "proven": "",
    "issue": 182
+  },
+  {
+   "id": "P100",
+   "codon": "G21.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25, read in the release checks (tests/test_g21_versions.py) while the number of a small release was being chosen: they read a tag as `v` and three numbers, and a CHANGELOG.md release heading as three numbers with a day in brackets. A tag or a heading in any other form (four numbers, a suffix, no `v`, no brackets) was not refused. The checks did not see it at all, so the fresh clone of such a tag passed with none of its labels compared. No such tag or heading has been published: the tags are v0.1.0, v0.1.1 and v0.1.2.",
+   "promise": "A tag on the checked-out commit that begins like a version and is not `v` and three numbers is refused, and the refusal names the tag. A CHANGELOG.md heading that begins like a version and is not three numbers followed by a day, or by `not yet released`, in brackets is refused the same way: on a branch and at a tag, above the top dated heading and below it. A tag that is not a version at all and a plan's heading are left alone. The test plants six such headings and five such tags, and clones a planted tag the way the release step does. Seen red first: with each check standing in for the old read, which sees nothing, the test fails on the first planted heading and on the first planted tag.",
+   "test": "test_G21_1_a_tag_or_heading_that_begins_like_a_version_and_is_not_three_numbers_is_refused_by_name",
+   "proven": "",
+   "issue": 183
+  },
+  {
+   "id": "P101",
+   "codon": "G7.0",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25, read in hooks/hooks.json and its tests: each of the four commands takes the plugin's folder from Claude Code's variable inside double quotes, and so does every other variable in them. What holds this is one test that compares the four commands with one exact text. A command of another shape, which the plan already has for later hooks, would be written against a new text, and nothing would say whether its variables are quoted.",
+   "promise": "A test reads every command in hooks/hooks.json, whatever its shape, and holds three things: the command names the plugin's folder through Claude Code's variable; that variable and every other variable in the command stand inside double quotes; and a command the check cannot read (a command substitution, a quote left open) is a problem, not a pass. A problem names the event and the variable. Seen red first on planted commands: the quotes dropped at the variable, at a variable set from it and at a third variable, single quotes in place of double, and a command that does not name the variable.",
+   "test": "test_G7_0_every_variable_in_a_hook_command_stands_inside_double_quotes",
+   "proven": "",
+   "issue": 184
   }
  ],
  "declined": [

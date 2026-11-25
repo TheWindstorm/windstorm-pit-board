@@ -122,6 +122,75 @@ def test_G7_0_command_runs_through_the_launcher(home):
     assert json.loads(r.stdout)["hookSpecificOutput"]["hookEventName"] == "SessionStart"
 
 
+PLUGIN_VAR = "CLAUDE_PLUGIN_ROOT"
+
+
+def hook_commands(obj):
+    """Every command in a hooks.json object, with its event: (event, command)."""
+    return [(event, hk["command"]) for event, entries in obj["hooks"].items() for entry in entries
+            for hk in entry["hooks"] if hk.get("type") == "command"]
+
+
+def quote_problems(event, cmd):
+    """P101: where a variable in a hook command does not stand inside double quotes. A command this cannot read
+    (a command substitution, a quote left open) is a problem too, never a pass."""
+    out, names, state, i = [], [], None, 0
+    while i < len(cmd):
+        ch = cmd[i]
+        if state != "'" and ch == "\\":
+            i += 2
+            continue
+        if state != "'" and (ch == "`" or cmd.startswith("$(", i)):
+            return [f"{event}: the command holds a command substitution, which this check cannot read"]
+        m = re.match(r"\$\{?([A-Za-z_][A-Za-z0-9_]*)", cmd[i:]) if ch == "$" else None
+        if state is None and ch in "'\"":
+            state = ch
+        elif ch == state:
+            state = None
+        elif m:
+            names.append(m.group(1))
+            if state is None:
+                out.append(f"{event}: ${m.group(1)} stands outside double quotes")
+            elif state == "'" and m.group(1) == PLUGIN_VAR:
+                out.append(f"{event}: ${m.group(1)} stands inside single quotes")
+        i += 1
+    if state:
+        out.append(f"{event}: a quote is not closed")
+    if PLUGIN_VAR not in names:
+        out.append(f"{event}: the command does not name ${PLUGIN_VAR}")
+    return out
+
+
+def test_G7_0_every_variable_in_a_hook_command_stands_inside_double_quotes():
+    """P101: read from the file, whatever shape a later command takes: each command names the plugin's folder through
+    Claude Code's variable, and that variable and every other one stand inside double quotes."""
+    with open(os.path.join(ROOT, "hooks", "hooks.json"), encoding="utf-8") as f:
+        cmds = hook_commands(json.load(f))
+    assert {event for event, _ in cmds} == set(HOOK_TABLE.values())
+    assert [p for event, cmd in cmds for p in quote_problems(event, cmd)] == []
+    good = cmds[0][1]
+    for change, want in [
+        (('R="${CLAUDE_PLUGIN_ROOT}"', 'R="$CLAUDE_PLUGIN_ROOT"'), []),                  # without braces, in quotes
+        (('"$R/pitboard/launch.py" hook', '"$R"/pitboard/launch.py hook'), []),          # the variable alone in quotes
+        (('R="${CLAUDE_PLUGIN_ROOT}"', 'R=${CLAUDE_PLUGIN_ROOT}'), ["E: $CLAUDE_PLUGIN_ROOT stands outside double quotes"]),
+        (('R="${CLAUDE_PLUGIN_ROOT}"', 'R=$CLAUDE_PLUGIN_ROOT'), ["E: $CLAUDE_PLUGIN_ROOT stands outside double quotes"]),
+        (('R="${CLAUDE_PLUGIN_ROOT}"', "R='${CLAUDE_PLUGIN_ROOT}'"), ["E: $CLAUDE_PLUGIN_ROOT stands inside single quotes"]),
+        (('[ -f "$R/pitboard/launch.py" ]', '[ -f $R/pitboard/launch.py ]'), ["E: $R stands outside double quotes"]),
+        (('exec "$P"', 'exec $P'), ["E: $P stands outside double quotes"]),
+        (('hook session-start', 'hook session-start "'), ["E: a quote is not closed"]),
+        (('R="${CLAUDE_PLUGIN_ROOT}"', 'R="$(dirname "$0")"'),
+         ["E: the command holds a command substitution, which this check cannot read"]),
+        (('R="${CLAUDE_PLUGIN_ROOT}"', 'R="/opt/pit board"'), ["E: the command does not name $CLAUDE_PLUGIN_ROOT"]),
+    ]:
+        bad = good.replace(*change)
+        assert bad != good, change
+        assert quote_problems("E", bad) == want, change
+    planted = {"hooks": {"PostToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": good}]},
+                                         {"hooks": [{"type": "command", "command": good.replace('exec "$P"', "exec $P")}]}]}}
+    assert [p for event, cmd in hook_commands(planted) for p in quote_problems(event, cmd)] == [
+        "PostToolUse: $P stands outside double quotes"]                                  # every entry of an event is read
+
+
 # The hooks.json each generation was released with. Changing hooks.json means raising
 # hooks/generation.json and adding its hash here (G21.6).
 GENERATIONS = {1: "d0d306ca49c483878632c4a25b0edad680cb44af0fc85447bad33169f175fdcc"}
