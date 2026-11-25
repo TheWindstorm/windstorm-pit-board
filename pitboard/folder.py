@@ -39,7 +39,7 @@ def _ps_lines():
                            text=True, timeout=20)
     except (OSError, subprocess.SubprocessError):
         return []
-    return r.stdout.splitlines()
+    return r.stdout.split("\n")            # P75: a line ends at a line feed only (args can hold U+2028)
 
 
 def _cwd_of(pid):
@@ -52,7 +52,7 @@ def _cwd_of(pid):
                            text=True, timeout=20)
     except (OSError, subprocess.SubprocessError):
         return None
-    for line in r.stdout.splitlines():
+    for line in r.stdout.split("\n"):    # P75: a folder's name can hold U+2028
         if line.startswith("n"):
             return os.path.realpath(line[1:])
     return None

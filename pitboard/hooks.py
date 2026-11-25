@@ -52,6 +52,11 @@ def _lane(inp, refresh=False):
     return row["lane"], row.get("lane_name") or row["lane"]
 
 
+def _doubled_line(e):
+    return ("Pit Board: the operator's message was not recorded. " + str(e).replace("pitboard: ", "", 1)
+            + "\nAsk the operator which one they mean, then run the command with its uid.")
+
+
 def _ctx(key, name, sid, cfg):
     from . import cli
     return cli._Ctx(key=key, name=name, session_id=sid, cfg=cfg, lock_timeout=store.LOCK_WAIT_HOOK)
@@ -162,6 +167,9 @@ def user_prompt_submit(inp, cfg):
             ids = ["all"] if m.group(2).lower() == "all" else ["A" + n for n in ASK_IDS.findall(m.group(2))]
             try:
                 picked, _, state = cli.approve(ctx, ids)
+            except cli.Doubled as e:                                        # P75: said, never dropped
+                lines.append(_doubled_line(e))
+                picked, state = [], None
             except cli.Fail as e:
                 if e.code == 7:
                     raise store.LaneBusy(str(e))
@@ -176,6 +184,9 @@ def user_prompt_submit(inp, cfg):
             ids = ["A" + n for n in ASK_IDS.findall(prompt)]
             try:
                 done_ids, _ = cli.decline(ctx, ids)
+            except cli.Doubled as e:                                        # P75: said, never dropped
+                lines.append(_doubled_line(e))
+                done_ids = []
             except cli.Fail as e:
                 if e.code == 7:
                     raise store.LaneBusy(str(e))

@@ -541,7 +541,7 @@ def count_asks(home):
     status = {}
     for n in names:
         raw = read_bytes(os.path.join(lanes, n)) or b""
-        for line in raw.decode("utf-8", "replace").splitlines():
+        for line in raw.decode("utf-8", "replace").split("\n"):   # P75: a line ends at a line feed only
             try:
                 ev = json.loads(line)
             except ValueError:
