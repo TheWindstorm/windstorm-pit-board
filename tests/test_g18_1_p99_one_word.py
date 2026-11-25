@@ -18,7 +18,7 @@ from pitboard import __version__, cli, leave, setup as S
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 PLANTED = {"a space": "pb home", "a percent sign": "pb%home%s", "a dollar sign": "pb$HOME$x", "a double quote": 'pb"home',
-           "a backslash": "pb\\home"}
+           "a backslash": "pb\\home", "a single quote": "pb'home"}
 INPUT = b'{"session_id":"s-p99","cwd":"/"}'
 
 
@@ -269,3 +269,27 @@ def test_G18_1_P99_no_line_printed_or_logged_holds_the_persons_own_status_line_c
     assert code == 0 and command(home) == f"printf mine; : KEEP={secret}"   # put back whole
     for text in said + [logged]:
         assert secret not in text and "KEEP=" not in text, text
+
+
+ODD = {"a newline": "a\nb", "a tab": "a\tb", "a carriage return": "a\rb", "a bell": "a\x07b", "a letter with an accent": "caf\u00e9",
+       "an emoji": "a\U0001F600b", "a no-break space": "a\u00a0b", "U+2028": "a\u2028b", "a star": "a*b", "a semicolon": "a;b",
+       "an ampersand": "a&b", "brackets": "a[b]?", "braces": "a{b,c}", "parentheses": "a(b)", "angle brackets": "a<b>",
+       "a bar": "a|b", "an equals sign": "A=b", "backticks": "a`b`", "an exclamation mark": "a!b"}
+
+
+@pytest.mark.parametrize("name", list(ODD.values()), ids=list(ODD))
+def test_G18_1_P99_no_character_tried_is_refused_and_each_is_run_as_one_path(tmp_path, name):
+    """(a), the other half: the refusal before the first write is a guard, and no character tried needs it. With each
+    of these in the home's path, the word setup would write is run by /bin/sh -c as the wrapper in that very home."""
+    home = tmp_path / name
+    home.mkdir()
+    wrapper = pathlib.Path(S.wrapper_path(str(home)))
+    wrapper.write_text("#!/bin/sh\nprintf ran\n")
+    wrapper.chmod(0o755)
+    word = S.wrapper_word(str(home))
+    assert leave.reads_as(word, str(wrapper)) is True
+    r = subprocess.run(["/bin/sh", "-c", word], capture_output=True, timeout=30, cwd=str(tmp_path),
+                       env={"PATH": os.environ["PATH"], "HOME": str(tmp_path)})
+    assert (r.returncode, r.stdout, r.stderr) == (0, b"ran", b"")
+    assert sorted(x.name for x in tmp_path.iterdir()) == [name]      # nothing in the name made a file
+
