@@ -1368,6 +1368,30 @@
    "test": "",
    "proven": "",
    "issue": 195
+  },
+  {
+   "id": "P113",
+   "codon": "G2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a stock Linux guest on the 0.1.3 release head, coming from 0.1.2: `pitboard version` said \"Pit Board's own, open to other accounts: 3\" for two folders of mode 775 and one file of mode 664, made by 0.1.2 under that system's own umask (0002). By the code, the count of Pit Board's own entries reads the mode alone: group write or other write set. It does not read who is in the group, nor whether the folders above let another account in. On that system each account has a group of its own with one member, so no other account could write any of the three. The folders that are not Pit Board's are judged the other way, by the group's members and by who can reach them. On a machine with many sessions the same count comes to some hundreds, one for each session's small state file.",
+   "promise": "The line says what was read. Where the group has no member but the owner and everyone else has no write bit, or the folders above let no other account in, it says that the entry's group or everyone may write it by its mode and counts them, and does not say \"other accounts\". It names other accounts only where another account can really write: the group has another member, or everyone may write, and the way in is open. Setup's closing step keeps taking the write bits off either way. A test plants each case (a group of one, a group of two, a closed folder above, an entry everyone may write) and reads the line; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 196
+  },
+  {
+   "id": "P114",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in the same guest: the line `pitboard version` prints to close the open entries, `~/.pitboard/bin/pitboard setup --minimal --apply`, typed exactly as printed, took the write bits off the three entries and also replaced the status line wrapper with 0.1.3's, keeping a backup beside it (\"Done: 2 change(s)\"). The plan form shows the wrapper line before; version's own line says only \"to close them\". The settings file was not changed (the same sum before and after), and the step did no harm.",
+   "promise": "A step a line prints changes only what the line says it is for: either version's line names everything its step will change (the entries to close, and the wrapper when it is older than the running version), or closing gets a step of its own that changes modes and nothing else. A test takes the line as printed in a home an older version made and compares every file's bytes before and after with what the line named; seen red first on the release's code.",
+   "test": "",
+   "proven": "",
+   "issue": 197
   }
  ],
  "declined": [
