@@ -114,18 +114,19 @@ Each line is something this version does today, and when that is wrong. The fix 
 - `pitboard add` does not name the lane it wrote to, so an ask filed in the wrong lane by a `PITBOARD_LANE` left set in a shell looks the same as one filed right (0.1.4).
 - `pitboard board` and the session reminder do not say which Pit Board home they read when it is not `~/.pitboard`, and `pitboard version` does not say when self-update is off (0.1.4).
 - `pitboard version` says "installed X" from Claude Code's plugin list alone: it still says so after the version folder is gone, and says "none" when the list cannot be read (0.1.4).
-- A few reads other than the launcher's (the stable copy's refresh, setup's reads of your settings and of its own record, the lane logs) can take a file that cannot be read for one that is not there (0.1.4).
+- A few reads other than the launcher's (the stable copy's refresh, setup's reads of your settings and of its own record, the lane logs) can take a file that cannot be read for one that is not there (read in its code, not seen) (0.1.4).
 - `setup --apply` and `uninstall --apply` change things at once; neither waits for a key at your terminal (0.1.4).
+- When `pitboard self-update --pin` is the very first Pit Board command on an account, it makes Pit Board's home 755, not 700, and setup afterwards neither names nor changes that mode (seen in a made home under umask 0002) (0.1.4).
 - Setup makes your settings file private (600). Its plan says so, and the backup keeps the old mode, but uninstall puts the old mode back only when it puts the whole file back byte for byte (0.1.4).
 - When your settings file cannot be written, setup stops after it has already made Pit Board's home and its copies, with a bare system error; when it cannot be read, setup stops before writing anything, also with a bare system error. Neither names the next step (0.1.4).
-- `setup --folder` counts the Claude Code sessions in a folder with `ps` (and `lsof` on a Mac); when either cannot answer, it counts none, so its refusal of a folder with more than one session can miss (0.1.4).
+- `setup --folder` counts the Claude Code sessions in a folder with `ps` (and `lsof` on a Mac); when either cannot answer, it counts none, so its refusal of a folder with more than one session can miss (read in its code, not seen) (0.1.4).
 - Uninstall on an account where Claude Code is already gone stops after putting your status line back, keeps Pit Board's files, and names what to do; it cannot take Pit Board's files off by itself in that case (0.1.4).
 - When uninstall keeps your asks, its census does not say that setting Pit Board up again takes them up again, in the same lanes (0.1.4).
 - Setup's "Done: N change(s)." counts the steps it applied; it does not check afterwards that Pit Board's commands run (0.1.4).
 - With no asks, uninstall's census says "kept: 0 asks" when what it keeps is the lane map and the log (0.1.4).
 - A session that starts and ends without an ask leaves a row in `lanes.json` and a few small state files behind, which nothing removes (0.1.4).
 - `logs/pitboard.log` is not rotated: every hook in every session adds a line (seen: about 21 KB in an hour and a half on a busy shared machine) (0.1.4).
-- In a session where Pit Board was installed after it started (`/reload-plugins`), the session reminder is never given; asks are still caught (0.1.4).
+- In a session where Pit Board was installed after it started (`/reload-plugins`), the session reminder was not given (seen once, on Claude Code 2.1.331); asks were still caught (0.1.4).
 - When `pitboard add` itself is refused (a harness that blocks the call), the reminder does not tell the agent to ask in the chat without mentioning the tool (0.1.4).
 - Pit Board's own programs get the whole environment Claude Code hands a hook or the status line, not one built for them (0.1.4).
 - A stop that says "lane busy ... (try again)" does not say what will differ at the next try (0.1.4).
