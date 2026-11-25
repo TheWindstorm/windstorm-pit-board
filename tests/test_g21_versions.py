@@ -144,6 +144,36 @@ def tag_shape_problems(root):
             for t in p.stdout.split() if LIKE_A_TAG.match(t) and not TAG.fullmatch(t)]
 
 
+RELEASE_WORD = "PITBOARD_RELEASE_TAG"
+
+
+def release_step_problems(root, word):
+    """P100: what the release step holds when it says the tag it expects. Run in the tag's fresh clone as
+        PITBOARD_RELEASE_TAG=vX.Y.Z python3 -m pytest tests/
+    Three answers, each by name: git could not be read (with git's own exit code); this checkout is not that tag's
+    (the tag is not on its commit, or another version-like tag is); the changelog could not be read. Then the tag's
+    own checks. Without the word none of this can be told from a branch's run (see the test below)."""
+    if not TAG.fullmatch(word):
+        return [f"{RELEASE_WORD} is '{word}', which is not vMAJOR.MINOR.PATCH"]
+    git = shutil.which("git")
+    if not git:
+        return ["the tags on this commit could not be read: no git on the PATH"]
+    try:
+        p = subprocess.run([git, "-C", root, "tag", "--points-at", "HEAD"], capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return [f"the tags on this commit could not be read: {type(e).__name__}"]
+    if p.returncode != 0:
+        return [f"the tags on this commit could not be read: git answered with exit code {p.returncode}"]
+    like = sorted(t for t in p.stdout.split() if LIKE_A_TAG.match(t))
+    if like != [word]:
+        return [f"this checkout is not {word}'s: the version tags on its commit are {', '.join(like) or 'none'}"]
+    try:
+        _read(root, "CHANGELOG.md")
+    except (OSError, UnicodeError) as e:
+        return [f"CHANGELOG.md could not be read: {type(e).__name__}"]
+    return tag_problems(root, word) + promise_problems_at_tag(root, word)[0]
+
+
 GOOD_CLONE = "git clone --depth 1 --branch v0.1.2 https://github.com/TheWindstorm/windstorm-pit-board"
 
 
@@ -204,6 +234,12 @@ def test_G21_1_a_tags_clone_is_refused_unless_its_name_is_every_version_label(tm
     """The release step (plan 1.23): run in a fresh clone of a tag, this refuses it unless the tag names every label."""
     monkeypatch.setenv("HOME", str(tmp_path / "home"))                       # P51: git runs with the test's home
     assert tag_shape_problems(ROOT) == []                                    # P100: no tag here is passed over
+    word = os.environ.get(RELEASE_WORD)
+    if word is not None:                                                     # P100: the release step said its tag
+        assert release_step_problems(ROOT, word) == [], word
+    # Without the word this run is a branch's, or cannot be told from one: a git that fails, or a clone of the wrong
+    # thing, reads as "no tag here" and nothing below is checked. It stays so because a CI leg must not turn red for
+    # its machine's git, and no leg can be run from a branch to see.
     for tag in release_tags_at_head(ROOT):                                   # only in a tag's checkout
         assert tag_problems(ROOT, tag) == [], tag
         problems, listed = promise_problems_at_tag(ROOT, tag)
@@ -304,3 +340,55 @@ def test_G21_1_a_tag_is_refused_while_a_row_due_in_it_has_no_proven_line(tmp_pat
     with open(os.path.join(root, "PROMISES.json"), "w") as f:
         f.write("{not json")
     assert promise_problems_at_tag(root, "v0.1.2") == (["PROMISES.json could not be read: JSONDecodeError"], [])
+
+
+@pytest.mark.skipif(not shutil.which("git"), reason="no git here")
+def test_G21_1_the_release_step_told_its_tag_refuses_what_it_cannot_read_and_a_clone_of_the_wrong_thing(tmp_path, monkeypatch):
+    """P100: with PITBOARD_RELEASE_TAG set, "git could not be read", "this is not that tag's clone" and "the changelog
+    could not be read" are failures with their own names, never "no tag here"; the tag's own clone passes."""
+    monkeypatch.setenv("HOME", str(tmp_path / "home"))                       # P51: git runs with the test's home
+    src = _tree(tmp_path)
+    _rows(src, {"id": "P1", "ship_in": "0.1.2", "proven": "a stock machine, 0.1.2, 2026-11-23"})
+    env = dict(os.environ, HOME=str(tmp_path / "home"), GIT_CONFIG_GLOBAL=os.devnull, GIT_CONFIG_SYSTEM=os.devnull, GIT_AUTHOR_NAME="t",
+               GIT_AUTHOR_EMAIL="t@example.invalid", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.invalid")
+
+    def git(*cmd, at=src):
+        subprocess.run(["git", "-C", at] + list(cmd), check=True, env=env, capture_output=True, timeout=60)
+
+    def clone(name, *how):
+        to = str(tmp_path / name)
+        subprocess.run(["git", "clone", "-q"] + list(how) + ["file://" + src, to], check=True, env=env,
+                       capture_output=True, timeout=60)
+        return to
+
+    for cmd in (["init", "-q", "-b", "main"], ["add", "-A"], ["commit", "-q", "-m", "release"], ["tag", "v0.1.2"]):
+        git(*cmd)
+    good = clone("good", "--depth", "1", "--branch", "v0.1.2")
+    assert release_step_problems(good, "v0.1.2") == []                       # the tag's own fresh clone
+    for word in ("0.1.2", "v0.1.2.1", "v0.1", ""):                           # the word itself
+        assert release_step_problems(good, word) == [f"{RELEASE_WORD} is '{word}', which is not vMAJOR.MINOR.PATCH"]
+    assert release_step_problems(good, "v0.1.3") == [
+        "this checkout is not v0.1.3's: the version tags on its commit are v0.1.2"]
+    git("commit", "-q", "--allow-empty", "-m", "after")                      # the branch has gone on past the tag
+    branch = clone("branch", "--depth", "1")                                 # a fresh clone of the wrong thing
+    assert release_step_problems(branch, "v0.1.2") == [
+        "this checkout is not v0.1.2's: the version tags on its commit are none"]
+    assert release_tags_at_head(branch) == []                                # the older read: nothing checked, nothing said
+    git("tag", "v0.1.2.1", "v0.1.2")                                         # a second version-like tag on the commit
+    assert release_step_problems(clone("two", "--branch", "v0.1.2"), "v0.1.2") == [
+        "this checkout is not v0.1.2's: the version tags on its commit are v0.1.2, v0.1.2.1"]
+    os.remove(os.path.join(good, "CHANGELOG.md"))
+    assert release_step_problems(good, "v0.1.2") == ["CHANGELOG.md could not be read: FileNotFoundError"]
+    path = os.environ["PATH"]
+    bad = tmp_path / "badgit"
+    bad.mkdir()
+    (bad / "git").write_text("#!/bin/sh\nexit 128\n")
+    os.chmod(bad / "git", 0o755)
+    monkeypatch.setenv("PATH", str(bad) + os.pathsep + path)                 # a git that answers with an error
+    assert release_step_problems(good, "v0.1.2") == [
+        "the tags on this commit could not be read: git answered with exit code 128"]
+    assert release_tags_at_head(good) == [] and tag_shape_problems(good) == []   # the older reads: "no tag here"
+    (tmp_path / "nogit").mkdir()
+    monkeypatch.setenv("PATH", str(tmp_path / "nogit"))                      # no git at all
+    assert release_step_problems(good, "v0.1.2") == ["the tags on this commit could not be read: no git on the PATH"]
+    monkeypatch.setenv("PATH", path)
