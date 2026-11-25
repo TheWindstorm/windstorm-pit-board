@@ -27,9 +27,18 @@ jobs:
         python: ["3.9", "3.10", "3.13"]
     steps:
       - uses: actions/checkout@v4
+      # G21.15: one leg has a real Python older than the floor beside its own, so the test that a real older Python
+      # is refused before anything runs and passes in CI (on the other legs it is skipped, with its reason printed).
+      # Set up first, so the leg's own Python set up next is the one `python` names; python3.8 stays on PATH.
+      - if: runner.os == 'Linux' && matrix.python == '3.9'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - if: runner.os == 'Linux' && matrix.python == '3.9'
+        run: python3.8 --version && python --version
       - run: pip install pytest
       # G20.6 (plan 1.22): -v gives every test its own line with its outcome and a skip's reason, so the log shows
       # each test ran. Never with -q (it cancels -v); -rA is not enough (it folds skips into one line without names).
@@ -51,9 +60,18 @@ jobs:
         python: ${{ fromJSON(github.event_name == 'pull_request' && '["3.9"]' || '["3.9", "3.10", "3.13"]') }}
     steps:
       - uses: actions/checkout@v4
+      # G21.15: one leg has a real Python older than the floor beside its own, so the test that a real older Python
+      # is refused before anything runs and passes in CI (on the other legs it is skipped, with its reason printed).
+      # Set up first, so the leg's own Python set up next is the one `python` names; python3.8 stays on PATH.
+      - if: runner.os == 'Linux' && matrix.python == '3.9'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - if: runner.os == 'Linux' && matrix.python == '3.9'
+        run: python3.8 --version && python --version
       - run: pip install pytest
       # G20.6 (plan 1.22): -v gives every test its own line with its outcome and a skip's reason, so the log shows
       # each test ran. Never with -q (it cancels -v); -rA is not enough (it folds skips into one line without names).
