@@ -307,7 +307,7 @@ def test_G7_2_without_session_start_the_other_hooks_still_work(home, monkeypatch
     """The family's rule 24 (a reload loads too): a session that got Pit Board by /reload-plugins never runs
     session-start. Today: the first prompt hook makes the lane row on first sight, an ask recorded with no --lane
     finds that lane through the session id, stop marks it idle, and cwd-changed writes the env line. What is
-    missing is the reminder: the prompt hook gives the model no rules and no open asks. P35 (due 0.1.4) changes
+    missing is the reminder: the prompt hook gives the model no rules and no open asks. P35 (due 0.1.5) changes
     the last assert: the first prompt hook of such a session gives session-start's reminder once."""
     first = hook("user-prompt-submit", fixture("user-prompt-submit", "basic", prompt="go on", session_title="API Server",
                                                transcript_path=transcript(home, "API Server")))
