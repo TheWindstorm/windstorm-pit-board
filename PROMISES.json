@@ -1573,7 +1573,7 @@
    "promise": "A refusal's next step fits the home it refused. In both homes, the default one and one the variable names, the step said first is the move: move what the lines above name out of that folder, then run setup once more. The words about `PITBOARD_HOME` are printed only where the variable is set, and there they also say that asks kept in the refused folder stay in it and are not shown from another folder. A test reads the refusal in both homes, does the move step in both, runs setup after it, and is seen red first.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 212
   },
   {
    "id": "P133",
@@ -1585,7 +1585,7 @@
    "promise": "Uninstall never ends with \"off this computer\" or \"nothing of Pit Board is here\" while a status line setting it has read, the account's or a folder's in a record it read, names a wrapper with Pit Board's mark in a home it did not undo. Where that home's own record names this settings file as set by its setup, the plan names the home and `--apply` undoes it as a home found, with the reads and the stops a home found through a folder has. In every other case nothing in that home is changed: the home is named, the one line that takes it off is printed, neither closing sentence is said, and the exit is 11. This row does not reach the second sighting above, a home that no list, record, variable or status line setting uninstall reads leads to: no new read is added for it. A test builds the first world above, runs uninstall without the variable, reads its last lines and takes the printed line as printed; it is seen red first.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 213
   },
   {
    "id": "P134",
@@ -1597,7 +1597,7 @@
    "promise": "A home's own copy acts for the home it sits in when `PITBOARD_HOME` is not set, where the copy's own folder reads as a Pit Board home. Where that folder reads as not a Pit Board home, the copy acts as today, on the default home; the plugin's own launcher is such a copy. Only where that could not be read does it stop, and it names the folder. The variable, when set, wins. The lines that already name their home with the variable stay as they are. A test takes each printed line that names a home's own copy as printed, without the variable, in a world with a second home and in one with the default home set up too; it is seen red first.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 214
   },
   {
    "id": "P135",
@@ -1609,7 +1609,7 @@
    "promise": "The record's \"made\" list holds only names of what setup made in Pit Board's home, however often setup runs and whatever happens to the settings file between the runs. A test runs setup three times with the settings file written anew between them, reads the record after each, and is seen red first.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 215
   },
   {
    "id": "P136",
@@ -1621,7 +1621,7 @@
    "promise": "One known way is refused where it starts. The refusal names what was refused and the step to take, and never repeats the prompt's text. A test is seen red first; its fixtures hold no real prompt.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 216
   },
   {
    "id": "P137",
@@ -1633,7 +1633,7 @@
    "promise": "An approval or a decline taken from a prompt counts only once Pit Board has seen that the operator typed that prompt. Where that cannot be read, it does not count, Pit Board says so, and nothing is done on it. What Pit Board reads for this is held by a contract row and by a fixture for each Claude Code version and platform in use. Built after a trial; only the trial's result moves this row's date.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 216
   }
  ],
  "declined": [
