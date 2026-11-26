@@ -1476,6 +1476,18 @@
    "test": "",
    "proven": "",
    "issue": 204
+  },
+  {
+   "id": "P122",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in made homes through the launcher itself, with the 0.1.3 release head's files laid out as Claude Code keeps a plugin, and a stand-in for Claude Code's own command that takes the plugin's row off its list, keeps the version folder and marks it `.orphaned_at`, as Claude Code's own uninstall was seen to do. A folder, or a link to a folder, that cannot be listed, put by the person inside one of Pit Board's folders in its home, ends `pitboard uninstall` and `pitboard uninstall --apply` alike in a Python traceback (PermissionError, exit 1) with no census. After `--apply` the status line setting is the person's own again, the plugin is off Claude Code's list, and `bin/`, `pitboard/`, `config.json` and `logs/` are gone from the home, the launcher with them; `state/`, `statusline.sh` and setup's record are left. Once the person had removed what they put there: the line they had typed answered that there is no such file; the launcher in the version folder Claude Code keeps answered \"no installed version found\"; only `python3 -I` with that folder's `pitboard/leave.py` and `--apply` finished, exit 0. One of Pit Board's own folders made unlistable ends with its last lines and exit 11 in four of five places, where the plan had said the folder would go, and in the same traceback in the fifth (`update/generation-shown/`). P121 takes the first cause away. The class stays: an `--apply` that meets an error it does not know ends without its last lines, half done, and the command for the next step is gone. Not seen: with Claude Code's own command; on a real home.",
+   "promise": "Whatever stops an uninstall in the middle, its last lines still say what went, what stayed and the one next step, and the command a person needs for that step is still there: the launcher goes last, or the step names what takes its place. It does not go on past the error and guesses nothing; the exit is not 0. A test fails each removal and each listing in turn, reads the last lines, and takes the printed step as printed; it is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": 205
   }
  ],
  "declined": [
