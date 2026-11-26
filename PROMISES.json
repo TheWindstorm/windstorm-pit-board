@@ -1562,6 +1562,78 @@
    "test": "",
    "proven": "",
    "issue": 211
+  },
+  {
+   "id": "P132",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-26 in made homes on the 0.1.3 release head, by ordinary commands, `PITBOARD_HOME` not set. A file of the person's own stood in `~/.pitboard`: put there after a setup and an ask, or in a new home where the person had made `~/.pitboard` with one file in it. `pitboard setup --minimal`, and the same with `--apply`, ended exit 2: \"pitboard: setup refused: Pit Board's home is not a folder for Pit Board alone.\", \"why: it holds things that are not Pit Board's: notes-of-mine.txt\", \"home: ~/.pitboard\", and last \"Unset PITBOARD_HOME, or set it to a new, empty folder. Nothing changed.\" The refusal is right and nothing changed. Its last line does not fit this home: the variable is not set, so it cannot be unset; and a setup with the variable set to a new, empty folder ends exit 0 while the asks kept in `~/.pitboard` stay behind there, and `pitboard list` then shows none of them. The step that fits is not said: with the named file moved out of `~/.pitboard`, setup ended exit 0 and `pitboard list` showed the kept ask. A person meets the refusal after `pitboard uninstall --apply` too, which rightly leaves such a file and the kept asks in `~/.pitboard`. 0.1.2 has no such refusal. Nothing of the person's was removed or written over. Not seen: on a real home.",
+   "promise": "A refusal's next step fits the home it refused. In both homes, the default one and one the variable names, the step said first is the move: move what the lines above name out of that folder, then run setup once more. The words about `PITBOARD_HOME` are printed only where the variable is set, and there they also say that asks kept in the refused folder stay in it and are not shown from another folder. A test reads the refusal in both homes, does the move step in both, runs setup after it, and is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P133",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-26 in a made home on the 0.1.3 release head, with a stand-in for Claude Code's own command. Setup was run with `PITBOARD_HOME` naming a second Pit Board home (a folder other than `~/.pitboard`), so the account's status line setting names the wrapper in that home. Later `pitboard uninstall --apply` was run in a shell where the variable is not set. Its plan named one line, the plugin. `--apply` ended exit 0: Claude Code's plugin was uninstalled, the second home was whole, the account's status line setting still named that home's wrapper, and no line said that either stays. A second run said \"nothing of Pit Board is here\", exit 0. With the variable set as at setup, all of it went. A person who sets the variable in their shell's profile does not meet this; one who set it for the setup command alone does. Seen the same day on the local head for 0.1.5: after an unfinished uninstall had undone the one folder that led to a second home, a plain `pitboard uninstall --apply` without the variable said \"nothing of Pit Board is here\", exit 0, while that home was still there. Nothing of the person's was removed or written over. Not seen: on a real home; with Claude Code's real command; what a session's status line then shows.",
+   "promise": "Uninstall never ends with \"off this computer\" or \"nothing of Pit Board is here\" while a status line setting it has read, the account's or a folder's in a record it read, names a wrapper with Pit Board's mark in a home it did not undo. Where that home's own record names this settings file as set by its setup, the plan names the home and `--apply` undoes it as a home found, with the reads and the stops a home found through a folder has. In every other case nothing in that home is changed: the home is named, the one line that takes it off is printed, neither closing sentence is said, and the exit is 11. This row does not reach the second sighting above, a home that no list, record, variable or status line setting uninstall reads leads to: no new read is added for it. A test builds the first world above, runs uninstall without the variable, reads its last lines and takes the printed line as printed; it is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P134",
+   "codon": "G21.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-26 in made homes on the local head for 0.1.5, with a stand-in for Claude Code's own command. A second Pit Board home was set up with `PITBOARD_HOME`. Setup's last lines gave the way back as `~/other-pb/bin/pitboard uninstall --apply`, the copy in that home. Taken as printed in a shell where the variable is not set, that line uninstalled the plugin, ended exit 0, and left the second home and the account's status line setting that names it. Where the default home was set up too, the line took the default home off and left the home it was printed for. The cause: a home's own copy reads `PITBOARD_HOME` and, without it, acts on `~/.pitboard`, whichever home it sits in. The next step of an unfinished uninstall had the same fault and now names its home in the line itself (P122). Five more printed lines name a home's own copy; they were read, not run. No release prints the way-back line. Not seen: on a real home.",
+   "promise": "A home's own copy acts for the home it sits in when `PITBOARD_HOME` is not set, where the copy's own folder reads as a Pit Board home. Where that folder reads as not a Pit Board home, the copy acts as today, on the default home; the plugin's own launcher is such a copy. Only where that could not be read does it stop, and it names the folder. The variable, when set, wins. The lines that already name their home with the variable stay as they are. A test takes each printed line that names a home's own copy as printed, without the variable, in a world with a second home and in one with the default home set up too; it is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P135",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-26 in a made home on the 0.1.3 release head, by ordinary commands. `pitboard setup --minimal --apply` was run; the settings file was then written anew without the status line, as the person or another tool may do; setup was run once more, and a third time the same way. From the second run on, the record's \"made\" list, the list of what setup made in Pit Board's home, held the name of the settings file's backup of the run before (`settings.json.bak-<time>`), one more with each run. Those backups stand beside the settings file, not in Pit Board's home. The cause, as read in the code: one name is used for two lists in the step that writes the record. `pitboard uninstall` and `pitboard uninstall --apply` in that home ended exit 0, said \"kept: 3 backups setup made of ~/.claude/settings.json (yours: ...)\", removed only Pit Board's own, and left the backups and the person's settings file. In a second made home a file of the person's own stood in Pit Board's home under such a recorded name: uninstall kept it and named it (\"not made by Pit Board; yours\"). So the record was wrong and nothing of the person's was removed. Not seen: on a real home.",
+   "promise": "The record's \"made\" list holds only names of what setup made in Pit Board's home, however often setup runs and whatever happens to the settings file between the runs. A test runs setup three times with the settings file written anew between them, reads the record after each, and is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P136",
+   "codon": "G7.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-26 on the installed 0.1.2: a prompt the operator did not type can be recorded as the operator's answer. It is not new in 0.1.3. The details are held by the maintainer until the whole cure is tagged.",
+   "promise": "One known way is refused where it starts. The refusal names what was refused and the step to take, and never repeats the prompt's text. A test is seen red first; its fixtures hold no real prompt.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P137",
+   "codon": "G7.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.6",
+   "ship_in": "0.1.6",
+   "seen": "As P136's.",
+   "promise": "An approval or a decline taken from a prompt counts only once Pit Board has seen that the operator typed that prompt. Where that cannot be read, it does not count, Pit Board says so, and nothing is done on it. What Pit Board reads for this is held by a contract row and by a fixture for each Claude Code version and platform in use. Built after a trial; only the trial's result moves this row's date.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   }
  ],
  "declined": [
