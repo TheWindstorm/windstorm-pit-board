@@ -21,6 +21,23 @@ STATUSES = ("open", "answered", "done", "withdrawn")
 
 MAX_LINE_BYTES = 16384
 CUT_MARK = "…"
+CONTROL_MARK = "\ufffd"
+_CONTROL = re.compile("[\x00-\x08\x0b-\x1f\x7f-\x9f]")    # every C0 but tab and line feed, DEL, every C1
+
+
+def shown(text):
+    """P123: a text on its way to a terminal or into a session: each control character as a visible mark. A tab and a
+    line feed stay, nothing else of the text changes, and what is stored is never passed through this."""
+    return _CONTROL.sub(CONTROL_MARK, text) if isinstance(text, str) else text
+
+
+def shown_all(obj):
+    """P123: every text inside a JSON-shaped answer for a session, as `shown` gives it."""
+    if isinstance(obj, dict):
+        return {k: shown_all(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [shown_all(v) for v in obj]
+    return shown(obj)
 
 HEX32 = re.compile(r"^[0-9a-f]{32}$")
 ASK_ID = re.compile(r"^A[1-9][0-9]*$")

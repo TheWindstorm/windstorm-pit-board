@@ -794,7 +794,7 @@ def cmd_hook(args, stdin=None):
         raw = (sys.stdin if stdin is None else stdin).read()
         obj = hooks.handle(args.event, raw)
         if obj is not None:
-            out.message = json.dumps(obj, ensure_ascii=False)
+            out.message = json.dumps(contract.shown_all(obj), ensure_ascii=False)    # P123: what a session reads
     except Exception:  # noqa: BLE001
         out.message = ""
     return out
@@ -1021,6 +1021,12 @@ COMMANDS = {"add": cmd_add, "update": cmd_update, "answer": cmd_answer, "ok": cm
             "self-update": cmd_self_update}
 
 
+# P123: the commands whose lines can hold an ask's text, the lane's name or the caller's own words. A control character
+# in such a line is shown as a mark. Not here: `export` (data, as stored), `status` (no text of an ask), and `setup`,
+# `version` and `self-update`, whose lines hold paths and commands a person runs as printed.
+ASK_TEXT_COMMANDS = ("add", "update", "answer", "ok", "no", "done", "withdraw", "reopen", "list", "board", "show", "lane")
+
+
 # ---------------------------------------------------------------- main
 
 def _emit(out, as_json, code, stdout, stderr):
@@ -1078,5 +1084,7 @@ def main(argv=None, stdout=None, stderr=None):
         out, code = Out(str(e)), e.code
     except Exception as e:  # noqa: BLE001 - G6.3 exit 1, one line, no traceback
         out, code = Out(f"pitboard: unexpected error: {type(e).__name__}: {e}"), 1
+    if argv[:1] and argv[0] in ASK_TEXT_COMMANDS and not getattr(out, "raw", False):
+        out.message = contract.shown(out.message)      # P123: an ask's text, the lane's name, the caller's own words
     _emit(out, as_json, code, stdout, stderr)
     return code

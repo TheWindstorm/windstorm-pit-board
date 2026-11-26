@@ -65,7 +65,7 @@ class _Row:
     """One output line: plain text, plus the flag label to colour once the line is cut."""
 
     def __init__(self, text, label=None, f=None):
-        self.text, self.label, self.f = text, label, f
+        self.text, self.label, self.f = contract.shown(text), label, f       # P123: before the colour is put on
 
     def out(self, width, plain):
         t = cut(self.text, width)
@@ -119,7 +119,7 @@ def board_open(asks, lane_name, tz, now=None, width=DEFAULT_WIDTH, plain=False, 
     clock = timefmt.show(contract.ts_of(now_dt), tz, now_dt)
     open_asks = [a for a in asks if a.get("status") == "open"]
     if not open_asks:
-        return cut(f"PIT BOARD · {lane_name} · nothing waits on you · {clock}", width)
+        return cut(contract.shown(f"PIT BOARD · {lane_name} · nothing waits on you · {clock}"), width)
     ordered = flags.sort_asks(open_asks, "severity", now_dt, escalate_after_hours=cfg.get("escalate_after_hours", 24),
                               urgent_deadline_hours=cfg.get("urgent_deadline_hours", 24))
     shown, more = ordered[:OPEN_MAX], len(ordered) - OPEN_MAX
