@@ -1490,6 +1490,42 @@
    "test": "",
    "proven": "",
    "issue": 205
+  },
+  {
+   "id": "P123",
+   "codon": "G11.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 in made homes, with the released 0.1.2 and with the 0.1.3 release head: an ask's text can hold control characters, and Pit Board passes them on as they are where it writes an ask's text to a terminal: `add`'s own line, the board, the list, the history and `show`. The reminder a session gets holds them too. The ordinary effect is a line that looks wrong or is hard to read. The status line shows no text of an ask. What helps until this is cured: keep an ask's words to plain text, and read a doubtful ask through a program that shows such characters as marks, for example `pitboard show A12 | cat -v`. Not seen: on a real home; what each terminal program makes of them.",
+   "promise": "Every view that writes an ask's text to a terminal, and the reminder, shows a control character as a visible mark. That holds for every text field of an ask, for the lane's name and the machine's name where a view prints them, for `add`'s own line, for `show` to its end, and for the line that repeats a typed answer. The stored event is never changed, a line feed and a tab keep what each view does with them today, and nothing else of a text is altered. The exports are data, not views, and hold the text as stored. A test plants such characters in every text field, reads every view, and is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": 206
+  },
+  {
+   "id": "P124",
+   "codon": "G6.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a made home, with the 0.1.3 release head: three refused `add`s (a question with no suggested answer, a hand ask with no step, a deadline that cannot be read; exit 6 each) left nothing in Pit Board's own log, which holds lines from the hooks only. So nobody can count how often an ask was turned away, or by which refusal, before a refusal is kept or dropped.",
+   "promise": "An `add` that is refused leaves one line in Pit Board's own log: the time, the lane's key, and which refusal by a short code. Nothing of the ask's text is in it. The refusal's own words and its exit stay as they are. A test plants each refusal, reads the log's line, and is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": 207
+  },
+  {
+   "id": "P125",
+   "codon": "G6.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in made homes, with the released 0.1.2 and with the 0.1.3 release head: `pitboard export --format csv` writes an ask's text into its cell as it is, also when the text begins with a sign that a spreadsheet program takes as the start of a formula. The ordinary effect is a cell that shows an error or a number where the ask's words belong. What helps until this is cured: open the export with every column set to text, or use `pitboard export` (JSONL). Not seen: in a spreadsheet program.",
+   "promise": "The CSV export writes every text cell so that a spreadsheet program shows the ask's words as text, and the plan says in one line how such a cell is written, so that a program reading the file can undo it. The JSONL export and the stored event are not changed. A test plants such texts in every text field, reads the cells back, and is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": 208
   }
  ],
  "declined": [
