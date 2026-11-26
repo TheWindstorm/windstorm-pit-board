@@ -186,6 +186,11 @@ def whole_problems(w):
             out.append(f"{r.get('id')}: kind, when given, must be 'guard'")
         if "proven_after_release" in r and not str(r["proven_after_release"] or "").strip():   # plan 1.29, P18
             out.append(f"{r.get('id')}: proven_after_release, when given, names the reason")
+        # a promise whose words changed after the row was written says so in a field of its own: which part, the day,
+        # by whose word. `moved_why` keeps its one job, a moved date.
+        if "promise_changed" in r and not re.search(r"\bPart \([a-z]\).* changed on 20[0-9]{2}-[0-9]{2}-[0-9]{2} by ",
+                                                    str(r["promise_changed"] or "")):
+            out.append(f"{r.get('id')}: promise_changed, when given, says which part changed, the day and by whose word")
         for k in ("first_ship_in", "ship_in"):
             if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", str(r.get(k, ""))):
                 out.append(f"{r.get('id')}: {k} is not MAJOR.MINOR.PATCH")
@@ -271,6 +276,10 @@ def test_G21_14_every_row_is_whole_and_its_codon_is_in_the_plan():
     assert whole_problems(_planted(w, kind="lesson")) == ["PX: kind, when given, must be 'guard'"]
     assert whole_problems(_planted(w, proven_after_release="a count over two days")) == []
     assert whole_problems(_planted(w, proven_after_release=" ")) == ["PX: proven_after_release, when given, names the reason"]
+    assert whole_problems(_planted(w, promise_changed="Part (c) changed on 2026-11-25 by the maintainer's ruling: ...")) == []
+    for bare in (" ", "The promise changed.", "Part (c) changed by the maintainer."):
+        assert whole_problems(_planted(w, promise_changed=bare)) == [
+            "PX: promise_changed, when given, says which part changed, the day and by whose word"]
 
 
 def test_G21_14_a_lesson_not_taken_is_written_down_with_its_reason():
