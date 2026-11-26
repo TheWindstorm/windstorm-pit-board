@@ -108,9 +108,9 @@ def test_G18_1_second_apply_changes_nothing_and_keeps_the_original(world):
 def test_G18_1_existing_config_is_kept(world):
     home, pb = world
     pb.mkdir(mode=0o700)
-    (pb / "config.json").write_text('{"operator_name": "Grant"}')
+    (pb / "config.json").write_text('{"operator_name": "Sam"}')
     run("setup", "--minimal", "--apply")
-    assert json.loads((pb / "config.json").read_text()) == {"operator_name": "Grant"}
+    assert json.loads((pb / "config.json").read_text()) == {"operator_name": "Sam"}
 
 
 def test_G18_1_no_settings_file_and_bad_settings(world):
