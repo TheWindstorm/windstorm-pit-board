@@ -1743,6 +1743,18 @@
    "test": "",
    "proven": "",
    "issue": 220
+  },
+  {
+   "id": "P142",
+   "codon": "G10.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-26, on main, in the Mac leg of CI, on the first attempt of the run for the merge that carried 0.1.3's record: one test that wanted Pit Board's segment kept after a single redraw failed, because the segment's file was not there; a second attempt on the same tree passed. The third sighting of its kind and the first on main: a first run of Pit Board that takes longer than the wrapper's cap keeps no segment, as P52 promises, and a test that asked for the segment from that one redraw was red on a tree that was right.",
+   "promise": "The suite is red only when the tree is wrong. A status line test that needs Pit Board's part after a redraw makes that redraw again, at most five times, and only while the wrapper cut the run at its cap: where the programs a redraw starts are counted, only while it kept no segment, and every try must have run Pit Board; where they are not, only while what it printed lacks Pit Board's part and the call took the cap's time. A try that ended under the cap is never made again, and a try beyond the first is said as a warning that names the test and the tries. The cap and the wrapper are never changed for a test, and nothing else is tried again: what was printed, which programs started, the quiet road. A test whose promise is the cap itself, or what one redraw does, keeps its one try. A test holds a run held past the cap by a slow stand-in: the person's own line alone, no segment kept, and the next redraw runs Pit Board and keeps it.",
+   "test": "test_G10_5_P54_a_run_cut_at_the_cap_keeps_no_segment_and_the_next_redraw_runs_pit_board_and_keeps_it",
+   "proven": "",
+   "issue": null
   }
  ],
  "declined": [
