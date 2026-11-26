@@ -1452,6 +1452,18 @@
    "test": "",
    "proven": "",
    "issue": 202
+  },
+  {
+   "id": "P120",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25 in a made home, with the code of the 0.1.3 release head, while the page of P88 was designed: `setup --minimal --apply`, then one file with a name that version does not know put into Pit Board's home (`state/asks.html`, mode 600), as a later version would write it. That copy's `setup --minimal` then refused, exit 2: \"Pit Board's home is not a folder for Pit Board alone ... it holds things that are not Pit Board's: state/asks.html\", with the next step \"Unset PITBOARD_HOME, or set it to a new, empty folder\". Its `uninstall --apply` ended 0, took everything else off, and kept the whole `state` folder: \"Pit Board's, left because state/asks.html in it is not; yours to delete after looking inside\". The cause is the table of Pit Board's own names in `pitboard/leave.py`: a name that is not in a copy's table is the person's to that copy. So the first file name a later version adds to the home makes every earlier copy refuse setup there and leave a folder behind on uninstall, and the way back from that version lands on such a copy. Not seen: this on a real machine after a real way back. Until today no version added a name; the page of P88 would be the first.",
+   "promise": "What an earlier release's copy does with a home that a later version wrote is known before that version ships. Each release keeps its own `leave.py` beside its fixture home, and a test fills a home with every file the current code can write and runs the newest kept copy over it. A name that copy would take for the person's fails the test until the release before is taught the name, or, by the maintainer's ruling for that name, the README's way-back lines say what an earlier copy does with it and the one step that clears it. The page of P88 is written under no name before this holds for it.",
+   "test": "",
+   "proven": "",
+   "issue": 203
   }
  ],
  "declined": [
