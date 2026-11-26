@@ -44,6 +44,9 @@ Install Pit Board in one lane's folder, and take it out again.
 
 Every release before this one still reads the same: the lane logs, the cache and the config keys are unchanged (G21.11; `tests/fixtures/releases/0.1.1`).
 
+## Plan 1.36 (2026-11-26)
+- G21.1 (P138, due 0.1.4): a release tag is pushed by a release step of its own and by nothing else. `tests/release_step.py` makes the tag locally in a fresh clone of the release commit, runs the suite there as CI runs it (pytest with its report, then `tests/report_check.py`), and pushes the tag only with `--push` and only where both ended exit 0; a tag of that name already at the origin is refused before the suite runs. Seen at `v0.1.3`: the check that refuses a release tag acts only where the tag points at the checked-out commit, so no branch's run could show that it would fail.
+
 ## Plan 1.35 (2026-11-24)
 - G1.1, G1.12, G2.6, G2.7 (P75, due 0.1.3, by the maintainer's ruling): a line ends at a line feed only; the writer escapes U+2028, U+2029 and U+0085; the cache carries `reader` and `doubled`, and one without this reader's mark is rebuilt once; two asks under one ID are both kept, a command takes a uid in an ID's place and refuses an ID that names two asks it could act on. The board's line for two asks under one ID is P76, due 0.1.4.
 
