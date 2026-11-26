@@ -24,6 +24,10 @@ class Fail(Exception):
         self.code = code
 
 
+class Doubled(Fail):
+    """P75: an ID names two asks a command could act on; nothing was written."""
+
+
 class _NeedFull(Exception):
     """A target ask is not in the live cache: run the build again with every ask (G2.11)."""
 
@@ -181,6 +185,12 @@ def _ask_id(text):
     return t
 
 
+def _ask_ref(text):
+    """P75: an ask ID (A12) or, in its place, an ask's uid (32 hex characters, as show prints it)."""
+    t = (text or "").strip().lower()
+    return t if store.is_uid(t) else _ask_id(text)
+
+
 def _session_id():
     return os.environ.get("CLAUDE_CODE_SESSION_ID") or None
 
@@ -239,6 +249,7 @@ class _Ctx:
                  lock_timeout=store.LOCK_WAIT_COMMAND):
         self.cfg = cfg or store.config()
         self.lock_timeout = lock_timeout
+        self.notes = []          # P75: what a command says about which of two asks under one ID it acted on
         if key:
             self.key = key
         else:
@@ -255,14 +266,37 @@ class _Ctx:
                                    session_id=self.session_id, by=by, data=data)
 
 
-def _target(view, ask_id, allowed, action):
-    a = view.find(ask_id)
-    if a is None:
-        if not view.full:
-            raise _NeedFull()
-        raise Fail(4, f"pitboard: {ask_id} not found in this lane")
-    if a["status"] not in allowed:
-        raise Fail(5, f"pitboard: {ask_id} is {a['status']}; {action} needs it {' or '.join(allowed)}")
+def _who(a, ctx):
+    return f"{a['uid']}  {a['status']}, asked {timefmt.show(a['asked_at'], timefmt.zone(ctx.cfg['display_tz']))}: {a['title']}"
+
+
+def _target(view, ref, allowed, action, ctx):
+    """The one ask `ref` (an ID or a uid) names that `action` may act on. P75: which ask an ID means never
+    depends on the cache: an ID the cache lists as doubled is looked up in every ask."""
+    found = view.matching(ref)
+    if not view.full and (not found or ref in view.doubled):
+        raise _NeedFull()
+    if not found:
+        raise Fail(4, f"pitboard: {ref} not found in this lane")
+    if len(found) == 1:
+        a = found[0]
+        if a["status"] not in allowed:
+            raise Fail(5, f"pitboard: {ref} is {a['status']}; {action} needs it {' or '.join(allowed)}")
+        if store.is_uid(ref):
+            ctx.notes.append(f"{a['ask']} is the ask: {a['title']}")
+        return a
+    can = [a for a in found if a["status"] in allowed]
+    every = "\n".join("  " + _who(a, ctx) for a in found)
+    if len(can) > 1:
+        raise Doubled(4, f"pitboard: {ref} names {len(found)} asks in this lane, so nothing was written.\n"
+                         f"An older copy of Pit Board gave the number twice. Give the same command again\n"
+                         f"with the uid of the one you mean in place of {ref}:\n{every}")
+    if not can:
+        raise Fail(5, f"pitboard: {ref} names {len(found)} asks in this lane; {action} needs one "
+                      f"{' or '.join(allowed)}, and none is:\n{every}")
+    a = can[0]
+    ctx.notes.append(f"{ref} names {len(found)} asks in this lane; {action} acted on the only one it can:\n"
+                     f"  {_who(a, ctx)}")
     return a
 
 
@@ -270,9 +304,11 @@ def _write(ctx, build, full=False):
     """store.append with the G6.3 exit codes; retries with every ask when a target is closed."""
     try:
         try:
+            ctx.notes.clear()
             return store.append(ctx.key, build, mode="refuse", cfg=ctx.cfg, full=full,
                                 lock_timeout=ctx.lock_timeout)
         except _NeedFull:
+            ctx.notes.clear()
             return store.append(ctx.key, build, mode="refuse", cfg=ctx.cfg, full=True,
                                 lock_timeout=ctx.lock_timeout)
     except contract.ContractError as e:
@@ -281,9 +317,24 @@ def _write(ctx, build, full=False):
         raise Fail(7, f"pitboard: lane busy: {ctx.key} (try again)")
 
 
-def _asks_of(state, ids):
-    by_id = {a["ask"]: a for a in state["asks"]}
-    return [by_id[i] for i in ids if i in by_id]
+def _asks_by_uid(state, uids):
+    by_uid = {a["uid"]: a for a in state["asks"]}
+    return [by_uid[u] for u in uids if u in by_uid]
+
+
+def _label(a, state):
+    """P75: an ask's ID, with its uid when the lane holds two asks under that ID."""
+    return f"{a['ask']} ({a['uid']})" if a["ask"] in (state.get("doubled") or []) else a["ask"]
+
+
+def _apart(asks, state):
+    """P75: one line per written ask whose ID names two asks here, so a line of IDs tells them apart."""
+    return [f"  {a['ask']} {a['uid']}: {a['title']}" for a in asks if a["ask"] in (state.get("doubled") or [])]
+
+
+def _said(ctx, line):
+    """P75: the command's line, then what it says about which ask it acted on."""
+    return "\n".join([line] + ctx.notes)
 
 
 def _can_answer(a, by, ask_id):
@@ -316,7 +367,7 @@ def cmd_add(args):
                                    session_id=ctx.session_id, by="agent", data=data)
     written, state = _write(ctx, build)
     ev = written[0]
-    ask = _asks_of(state, [ev["ask"]])
+    ask = _asks_by_uid(state, [ev["uid"]])
     f = flags.flag(ask[0], escalate_after_hours=ctx.cfg["escalate_after_hours"],
                    urgent_deadline_hours=ctx.cfg["urgent_deadline_hours"]) if ask else flags.RED
     msg = f'{ev["ask"]} recorded ({flags.word(f)}). Ask it in chat as: "{ev["ask"]}: {ev["data"]["title"]}"'
@@ -331,7 +382,7 @@ def cmd_update(args):
     if args.id is None or any(getattr(args, f[2:]) is not None for f in UPDATER_FLAGS):
         raise Fail(2, NOT_SELF_UPDATE)                # G6.2: one meaning, never updates Pit Board
     ctx = _Ctx(args)
-    ask_id = _ask_id(args.id)
+    ref = _ask_ref(args.id)
     data = {k: getattr(args, k) for k in ("severity", "title", "suggested", "why", "detail", "steps")
             if getattr(args, k) is not None}
     if args.deadline is not None:
@@ -340,28 +391,30 @@ def cmd_update(args):
         raise Fail(2, "pitboard: update needs at least one field (--title, --severity, ...)")
 
     def build(view):
-        a = _target(view, ask_id, ("open", "answered"), "update")
+        a = _target(view, ref, ("open", "answered"), "update", ctx)
         return ctx.event("updated", a, "agent", data)
-    _, state = _write(ctx, build)
-    return Out(f"{ask_id} updated.", [ask_id], _asks_of(state, [ask_id]))
+    written, state = _write(ctx, build)
+    a = written[0]
+    return Out(_said(ctx, f"{a['ask']} updated."), [a["ask"]], _asks_by_uid(state, [a["uid"]]))
 
 
 def cmd_answer(args):
     ctx = _Ctx(args)
-    ask_id = _ask_id(args.id)
+    ref = _ask_ref(args.id)
 
     def build(view):
-        a = _target(view, ask_id, ("open", "answered"), "answer")
-        _can_answer(a, args.by, ask_id)
+        a = _target(view, ref, ("open", "answered"), "answer", ctx)
+        _can_answer(a, args.by, a["ask"])
         return ctx.event("answered", a, args.by, {"answer": args.answer, "via": "text"})
-    _, state = _write(ctx, build)
-    return Out(f"{ask_id} answered.", [ask_id], _asks_of(state, [ask_id]))
+    written, state = _write(ctx, build)
+    a = written[0]
+    return Out(_said(ctx, f"{a['ask']} answered."), [a["ask"]], _asks_by_uid(state, [a["uid"]]))
 
 
 def _ids(raw):
     out = []
     for r in raw:
-        i = _ask_id(r)
+        i = _ask_ref(r)
         if i not in out:
             out.append(i)
     return out
@@ -369,16 +422,17 @@ def _ids(raw):
 
 def cmd_ok(args):
     ctx = _Ctx(args)
-    picked, skipped, state = approve(ctx, args.ids)
+    picked, skipped, state, asks = approve(ctx, args.ids)
     parts = [f"Approved: {', '.join(picked)}." if picked else "Nothing approved."]
     if skipped:
         parts.append(f"Skipped (no suggested answer): {', '.join(skipped)}.")
-    return Out(" ".join(parts), picked, _asks_of(state, picked), {"skipped": skipped})
+    text = "\n".join([" ".join(parts)] + _apart(asks, state))
+    return Out(_said(ctx, text), picked, asks, {"skipped": skipped})
 
 
 def approve(ctx, raw_ids):
     """The ok logic (G6.2), shared with the UserPromptSubmit hook (G7.2 step 2).
-    Returns (approved IDs, skipped IDs, state)."""
+    Returns (approved IDs, skipped IDs, state, the approved asks as written: found by uid, each once, P75)."""
     every = [r.lower() for r in raw_ids] == ["all"]
     ids = [] if every else _ids(raw_ids)
     picked, skipped = [], []
@@ -388,7 +442,7 @@ def approve(ctx, raw_ids):
         skipped.clear()
         targets = (sorted((a for a in view.asks.values() if a["status"] == "open"),
                           key=lambda a: contract.ask_number(a["ask"]))
-                   if every else [_target(view, i, ("open", "answered"), "ok") for i in ids])
+                   if every else [_target(view, i, ("open", "answered"), "ok", ctx) for i in ids])
         events = []
         for a in targets:
             if not a.get("suggested"):
@@ -398,42 +452,44 @@ def approve(ctx, raw_ids):
             picked.append(a["ask"])
             events.append(ctx.event("answered", a, "operator", {"answer": a["suggested"], "via": "ok"}))
         return events
-    _, state = _write(ctx, build)
-    return list(picked), list(skipped), state
+    written, state = _write(ctx, build)
+    return list(picked), list(skipped), state, _asks_by_uid(state, [e["uid"] for e in written])
 
 
 def cmd_no(args):
     ctx = _Ctx(args)
-    ids, state = decline(ctx, args.ids)
-    return Out(f"Declined: {', '.join(ids)}.", ids, _asks_of(state, ids))
+    ids, state, asks = decline(ctx, args.ids)
+    text = "\n".join([f"Declined: {', '.join(ids)}."] + _apart(asks, state))
+    return Out(_said(ctx, text), ids, asks)
 
 
 def decline(ctx, raw_ids):
-    """The no logic (G6.2), shared with the UserPromptSubmit hook (G7.2 step 3)."""
+    """The no logic (G6.2), shared with the UserPromptSubmit hook (G7.2 step 3).
+    Returns (declined IDs, state, the declined asks as written: found by uid, each once, P75)."""
     ids = _ids(raw_ids)
 
     def build(view):
         events = []
         for i in ids:
-            a = _target(view, i, ("open", "answered"), "no")
-            _can_answer(a, "operator", i)
+            a = _target(view, i, ("open", "answered"), "no", ctx)
+            _can_answer(a, "operator", a["ask"])
             events.append(ctx.event("answered", a, "operator", {"answer": "No.", "via": "no"}))
         return events
-    _, state = _write(ctx, build)
-    return ids, state
+    written, state = _write(ctx, build)
+    return [e["ask"] for e in written], state, _asks_by_uid(state, [e["uid"] for e in written])
 
 
 def _close(etype, word, allowed, data_of):
     def cmd(args):
         ctx = _Ctx(args)
-        ask_id = _ask_id(args.id)
+        ref = _ask_ref(args.id)
 
         def build(view):
-            a = _target(view, ask_id, allowed, args.command)
+            a = _target(view, ref, allowed, args.command, ctx)
             return ctx.event(etype, a, "agent", data_of(args))
-        _, state = _write(ctx, build, full=(etype == "reopened"))
-        asks = _asks_of(state, [ask_id])
-        return Out(f"{ask_id} {word}.", [ask_id], asks)
+        written, state = _write(ctx, build, full=(etype == "reopened"))
+        a = written[0]
+        return Out(_said(ctx, f"{a['ask']} {word}."), [a["ask"]], _asks_by_uid(state, [a["uid"]]))
     return cmd
 
 
@@ -737,26 +793,33 @@ def cmd_hook(args, stdin=None):
 
 def cmd_show(args):
     ctx = _Ctx(args)
-    ask_id = _ask_id(args.id)
-    a = next((x for x in store.all_asks(ctx.key).values() if x["ask"] == ask_id), None)
-    if a is None:
-        raise Fail(4, f"pitboard: {ask_id} not found in this lane")
+    ref = _ask_ref(args.id)
+    found = store.matching(store.all_asks(ctx.key).values(), ref)
+    if not found:
+        raise Fail(4, f"pitboard: {ref} not found in this lane")
     tz = timefmt.zone(ctx.cfg["display_tz"])
-    events = _events_of(ctx.key, a["uid"])
-    lines = []
-    for k, v in a.items():
-        if v in (None, "", [], {}):
-            continue
-        if isinstance(v, str) and contract.TS.match(v):
-            v = timefmt.show(v, tz)
-        elif isinstance(v, (list, dict)):
-            v = json.dumps(v, ensure_ascii=False)
-        lines.append(f"{k}: {v}")
-    lines.append("events:")
-    for e in events:
-        lines.append(f"  {timefmt.show(e['ts'], tz)}  {e['type']} by {e['by']}  "
-                     f"{json.dumps(e['data'], ensure_ascii=False)}")
-    return Out("\n".join(lines), [ask_id], [a], {"events": events})
+    lines, events = [], []
+    if len(found) > 1:     # P75: every ask under the ID, each with its uid
+        lines += [f"{ref} names {len(found)} asks in this lane: an older copy of Pit Board gave the number twice.",
+                  f"A command needs the uid of the one you mean in place of {ref}.", ""]
+    for n, a in enumerate(found):
+        if n:
+            lines.append("")
+        mine = _events_of(ctx.key, a["uid"])
+        events += mine
+        for k, v in a.items():
+            if v in (None, "", [], {}):
+                continue
+            if isinstance(v, str) and contract.TS.match(v):
+                v = timefmt.show(v, tz)
+            elif isinstance(v, (list, dict)):
+                v = json.dumps(v, ensure_ascii=False)
+            lines.append(f"{k}: {v}")
+        lines.append("events:")
+        for e in mine:
+            lines.append(f"  {timefmt.show(e['ts'], tz)}  {e['type']} by {e['by']}  "
+                         f"{json.dumps(e['data'], ensure_ascii=False)}")
+    return Out("\n".join(lines), [found[0]["ask"]], found, {"events": events})
 
 
 def cmd_lane(args):
@@ -947,8 +1010,9 @@ def main(argv=None, stdout=None, stderr=None):
             return int(e.code or 0)
         if a.folder:
             from . import leave
-            stderr.write("pitboard: `setup --folder DIR --undo` is the old spelling of `pitboard uninstall --folder "
-                         "DIR --apply`; it does the same, and goes after 0.1.3.\n")
+            stderr.write("pitboard: setup --folder DIR --undo is the old spelling of this command, which does the same:\n"
+                         "  pitboard uninstall --folder DIR --apply\n"
+                         "The old spelling goes after 0.1.3.\n")
             return leave.main(["--folder", a.folder, "--apply"] + (["--json"] if a.json else []), stdout=stdout,
                               stderr=stderr)
     as_json = "--json" in argv

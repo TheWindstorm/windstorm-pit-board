@@ -242,7 +242,8 @@ def test_G7_7_reminder_with_and_without_asks(home):
     out = ctx_of(start(home))
     assert out.splitlines() == ['Pit Board: you are lane "API Server" (key api-server) on studio-1.',
                                 "Rules: record every new ask with `pitboard add` before you ask it, "
-                                "and start the question with its ID. That includes an ask only the operator can "
+                                "and start the question with its ID. Put the ask's words in single quotes, with no backtick and no "
+                                "dollar sign in them. That includes an ask only the operator can "
                                 "answer that you send to another agent (a coordinator, a reviewer) or a shared "
                                 "board instead of the chat."]
     add("api-server")
@@ -272,7 +273,7 @@ def test_G7_7_an_ask_sent_to_another_agent_or_a_board_is_recorded_too():
         skill = f.read()
     assert "questions to other agents that they can answer themselves" in skill
     assert "Answer under A12, or say 'not mine to answer' under A12." in skill
-    assert "`pitboard answer A12 --by agent --answer \"<who>: <their answer>\"`" in skill
+    assert "`pitboard answer A12 --by agent --answer '<who>: <their answer>'`" in skill
 
 
 def test_G7_7_operator_name_limit_and_3000_chars():

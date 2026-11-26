@@ -384,8 +384,8 @@ def test_G18_3_uninstall_finds_each_folder_and_puts_it_back(world, folder):
 def test_G18_3_the_old_spelling_says_so_and_does_the_same(world, folder):
     lane, log = folder
     code, out, err = run_cli("setup", "--folder", str(lane), "--undo")
-    assert code == 0 and err.startswith("pitboard: `setup --folder DIR --undo` is the old spelling of `pitboard "
-                                        "uninstall --folder DIR --apply`")
+    assert code == 0 and err.startswith("pitboard: setup --folder DIR --undo is the old spelling of this command, "
+                                        "which does the same:\n  pitboard uninstall --folder DIR --apply\n")
     assert (lane / ".claude" / "settings.local.json").read_text() == '{"model": "y"}\n'
     assert "census:" in out and f"Pit Board is off in {lane}." in out
 
@@ -636,8 +636,8 @@ P30_FOLDER = ("  kept: ~/.claude/plugins/cache/thewindstorm/windstorm-pit-board/
               "Claude Code keeps in its plugin cache after its own uninstall (it marked it .orphaned_at); Claude Code's to "
               "clean up, so Pit Board leaves it)")
 P30_CATALOG = ("  kept: the plugin catalog thewindstorm in Claude Code's list (other plugins install and update from it; "
-               "removing it with `claude plugin marketplace remove thewindstorm` also uninstalls every plugin installed "
-               "from that catalog, so Pit Board leaves it)")
+               "removing that catalog from Claude Code also uninstalls every plugin installed from it, so Pit Board "
+               "leaves it)")
 
 
 def test_G18_3_the_census_names_what_claude_codes_own_uninstall_changed_and_kept(world):
@@ -1007,10 +1007,10 @@ def test_G18_3_P58_with_no_claude_on_the_path_the_census_names_a_step_the_person
     assert code == L.INCOMPLETE and st.read_text() == MINE_TEXT                       # the status line is back
     assert "  gone: status line setting in ~/.claude/settings.json (put back byte for byte)" in rows
     line = [r for r in rows if r.startswith("  kept: plugin windstorm-pit-board@thewindstorm (user scope)")]
-    assert line == ["  kept: plugin windstorm-pit-board@thewindstorm (user scope) (`claude` was not found on the "
+    assert line == ["  kept: plugin windstorm-pit-board@thewindstorm (user scope) (The claude command was not found on the "
                     "PATH, so Claude Code's own entry for the plugin stays; your status line is already back, and Pit "
                     "Board's files stay where the line below says. If Claude Code is still on this account, put its "
-                    "`claude` on the PATH and run ~/.pitboard/bin/pitboard uninstall --apply again. If Claude Code "
+                    "claude command on the PATH and run ~/.pitboard/bin/pitboard uninstall --apply again. If Claude Code "
                     "is gone, nothing of Pit Board runs any more)"], rows
     assert "run yourself: claude plugin uninstall" not in out.getvalue()
     assert any(r.startswith("  kept: Pit Board's files in ~/.pitboard (a step above was not finished") for r in rows)
@@ -1071,3 +1071,72 @@ def test_G18_3_the_way_back_in_setup_leave_setup_again_and_an_ask_is_added_and_s
     assert code == 0 and out.startswith(f"🔴 RED {kept + 1} ask"), out
     code, out, _ = run_cli("board", "--lane", "circle", "--plain")
     assert code == 0 and ("first?" in out) == bool(kept) and "second?" in out, out
+
+
+# ---------------------------------------------------------------- P72: no printed line a shell would run (rule 31)
+
+SHELL_RUNS = re.compile(r"`|\$\(")       # inside double quotes a shell runs what a backtick pair or $( ) holds
+
+
+def _uninstall_worlds(name, home, pb, st, monkeypatch):
+    """Every road of `pitboard uninstall` this file sets up, by name; returns what each run printed."""
+    if name == "plan, then apply twice":
+        return [run(), run("--apply"), run("--apply")]
+    if name == "delete refused away from a terminal":
+        return [run("--apply", "--delete-asks-and-log", stdin=io.StringIO("2\n")),
+                run("--delete-asks-and-log", stdin=Tty("2\n"), stdout=Tty())]
+    registry(home, [{"scope": "user", "version": "0.1.3", "installPath": "/x"}])
+    if name == "the catalog still listed":
+        _, effect = _as_seen_on_2_1_331(home)
+        return [run("--apply", effect=effect)]
+    if name == "claude fails":
+        return [run("--apply", fail=True)]
+    if name == "no claude on the PATH":
+        out, err = io.StringIO(), io.StringIO()
+        code = L.main(["--apply"], stdin=io.StringIO(""), stdout=out, stderr=err, run=_no_claude)
+        return [(code, out.getvalue(), err.getvalue())]
+    if name == "a lane busy":
+        monkeypatch.setattr(L, "LOCK_WAIT_SECONDS", 0.3)
+        fd = _hold(pb / "lanes" / "api.lock")
+        try:
+            return [run("--apply")]
+        finally:
+            os.close(fd)
+    if name == "the list cannot be read":
+        _broken_registry(home, pb, st)
+        return [run(), run("--apply")]
+    raise AssertionError(name)
+
+
+@pytest.mark.parametrize("name", ["plan, then apply twice", "delete refused away from a terminal",
+                                  "the catalog still listed", "claude fails", "no claude on the PATH", "a lane busy",
+                                  "the list cannot be read"])
+def test_G18_3_P72_no_line_uninstall_prints_is_run_by_a_shell(world, monkeypatch, name):
+    """P72 (the family's rule 31): an agent relays what Pit Board printed, and inside double quotes a shell runs what
+    a backtick pair or $( ) holds, before the program it was meant for starts. Seen 2026-11-24 with a stand-in
+    `claude`: uninstall's kept line about the catalog, relayed in double quotes, ran `claude plugin marketplace
+    remove thewindstorm`. So no line uninstall prints, on any road, carries a backtick or $(; a command stands alone."""
+    home, pb, st = world
+    printed = _uninstall_worlds(name, home, pb, st, monkeypatch)
+    hits = [ln for _, out, err in printed for ln in (out + err).splitlines() if SHELL_RUNS.search(ln)]
+    assert hits == [], hits
+
+
+def test_G18_3_P72_no_line_setup_prints_is_run_by_a_shell(world, folder, tmp_path, monkeypatch):
+    """P72: the same for every road of `pitboard setup`: a plan, the apply twice, its refusals, the folder mode with
+    its own refusal, and the old spelling of the folder undo."""
+    home, pb, st = world
+    lane, _ = folder
+    other = tmp_path / "other"
+    other.mkdir()
+    fresh = tmp_path / "fresh"
+    (fresh / ".claude").mkdir(parents=True)
+    printed = [run_cli("setup", "--folder", str(lane)), run_cli("setup", "--folder", str(home)),
+               run_cli("setup", "--folder", str(other)), run_cli("setup", "--folder", str(other), "--apply"),
+               run_cli("setup", "--folder", str(lane), "--undo"), run_cli("setup"), run_cli("setup", "--undo")]
+    monkeypatch.setenv("HOME", str(fresh))
+    printed += [run_cli("setup", "--minimal"), run_cli("setup", "--minimal", "--apply"),
+                run_cli("setup", "--minimal", "--apply")]
+    assert any("Done:" in out for _, out, _ in printed) and any(code != 0 for code, _, _ in printed)
+    hits = [ln for _, out, err in printed for ln in (out + err).splitlines() if SHELL_RUNS.search(ln)]
+    assert hits == [], hits

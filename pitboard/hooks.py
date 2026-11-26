@@ -52,6 +52,11 @@ def _lane(inp, refresh=False):
     return row["lane"], row.get("lane_name") or row["lane"]
 
 
+def _doubled_line(e):
+    return ("Pit Board: the operator's message was not recorded. " + str(e).replace("pitboard: ", "", 1)
+            + "\nAsk the operator which one they mean, then run the command with its uid.")
+
+
 def _ctx(key, name, sid, cfg):
     from . import cli
     return cli._Ctx(key=key, name=name, session_id=sid, cfg=cfg, lock_timeout=store.LOCK_WAIT_HOOK)
@@ -161,27 +166,33 @@ def user_prompt_submit(inp, cfg):
         if m:                                                               # step 2
             ids = ["all"] if m.group(2).lower() == "all" else ["A" + n for n in ASK_IDS.findall(m.group(2))]
             try:
-                picked, _, state = cli.approve(ctx, ids)
+                picked, _, state, asks = cli.approve(ctx, ids)
+            except cli.Doubled as e:                                        # P75: said, never dropped
+                lines.append(_doubled_line(e))
+                picked, state = [], None
             except cli.Fail as e:
                 if e.code == 7:
                     raise store.LaneBusy(str(e))
                 picked, state = [], None
-            if picked:
-                by = {a["ask"]: a for a in state["asks"]}
-                said = "; ".join(f'{i}: "{by[i]["answer"]}"' for i in picked if i in by)
+            if picked:                                     # P75: each approved ask by its uid, with its own answer
+                said = "; ".join(f'{cli._label(a, state)}: "{a["answer"]}"' for a in asks)
                 lines.append(f"Pit Board: the operator approved {said}. Carry them out now. "
                              f"When each is finished, run: pitboard done <ID>.")
                 did.append("approved " + ",".join(picked))
         elif d:                                                             # step 3
             ids = ["A" + n for n in ASK_IDS.findall(prompt)]
             try:
-                done_ids, _ = cli.decline(ctx, ids)
+                done_ids, state, asks = cli.decline(ctx, ids)
+            except cli.Doubled as e:                                        # P75: said, never dropped
+                lines.append(_doubled_line(e))
+                done_ids = []
             except cli.Fail as e:
                 if e.code == 7:
                     raise store.LaneBusy(str(e))
                 done_ids = []
             if done_ids:
-                lines.append(f"Pit Board: the operator declined {', '.join(done_ids)}. Do not do them. "
+                said = ", ".join(cli._label(a, state) for a in asks)
+                lines.append(f"Pit Board: the operator declined {said}. Do not do them. "
                              "Ask what to do instead only if you are blocked.")
                 did.append("declined " + ",".join(done_ids))
 

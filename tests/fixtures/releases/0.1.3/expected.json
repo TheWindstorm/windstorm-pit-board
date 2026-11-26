@@ -1,0 +1,413 @@
+{
+  "version": "0.1.3",
+  "made_with": [
+    [
+      "add",
+      "--lane",
+      "fixture-lane",
+      "--title",
+      "Merge #12 now?",
+      "--suggested",
+      "merge now",
+      "--why",
+      "CI green"
+    ],
+    [
+      "add",
+      "--lane",
+      "fixture-lane",
+      "--title",
+      "create a test account",
+      "--kind",
+      "hand",
+      "--step",
+      "Open the page",
+      "--step",
+      "Paste the key name here",
+      "--deadline",
+      "2026-11-20T22:00:00.000Z",
+      "--severity",
+      "can-wait"
+    ],
+    [
+      "add",
+      "--lane",
+      "fixture-lane",
+      "--title",
+      "Keep the old page?",
+      "--kind",
+      "decision",
+      "--severity",
+      "urgent",
+      "--suggested",
+      "no, redirect it"
+    ],
+    [
+      "add",
+      "--lane",
+      "fixture-lane",
+      "--title",
+      "Use staging first?",
+      "--suggested",
+      "yes",
+      "--detail",
+      "two lines\nof detail"
+    ],
+    [
+      "add",
+      "--lane",
+      "fixture-lane",
+      "--title",
+      "Old idea?",
+      "--severity",
+      "can-wait",
+      "--suggested",
+      "drop it"
+    ],
+    [
+      "add",
+      "--lane",
+      "fixture-lane",
+      "--title",
+      "Run the long job?",
+      "--kind",
+      "permission",
+      "--suggested",
+      "yes"
+    ],
+    [
+      "update",
+      "--lane",
+      "fixture-lane",
+      "A1",
+      "--suggested",
+      "merge now (CI green)"
+    ],
+    [
+      "ok",
+      "--lane",
+      "fixture-lane",
+      "A1"
+    ],
+    [
+      "done",
+      "--lane",
+      "fixture-lane",
+      "A1",
+      "--note",
+      "merged"
+    ],
+    [
+      "no",
+      "--lane",
+      "fixture-lane",
+      "A3"
+    ],
+    [
+      "answer",
+      "--lane",
+      "fixture-lane",
+      "A4",
+      "--answer",
+      "Yes, staging first",
+      "--by",
+      "operator"
+    ],
+    [
+      "withdraw",
+      "--lane",
+      "fixture-lane",
+      "A5",
+      "--reason",
+      "moot"
+    ],
+    [
+      "done",
+      "--lane",
+      "fixture-lane",
+      "A4"
+    ],
+    [
+      "reopen",
+      "--lane",
+      "fixture-lane",
+      "A4",
+      "--reason",
+      "staging broke"
+    ],
+    [
+      "add",
+      "--lane",
+      "second-lane",
+      "--title",
+      "Plug in the phone",
+      "--kind",
+      "hand",
+      "--step",
+      "Plug it in"
+    ],
+    [
+      "answer",
+      "--lane",
+      "second-lane",
+      "A1",
+      "--answer",
+      "done it",
+      "--by",
+      "agent"
+    ]
+  ],
+  "lanes": {
+    "fixture-lane": {
+      "asks": [
+        {
+          "uid": "1b69355a960149758a5608ea5dda4952",
+          "ask": "A1",
+          "lane": "fixture-lane",
+          "lane_name": "Fixture Lane",
+          "machine": "fixture-box",
+          "status": "done",
+          "kind": "question",
+          "severity": "blocking",
+          "title": "Merge #12 now?",
+          "suggested": "merge now (CI green)",
+          "steps": [],
+          "deadline": null,
+          "detail": "",
+          "why": "CI green",
+          "asked_at": "2026-11-24T14:28:06.108Z",
+          "answered_at": "2026-11-24T14:28:06.141Z",
+          "answer": "merge now (CI green)",
+          "answered_by": "operator",
+          "answered_via": "ok",
+          "done_at": "2026-11-24T14:28:06.146Z",
+          "done_note": "merged",
+          "withdrawn_at": null,
+          "withdrawn_reason": null,
+          "updated_at": "2026-11-24T14:28:06.146Z",
+          "source": "agent",
+          "where": {
+            "cwd": "/home/user/project",
+            "host": "fixture-host"
+          },
+          "session_id": "00000000-0000-4000-8000-0000000000c1",
+          "events": 4
+        },
+        {
+          "uid": "ab391ebb2c8140fb87023a3d751c5dbc",
+          "ask": "A2",
+          "lane": "fixture-lane",
+          "lane_name": "Fixture Lane",
+          "machine": "fixture-box",
+          "status": "open",
+          "kind": "hand",
+          "severity": "can-wait",
+          "title": "create a test account",
+          "suggested": "",
+          "steps": [
+            "Open the page",
+            "Paste the key name here"
+          ],
+          "deadline": "2026-11-20T22:00:00.000Z",
+          "detail": "",
+          "why": "",
+          "asked_at": "2026-11-24T14:28:06.115Z",
+          "answered_at": null,
+          "answer": null,
+          "answered_by": null,
+          "answered_via": null,
+          "done_at": null,
+          "done_note": null,
+          "withdrawn_at": null,
+          "withdrawn_reason": null,
+          "updated_at": "2026-11-24T14:28:06.115Z",
+          "source": "agent",
+          "where": {
+            "cwd": "/home/user/project",
+            "host": "fixture-host"
+          },
+          "session_id": "00000000-0000-4000-8000-0000000000c1",
+          "events": 1
+        },
+        {
+          "uid": "773ef7e37f1f4305857a21f10534185c",
+          "ask": "A3",
+          "lane": "fixture-lane",
+          "lane_name": "Fixture Lane",
+          "machine": "fixture-box",
+          "status": "answered",
+          "kind": "decision",
+          "severity": "urgent",
+          "title": "Keep the old page?",
+          "suggested": "no, redirect it",
+          "steps": [],
+          "deadline": null,
+          "detail": "",
+          "why": "",
+          "asked_at": "2026-11-24T14:28:06.118Z",
+          "answered_at": "2026-11-24T14:28:06.149Z",
+          "answer": "No.",
+          "answered_by": "operator",
+          "answered_via": "no",
+          "done_at": null,
+          "done_note": null,
+          "withdrawn_at": null,
+          "withdrawn_reason": null,
+          "updated_at": "2026-11-24T14:28:06.149Z",
+          "source": "agent",
+          "where": {
+            "cwd": "/home/user/project",
+            "host": "fixture-host"
+          },
+          "session_id": "00000000-0000-4000-8000-0000000000c1",
+          "events": 2
+        },
+        {
+          "uid": "d9c994ecabe54c9284d0485d9fb5726c",
+          "ask": "A4",
+          "lane": "fixture-lane",
+          "lane_name": "Fixture Lane",
+          "machine": "fixture-box",
+          "status": "open",
+          "kind": "question",
+          "severity": "blocking",
+          "title": "Use staging first?",
+          "suggested": "yes",
+          "steps": [],
+          "deadline": null,
+          "detail": "two lines\nof detail",
+          "why": "",
+          "asked_at": "2026-11-24T14:28:06.122Z",
+          "answered_at": null,
+          "answer": null,
+          "answered_by": null,
+          "answered_via": null,
+          "done_at": null,
+          "done_note": null,
+          "withdrawn_at": null,
+          "withdrawn_reason": null,
+          "updated_at": "2026-11-24T14:28:06.165Z",
+          "source": "agent",
+          "where": {
+            "cwd": "/home/user/project",
+            "host": "fixture-host"
+          },
+          "session_id": "00000000-0000-4000-8000-0000000000c1",
+          "events": 4
+        },
+        {
+          "uid": "e17758ebcf4049a0a2a095c8ceb7b5fe",
+          "ask": "A5",
+          "lane": "fixture-lane",
+          "lane_name": "Fixture Lane",
+          "machine": "fixture-box",
+          "status": "withdrawn",
+          "kind": "question",
+          "severity": "can-wait",
+          "title": "Old idea?",
+          "suggested": "drop it",
+          "steps": [],
+          "deadline": null,
+          "detail": "",
+          "why": "",
+          "asked_at": "2026-11-24T14:28:06.126Z",
+          "answered_at": null,
+          "answer": null,
+          "answered_by": null,
+          "answered_via": null,
+          "done_at": null,
+          "done_note": null,
+          "withdrawn_at": "2026-11-24T14:28:06.157Z",
+          "withdrawn_reason": "moot",
+          "updated_at": "2026-11-24T14:28:06.157Z",
+          "source": "agent",
+          "where": {
+            "cwd": "/home/user/project",
+            "host": "fixture-host"
+          },
+          "session_id": "00000000-0000-4000-8000-0000000000c1",
+          "events": 2
+        },
+        {
+          "uid": "cd888d9026634d6097f6fbc45e8bd064",
+          "ask": "A6",
+          "lane": "fixture-lane",
+          "lane_name": "Fixture Lane",
+          "machine": "fixture-box",
+          "status": "open",
+          "kind": "permission",
+          "severity": "blocking",
+          "title": "Run the long job?",
+          "suggested": "yes",
+          "steps": [],
+          "deadline": null,
+          "detail": "",
+          "why": "",
+          "asked_at": "2026-11-24T14:28:06.130Z",
+          "answered_at": null,
+          "answer": null,
+          "answered_by": null,
+          "answered_via": null,
+          "done_at": null,
+          "done_note": null,
+          "withdrawn_at": null,
+          "withdrawn_reason": null,
+          "updated_at": "2026-11-24T14:28:06.130Z",
+          "source": "agent",
+          "where": {
+            "cwd": "/home/user/project",
+            "host": "fixture-host"
+          },
+          "session_id": "00000000-0000-4000-8000-0000000000c1",
+          "events": 1
+        }
+      ]
+    },
+    "second-lane": {
+      "asks": [
+        {
+          "uid": "d6538eaa33f3472c954cbdaa3f7e3cc3",
+          "ask": "A1",
+          "lane": "second-lane",
+          "lane_name": "second-lane",
+          "machine": "fixture-box",
+          "status": "answered",
+          "kind": "hand",
+          "severity": "blocking",
+          "title": "Plug in the phone",
+          "suggested": "",
+          "steps": [
+            "Plug it in"
+          ],
+          "deadline": null,
+          "detail": "",
+          "why": "",
+          "asked_at": "2026-11-24T14:28:06.169Z",
+          "answered_at": "2026-11-24T14:28:06.173Z",
+          "answer": "done it",
+          "answered_by": "agent",
+          "answered_via": "text",
+          "done_at": null,
+          "done_note": null,
+          "withdrawn_at": null,
+          "withdrawn_reason": null,
+          "updated_at": "2026-11-24T14:28:06.173Z",
+          "source": "agent",
+          "where": {
+            "cwd": "/home/user/project",
+            "host": "fixture-host"
+          },
+          "session_id": "00000000-0000-4000-8000-0000000000c1",
+          "events": 2
+        }
+      ]
+    }
+  },
+  "config": {
+    "operator_name": "Sam",
+    "escalate_after_hours": 12,
+    "urgent_deadline_hours": 6,
+    "reminder_max_items": 5,
+    "display_tz": "America/New_York"
+  }
+}
