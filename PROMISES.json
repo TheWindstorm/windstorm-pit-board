@@ -40,7 +40,7 @@
   {
    "id": "P3",
    "seen": "2026-11-22, the same reboot: the terminal tab showing the pilot lane got a new id and kept its label. The tmux pane id saved with an ask before the reboot (%148) no longer existed; the lane came back as %10, because a new tmux server gives pane ids out again from the start. Its window name changed too (bash to claude).",
-   "promise": "Waking (G16.5) types into a saved pane only when it still runs Claude Code, its tmux session name equals the ask's where.tmux_session and its folder equals where.cwd; never by a saved id alone, and window names are not compared.",
+   "promise": "Waking (G16.5) types into a saved pane only when it still runs Claude Code, its tmux session name equals the ask's where.tmux_session and its folder equals where.cwd; never by a saved id alone, and window names are not compared. Both names are read with tmux's -u (P71), and an ask whose where has no tmux_session is never woken by a name.",
    "codon": "G16.5",
    "owner": "maintainer",
    "first_ship_in": "0.4.0",
@@ -60,9 +60,9 @@
    "first_ship_in": "0.1.1",
    "ship_in": "0.1.2",
    "test": "test_G9_1_pit_board_body_is_appendix_A5_word_for_word",
-   "proven": "",
+   "proven": "Proven 2026-11-25 on one machine, a shared Linux workstation. The set: every lane there whose session carried 0.1.2's reminder, each counted from its own first session with it, the maintainer's own lane left out. A product lane outside the skill family recorded asks for the operator with pitboard add, by the agent, at 2026-11-24T14:33:20.759Z and 2026-11-25T11:44:30.434Z: two Eastern days, 21 h 11 min apart. Four more lanes outside the family recorded asks on those days: 13 asks in 5 lanes in all, the \"asked\" events by the agent from 2026-11-24T14:33:20.759Z to the window's end, 2026-11-25T11:44:30.434Z (2 + 4 + 1 + 1 + 5). Read from the tool's own records (ids and times, never an ask's text), counted by the maintainer and read by the skill's owner; nothing was told to any lane about the count. What it does not show: in the same days, steps only the operator could take were also named on the shared board with no ask recorded (P13, P81).",
    "issue": null,
-   "moved_why": "Moved from 0.1.1 to 0.1.2 on 2026-11-23 by the skills' department head. In M2a, under 0.1.1's words, the one real ask in the week's sample was not recorded (it went to the shared board), so the promise as shipped was not kept. P13 changes the words in 0.1.2. P4's two days count from the day all three pilot lanes run 0.1.2, and its proof then holds back 0.1.3, not 0.1.2.",
+   "moved_why": "Moved from 0.1.1 to 0.1.2 on 2026-11-23 by the skill's owner. In M2a, under 0.1.1's words, the one real ask in the week's sample was not recorded (it went to the shared board), so the promise as shipped was not kept. P13 changes the words in 0.1.2. P4's two days count from the day all three pilot lanes run 0.1.2, and its proof then holds back 0.1.3, not 0.1.2.",
    "moved_by_person": "",
    "proof_needed": "Two calendar days, each with at least one real ask recorded unprompted in a pilot lane, counted from the day all three pilot lanes run 0.1.2; name the dates and the lanes."
   },
@@ -182,13 +182,14 @@
    "codon": "G7.7",
    "owner": "maintainer",
    "first_ship_in": "0.1.2",
-   "ship_in": "0.1.2",
-   "seen": "2026-11-23, the weekly sample of 20 lane endings in M2a (three lanes of the skill family, from 2026-11-22T14:47Z): 19 needed no ask of the operator, and 1 needed one that was not recorded: the lane's work waited on the operator's own login step, and the lane said so on the shared board only. No lane ran pitboard add in any of its 190 endings. The skill's owner, who is staff, also reported asks for the operator that two lanes brought to him over the same two days instead of recording them (whether something may be posted under the operator's name; a decision about another user's install on the machine). The reminder says to record an ask before you ask it, and the lanes read that as a question typed in the chat.",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-23, the weekly sample of 20 lane endings in M2a (three lanes of the skill family, from 2026-11-22T14:47Z): 19 needed no ask of the operator, and 1 needed one that was not recorded: the lane's work waited on the operator's own login step, and the lane said so on the shared board only. No lane ran pitboard add in any of its 190 endings. The skill's owner, who is staff, also reported asks for the operator that two lanes brought to him over the same two days instead of recording them (whether something may be posted under the operator's name; a decision about another user's install on the machine). The reminder says to record an ask before you ask it, and the lanes read that as a question typed in the chat. Seen again 2026-11-24 and 2026-11-25 on one shared Linux workstation where every lane ran 0.1.2, in board lines since 12:00 AM Eastern on 11-24, counted by pattern (the maintainer's count by words) and read by the skill's owner. Kept: an ask's ID travelled on the shared board in lines of two lanes. Not kept: a product lane named the operator's own login step to a coordinator on the board three times and recorded no ask; the machine's keeper, a staff lane, read back on the board items of its own numbered list for the operator and recorded none of them; the staff lane that owns this skill had five asks waiting on the operator and recorded none until after the count. The cause, read by the skill's owner: a second list kept for the operator, and asks that were open before the tool arrived, which the reminder's \"new\" does not reach (P81).",
    "promise": "The reminder (G7.7) and the skill (G9.1) say that an ask only the operator can answer (the operator's own login, consent, signature, money or name, or another person's account on the operator's machine) is recorded with pitboard add by the agent that has it, also when the agent sends it to another agent (a coordinator, a reviewer) or a shared board instead of the chat. The ask's ID and one line travel in that message: answer under the ID, or say 'not mine to answer' under it. An answer given under the ID is written with who gave it; otherwise the operator is asked in chat under the same ID. The skill no longer says not to record questions to other agents, only those they can answer themselves.",
    "test": "test_G7_7_an_ask_sent_to_another_agent_or_a_board_is_recorded_too",
    "proven": "",
-   "proof_needed": "P4's proof (ruled by the skills' department head, 2026-11-23): a wording row is not proven by a test of its words. Proven when P4 is: two calendar days, each with a real ask recorded unprompted in a pilot lane, with all three lanes on 0.1.2.",
-   "issue": ""
+   "proof_needed": "P4's proof (ruled by the skill's owner, 2026-11-23): a wording row is not proven by a test of its words. Proven when P4 is: two calendar days, each with a real ask recorded unprompted in a pilot lane, with all three lanes on 0.1.2.",
+   "issue": "",
+   "moved_why": "Moved from 0.1.2 to 0.1.4 on 2026-11-25 by the skill's owner: its words shipped and were kept where a lane had no other list, and not where it had one. Seen in part is not proof (the family's rule 32). No wording change in 0.1.3: what was seen is P81, due 0.1.4."
   },
   {
    "id": "P14",
@@ -273,7 +274,7 @@
    "promise": "Every stop and need-you line names what happened and the one next step, and the words for the person are one numbered block printed by the tool (`tell the person 1 of N`), the last thing before the stop. Every clause in a tell line is something the person must hear; what is only good to know stays in the README. A test reads them all.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 144
   },
   {
    "id": "P21",
@@ -285,7 +286,7 @@
    "promise": "The skills carry trigger evals and with-skill against without-skill evals in the skill-creator style, and their results are read before a release.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 159
   },
   {
    "id": "P22",
@@ -309,7 +310,7 @@
    "promise": "Every other read a decision hangs on has three answers (yes, no, could not be read). Nothing is deleted, emptied, started or reported gone on the third, and one test fails each read in turn.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 145
   },
   {
    "id": "P24",
@@ -321,7 +322,7 @@
    "promise": "With no lane given, a command says how many lanes the computer has. Its one next step leads the agent to its own key first, from where it was told it: the session's first Pit Board line (`you are lane ... (key ...)`), or the `PITBOARD_LANE` the SessionStart hook set for this session. It names `pitboard lanes` only as the person's way to see them all. Lane names are printed only when the person asks with `pitboard lanes`, which the plan names.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 146
   },
   {
    "id": "P25",
@@ -345,7 +346,7 @@
    "promise": "Setup keeps the mode a settings file had when it changes it. For a file an earlier setup made private (600), uninstall puts the recorded mode back when the file's mode is still 600; when the person changed the mode since, it leaves it and the census says so.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 147
   },
   {
    "id": "P27",
@@ -357,7 +358,7 @@
    "promise": "The `session-start` line in `logs/pitboard.log` names the session (the first 8 characters of its id) next to the version that ran (P15), so which version runs in which session is read from the log alone.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 148
   },
   {
    "id": "P28",
@@ -369,7 +370,7 @@
    "promise": "What a person must hear before `setup --apply` or `uninstall --apply` changes anything is printed by that command, and at a real terminal it goes on only when they press a key. With no terminal (an agent's tool call) it does not wait and does not hang, and the must-hear block is still the last thing it prints.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 149
   },
   {
    "id": "P29",
@@ -405,7 +406,7 @@
    "promise": "A session that starts and ends without recording an ask leaves nothing of its own behind: no row in the lane map, no lock file, no state files. A session that does record one keeps its lane as before. The README says what a session writes and when each piece goes.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 150
   },
   {
    "id": "P32",
@@ -417,7 +418,7 @@
    "promise": "The reminder's `Rules:` line says that when `pitboard add` itself is refused or fails, the agent asks in the chat as usual and says nothing to the person about the tool.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 151
   },
   {
    "id": "P33",
@@ -429,7 +430,7 @@
    "promise": "`logs/pitboard.log` is rotated at 1 MB and 3 old files are kept, also when several hooks write at once; no line is lost or split by a rotation; the README names the log as what stays and says its bound; uninstall counts the rotated files with the log.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 152
   },
   {
    "id": "P34",
@@ -437,11 +438,11 @@
    "owner": "maintainer",
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.4",
-   "seen": "2026-11-24: one home made on 2026-11-17, before the first release, was mode 775. Released code does not do that: `pitboard setup` makes the home through the store's 700 path before it writes, in every release, and a fresh setup of 0.1.2 on a fleet Linux machine with umask 0002 made it 700. Every hook, run first into an empty home under umask 0002, made it 700 in 0.1.0, 0.1.1 and 0.1.2. Nothing in a released version was seen to make a home other than 700. Read in the code, not run: `pitboard pin` (0.1.2) makes its folder with the default mode, so as the very first command it would make the home that way. And setup's plan says nothing about the mode of a home that already exists.",
+   "seen": "2026-11-24: one home made on 2026-11-17, before the first release, was mode 775. Released code does not do that: `pitboard setup` makes the home through the store's 700 path before it writes, in every release, and a fresh setup of 0.1.2 on a fleet Linux machine with umask 0002 made it 700. Every hook, run first into an empty home under umask 0002, made it 700 in 0.1.0, 0.1.1 and 0.1.2. Nothing in a released version was seen to make a home other than 700. Read in the code: `pitboard pin` (0.1.2) makes its folder with the default mode, so as the very first command it would make the home that way. Seen 2026-11-25 with the 0.1.3 release head's code, in a made home under umask 0002 with a stand-in install of 0.1.2 and 0.1.3: `pitboard self-update --pin 0.1.2` as the very first Pit Board command made the home 755 and update/ 755 (the launcher's 022 takes off only group write), the pin file 600; setup's plan afterwards named nothing about the home's mode, and after --apply the home was still 755. And setup's plan says nothing about the mode of a home that already exists.",
    "promise": "A home that Pit Board makes is 700, whichever command or hook writes first (setup's is pinned by a test; `pin` joins it). A home that already exists with another mode is named in setup's plan and never changed.",
    "test": "",
    "proven": "The half released code already keeps, only: 2026-11-24 02:52Z, a stock Ubuntu 24.04.5 virtual machine, a fresh user with umask 0002, Claude Code 2.1.331: `pitboard setup --minimal --apply` (run by hand) made ~/.pitboard 700, and lanes/, state/ and logs/ 700. The other half (setup's plan names an existing home's mode; `pin` makes the home 700) is not built and not seen.",
-   "issue": ""
+   "issue": 153
   },
   {
    "id": "P35",
@@ -453,7 +454,7 @@
    "promise": "In a session whose session-start hook never ran, the first prompt hook gives the model the same reminder session-start gives (the rules and the open asks), once in that session, and the log says it came by the prompt hook. A session that did run session-start gets nothing more from it.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 154
   },
   {
    "id": "P36",
@@ -501,7 +502,7 @@
    "promise": "A command whose result a setting changed says so: `pitboard add` always names the lane it wrote to (an ask filed in the wrong lane by a `PITBOARD_LANE` left in a shell is otherwise the one mistake a person cannot see); `pitboard board` and the reminder name the home when it is not `~/.pitboard`; `pitboard version` says self-update is off whenever it is off.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 155
   },
   {
    "id": "P40",
@@ -608,7 +609,7 @@
    "seen": "2026-11-24, the family's maintainer reading the log of P46's run on a real Mac against the family's rules 23 and 8: after `uninstall --apply` the census kept setup's record and printed `rm -r ~/.pitboard` for the person to run at their own terminal. That is a recursive delete of a folder a setting (`PITBOARD_HOME`) can name, printed for later, when anything may have landed in it; and the account was as found only after that line was run.",
    "promise": "No line Pit Board prints is a delete. Setup's record is Pit Board's: once every step before it was done, the leave removes it last, then Pit Board's home when it is empty and Pit Board made it (setup records that it made the home before it writes anything there; the default `~/.pitboard` is Pit Board's by name), each named in the census; a folder that was there before setup stays and is named as the person's; the listing after the leave equals the listing before setup, every difference a named line, with no step by hand. A leave that did not finish keeps the record for the next run. When the person's asks or log stay, they are named, and the one way offered to delete them is Pit Board's own `--delete-asks-and-log`, in the plan; after `--apply` no command is printed for them. In a home that holds things not Pit Board's, the record stays and is named.",
    "test": "test_G18_3_P48_the_leave_leaves_the_home_as_found_with_no_step_by_hand",
-   "proven": "2026-11-24 07:33Z, a clean test account on a fleet Mac (macOS 27.2.1, arm64, Apple's python3 3.9.6, /bin/sh = bash 3.2.57), no Claude Code and no `~/.claude`, main at e184415a, stock: setup --minimal --apply (15 entries added), the plan, then the home's own uninstall --apply, exit 0. The census named `~/.claude` gone (made by setup when there was none), Pit Board's files gone, setup's record last and then `~/.pitboard` (\"Pit Board's home, empty\"); no line printed was a delete. The whole home listed with the family's listing tool before setup and after the leave: 0 differences (102879 entries both times), no clean-up by hand. Then, 07:32Z, with a real Claude Code 2.1.331 (no sign-in) on the same account, the catalog and install line of the release, steered: the version folder's code was replaced by the commit under test; setup, the session's start by hooks.json's own command, three redraws (the per-session file kept), then uninstall --apply ran the real `claude plugin uninstall`, exit 0; no line printed was a delete; Pit Board's files, the per-session file and setup's record went, and what stayed was named: the settings backup, Claude Code's own files and version folder (marked .orphaned_at), the catalog, and the lane map and the log as the person's (that line's wording is P59). An earlier stock run at 76b6920e (05:46Z) gave the same 0 differences. Not seen on a Mac: the leave with asks kept (the tests cover it). The run stands for the tag while `pitboard/leave.py`, `pitboard/launch.py` and `pitboard/setup.py` are the same files at the tag commit as at e184415a; if one changes, the Mac run is done once more before the tag.",
+   "proven": "2026-11-24 07:33Z, a clean test account on a fleet Mac (macOS 27.2.1, arm64, Apple's python3 3.9.6, /bin/sh = bash 3.2.57), no Claude Code and no `~/.claude`, main at e184415a, stock: setup --minimal --apply (15 entries added), the plan, then the home's own uninstall --apply, exit 0. The census named `~/.claude` gone (made by setup when there was none), Pit Board's files gone, setup's record last and then `~/.pitboard` (\"Pit Board's home, empty\"); no line printed was a delete. The whole home listed with the family's listing tool before setup and after the leave: 0 differences (102879 entries both times), no clean-up by hand. Then, 07:32Z, with a real Claude Code 2.1.331 (no sign-in) on the same account, the catalog and install line of the release, steered: the version folder's code was replaced by the commit under test; setup, the session's start by hooks.json's own command, three redraws (the per-session file kept), then uninstall --apply ran the real `claude plugin uninstall`, exit 0; no line printed was a delete; Pit Board's files, the per-session file and setup's record went, and what stayed was named: the settings backup, Claude Code's own files and version folder (marked .orphaned_at), the catalog, and the lane map and the log as the person's (that line's wording is P59). An earlier stock run at 76b6920e (05:46Z) gave the same 0 differences. Done once more on 5c1fba4, 2026-11-25 05:29Z-05:30Z, because `pitboard/leave.py` changed after e184415a: the same account and Mac, no Claude Code, stock; setup --minimal --apply, then the home's own uninstall --apply, exit 0, no printed line a delete, the whole home before setup and after the leave: 0 differences (102999 entries both times). Then the leave with an ask kept, first seen on a Mac: one ask recorded by the code's own launcher (the home's copy finds no installed version on an account with no Claude Code), uninstall --apply exit 0, no printed line a delete, the census said \"kept: 1 ask (1 open) in 1 lane log in ~/.pitboard (yours)\", and the only differences from before setup were that lane log (mode 600) and its two folders; the run's script removed them after, and the home was as found. The run stands for the tag while `pitboard/leave.py`, `pitboard/launch.py` and `pitboard/setup.py` are the same files at the tag commit as at 5c1fba4; if one changes, the Mac run is done once more before the tag.",
    "issue": ""
   },
   {
@@ -705,7 +706,7 @@
    "promise": "Pit Board's own programs get an environment Pit Board built, by name: what they need (HOME, PATH, the settings the README names, the facts Claude Code and the terminal give), never the person's whole environment. The `claude plugin` commands setup and uninstall run have their road fixed where Claude Code allows it; where the person's settings can still move it, Pit Board reads what the command will really do, does not act on \"not as set\" or \"could not be read\", and says so with the one next step.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 156
   },
   {
    "id": "P57",
@@ -729,7 +730,7 @@
    "promise": "The leave tells three answers apart: `claude` runs; it is not on the PATH but is at one of Claude Code's own install places (it names that path and the one line to run); Claude Code is not on the account, and then Pit Board's own files go by its record as in a full leave, while Claude Code's registry row and plugin cache stay and are named with the line for the day Claude Code comes back. The asks and the log stay as always. A place that could not be read is never taken as \"Claude Code is not here\". Proven in a Mac round with and without Claude Code.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 157
   },
   {
    "id": "P59",
@@ -797,11 +798,275 @@
    "owner": "maintainer",
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.4",
-   "seen": "2026-11-24, in a scratch home on Linux (the code of 0.1.2 and of main that day), the family's rule 24 (A SETTING SAYS WHAT WAS ASKED FOR, NOT WHAT IS THERE): `pitboard version` takes \"installed\" from Claude Code's plugin registry alone. The registry keeps Pit Board's row while its version folder is gone: \"0.1.2 (installed 0.1.2, hooks gen 1)\", exit 0. The registry cannot be read (not JSON, or no read permission): \"installed none\" (rule 6: \"could not be read\" printed as \"none\"); a later line says the registry could not be read, under \"open to other accounts\".",
-   "promise": "`pitboard version` says \"installed X\" only when the registry's row and its version folder are both there; the folder gone, the same line says the list names X and its folder is gone, with the one next step; the registry unreadable, the same line says it could not be read, never \"none\", and not under another heading. One test for each half takes the thing away while the record stays, and reads the line. Due 0.1.4, not 0.1.3, by the maintainer's ruling: both states need the registry and the folder to disagree or the registry to be unreadable, which no stock install and no leave of Pit Board makes; the line tells a version and starts, stops or deletes nothing; and a code change now would send 0.1.3's rounds round again.",
+   "seen": "2026-11-24, in a scratch home on Linux (the code of 0.1.2 and of main that day), the family's rule 24 (A SETTING SAYS WHAT WAS ASKED FOR, NOT WHAT IS THERE): `pitboard version` takes \"installed\" from Claude Code's plugin registry alone. The registry keeps Pit Board's row while its version folder is gone: \"0.1.2 (installed 0.1.2, hooks gen 1)\", exit 0. The registry cannot be read (not JSON, or no read permission): \"installed none\" (rule 6: \"could not be read\" printed as \"none\"); a later line says the registry could not be read, under \"open to other accounts\". Read in the code the same day: a registry that is not there gives \"installed none\" as well, the same line as a registry with no row. Read in the code the same day: the launcher folds a key with an empty list, and rows with no installPath, into the same \"no row\" that makes it say \"Pit Board was removed by Claude Code\".",
+   "promise": "`pitboard version` says \"installed X\" only when the registry's row and its version folder are both there; the folder gone, the same line says the list names X and its folder is gone, with the one next step; the registry unreadable, the same line says it could not be read, never \"none\", and not under another heading; a registry that is not there is said as such in the same line (\"no plugin list\"), never \"none\" (the family's rule 29 (e)); and the launcher's \"Pit Board was removed by Claude Code\" only when the list was read and has no key for the plugin, a key with an empty list or a row with no installPath being \"could not be read\" (Claude Code's own uninstall was seen to take the key off, never to leave it empty). One test for each half takes the thing away while the record stays, and reads the line. Due 0.1.4, not 0.1.3, by the maintainer's ruling: both states need the registry and the folder to disagree or the registry to be unreadable, which no stock install and no leave of Pit Board makes; the line tells a version and starts, stops or deletes nothing; and a code change now would send 0.1.3's rounds round again.",
    "test": "",
    "proven": "",
    "issue": 128
+  },
+  {
+   "id": "P65",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, in scratch homes on Linux (the code of 0.1.2 and of main that day), the family's rule 11 (WHAT WILL REFUSE IS ASKED BEFORE THE FIRST WRITE): `setup --minimal --apply` writes config.json first (making ~/.pitboard), then the launcher copies and the wrapper, and the settings file last. A settings file that cannot be read is refused at the plan, before any write, but in a bare system error (\"pitboard: setup: [Errno 13] Permission denied: <path>\", exit 6) with no next step. A settings file that cannot be written (the file 444 in a 555 ~/.claude) is found only at the last step: everything else was already written, including setup's record, and setup says \"pitboard: unexpected error: PermissionError: [Errno 13] Permission denied: <path>\", exit 1, naming nothing it left and no next step. The settings file is untouched; `version` then says \"installed none\" and \"status line runs nothing\", which is true there.",
+   "promise": "Setup asks before its first write whether the settings file and its folder can be read and written, read from the thing itself, and on a seen no stops having made nothing, saying what it found and the one next step. A setup that stops after a write names what it left on disk and the one next step (uninstall clears it, or fix the mode and run setup again). Every stop line, the unreadable case included, names what happened and the one next step, never a bare system error. A test for each case takes the permission away and reads the words and the home. Due 0.1.4, not 0.1.3, by the maintainer's ruling: the words are bare, not untrue; nothing is lost (the settings file is untouched); and the case is rare.",
+   "test": "",
+   "proven": "",
+   "issue": 132
+  },
+  {
+   "id": "P66",
+   "codon": "G10.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, in a scratch home on Linux (the code of 0.1.2 and of main that day), the family's rules 6 and 30 (A MISSING FIELD IS NOT AN ANSWER): with Pit Board's lanes folder unreadable (mode 000) and one open ask in it, the status line printed nothing, exit 0, byte for byte what it prints when nothing is open; `pitboard board --plain` said \"which lane? Pass --lane KEY. Lanes on this machine: none yet\" (exit 3). By the code: `pitboard status` catches every error and prints nothing (cli.py, cmd_status's last except), and the list of lanes reads an unreadable folder as none (store.lane_keys). Seen the same day, two more ways to that last except, each with asks open (code of the 0.1.3 release head, a scratch home on Linux): when the lane's cache must be built again and cannot be written (its state folder made unwritable, the path a full disk takes too), the status line printed nothing with two open asks, and `pitboard status --json` said none; and a value of the wrong type in config.json (`\"escalate_after_hours\": \"abc\"` or `null`, as a hand edit could leave) printed nothing with one can-wait ask open, while `pitboard board` failed loudly (exit 1, TypeError). Not reached by: a torn last log line (skipped), a cache of another version (built again), a half-written JSON file (every JSON file is written by rename). No version from 0.1.0 to 0.1.3 changed a setting's type.",
+   "promise": "A read Pit Board cannot make is never shown as nothing. The status line shows a short could-not-read segment (as the launcher already does for its own files) when the lane's log, its state or Pit Board's home cannot be read, and nothing only when it read them and nothing is open; the board says the lanes folder could not be read, never \"none yet\". `pitboard status --json` says the same: that it could not read, never an empty list of asks. Every read the status line and the board decide on has a test that makes it fail (no permission, a missing field, an empty answer with exit 0) and reads the words. The cure's design: a read that fails once is read again before anything is said, so a file caught mid-write is not shown as could-not-read; the could-not-read segment is seen under the 30-second lap of the status line on a machine with lanes at work before the tag. Due 0.1.4, not 0.1.3, by the maintainer's ruling: it is 0.1.2's behaviour on every machine; 0.1.3 does not make it worse; and the cure changes what every status line shows on every prompt, which gets its own round. 0.1.3's README says it as a known edge. The same holds where Pit Board cannot start at all: when the PATH the status line is given has no python3 and no python, the wrapper, which itself needs only sh, cat and date, shows one short line saying Pit Board could not start and why, in place of the segment, never nothing (seen 2026-11-25 in a made home with the release head's code: inside the kept segment's minute the segment still showed; after it, only the person's own line, an open ask gone from the status line and nothing said; with python3 back, the segment again). A test runs the wrapper with such a PATH after the kept segment's time and reads the line.",
+   "test": "",
+   "proven": "",
+   "issue": 133
+  },
+  {
+   "id": "P67",
+   "codon": "G20.6",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's gate recipe, ninth case, planted in a throwaway copy of the suite on Linux (pytest 9.0.2, Python 3.12): a first test that calls os._exit(0) ends pytest's process; the CI step's own command (`python -m pytest -v -o console_output_style=classic tests/`) exited 0 after starting 1 of 615 tests, with no summary and no report. The CI job would have been green. The promise gate itself held: with os._exit(0) planted in a row's test it failed with \"the test runner wrote no report\". Its limit: the check counts cases, it does not judge them (pass and fail stay pytest's exit code), and a test that wrote a whole report itself before ending the process would pass it; that is forgery written into our own tests, not a way a test hides by accident.",
+   "promise": "A run that ends early fails the CI job: every job's pytest step writes the JUnit report, and the next step (tests/report_check.py) fails unless the report is there, can be read, and holds one case for every test pytest collects; the count comes from pytest's own collection, never from the run's printed lines. A test plants a run whose first test calls os._exit(0) and sees the CI's own command exit 0 and the check fail, and the same folder without it pass both.",
+   "test": "test_G20_6_P67_a_run_that_ends_early_fails_the_job",
+   "proven": "",
+   "issue": 134
+  },
+  {
+   "id": "P68",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 29 (a), a test before the release: from a copy of the plugin in a made-up plugin cache version folder (recorded in Claude Code's list), `setup --minimal --apply` of v0.1.0, v0.1.1, v0.1.2 and the 0.1.3 release head wrote no path into that folder (one run each on Linux, every file of the home read). A SessionStart hook, `pitboard add` and the status line run from the same copy wrote none either. So the test could not be seen red on the code as it was. It was seen red three ways, each planted by hand and taken out again: setup's record given the folder's path, the status line setting pointed into the folder, and a link into it; and once more for rule 29 (f), with the status line setting naming the resolved path of the Python running the suite. Not seen: the same search on a Mac, where a resolved Python and an Xcode path come from.",
+   "promise": "Nothing Pit Board writes or prints names a version folder of Claude Code's plugin cache, which Claude Code removes 14 days after the update that replaced it. Run from a copy in such a folder, `setup --minimal --apply` twice, `setup --folder DIR --apply`, a SessionStart hook line exactly as hooks.json holds it, `pitboard add` and the status line leave no file, no link and no printed line in the home or the folder that names the version folder, the plugin's cache folder or \"plugins/cache\", nor (rule 29 (f)) the resolved path of the Python that ran it or a folder another updater owns (Homebrew's Cellar, pyenv, mise, conda, Xcode, Claude Code's own versions); every hook line reaches its folder only through Claude Code's ${CLAUDE_PLUGIN_ROOT}.",
+   "test": "test_G18_1_P68_nothing_setup_writes_names_the_plugin_cache_version_folder",
+   "proven": "",
+   "issue": 135
+  },
+  {
+   "id": "P69",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, the family's rule 30 (A PROGRAM IS ASKED IN ONE LANGUAGE), read in the code of the 0.1.3 release head: the one place Pit Board matches another program's words is the error text of a failed `claude plugin` call (setup --folder, uninstall): the first line that starts with ✘, Claude Code's two clone progress lines, and two of ssh's lines (\"Host key verification failed\", \"Permission denied (publickey)\"). That call runs with the person's own language settings. What is decided (done or failed) is the exit code alone, so on a computer set to another language only the plain-words line put above the error would be lost; the error itself is still shown whole. Pit Board runs no git; ps, lsof and tmux are read in their fields made for programs (`-o pid=,args=`, `-Fn`, a format string), never by words. Not seen: a run on a computer set to another language. Today ssh's two lines and Claude Code's progress lines are believed not translated (OpenSSH and Claude Code print English); not yet read on a computer set to another language. On a Mac on macOS 13, C.UTF-8 is not there: with it set, the system falls to plain C (ASCII) without an error; a newer macOS and Linux have it.",
+   "promise": "The list of every phrase Pit Board matches in another program's words lives in the repo: program, phrase, version seen, and \"translated\", \"not translated, seen on <system>\" or \"believed not translated\", held against the code by a test. Before 0.1.4's tag, one read on a computer set to German fills that last column for each phrase. The `claude plugin` call is moved to the C language (LC_ALL=C.UTF-8 and LANGUAGE removed, on that one call only, never in Pit Board's own environment or a session's) only if a phrase is seen translated there; never to plain C, and on a Mac with no C.UTF-8 (seen on macOS 13) a call whose answer carries names or ✘ is not moved at all.",
+   "test": "",
+   "proven": "",
+   "issue": 136
+  },
+  {
+   "id": "P70",
+   "codon": "G2.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, the family's rule 7 (THE SAME STOP MUST NOT COME BACK), read in the code of the 0.1.3 release head: `pitboard add` and the other writes print \"pitboard: lane busy: <lane> (try again)\" (exit 7) when another Pit Board process holds the lane's lock past the wait, and the line does not say what will be different at the next run. Uninstall's busy line says it (\"a session is writing to lane X now; run uninstall again in a moment\"). Every other \"again\" Pit Board prints names the change first (a GitHub key added or Claude Code updated; `claude` put on the PATH) or is a different command (`--apply`).",
+   "promise": "A stop that says to run again names what is different at the next run: the lane-busy stop says that another Pit Board command is writing this lane's log now and that the next run waits for it again. A test takes the step of every stop that says to run again twice in the unchanged world, and reads that the same stop comes back only where the stop named a change the person makes first. Uninstall's busy line (\"a session is writing to lane X now; run uninstall again in a moment\") is a wait (the family's rule 7, A WAIT THAT MAY NOT END): the first time it is printed it also says what to do if the same line comes back (running it again then changes nothing; that lane's session must finish writing or end first), and its test has two worlds: the lock let go between the runs, and the second run goes on; the lock still held, and the same lines come back.",
+   "test": "",
+   "proven": "",
+   "issue": 137
+  },
+  {
+   "id": "P71",
+   "codon": "G6.7",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, the family's rule 30 (A NAME IS READ WHOLE), on Linux with tmux 3.4 and Python 3.12, a throwaway tmux server with a session named \"tést\" and a window named \"wïn\", the code of the 0.1.3 release head: `pitboard add` run with LC_ALL=C and no TMUX in its environment (TMUX_PANE set) kept \"t_st\" and \"w_n\" in the ask's `where`. tmux prints \"_\" for each non-ASCII letter when its client has no UTF-8 language. With TMUX set the names came whole, and the pattern for `where` then drops them; with no language variable at all, Python itself sets LC_CTYPE=C.UTF-8 for the programs it starts (PEP 538), so the names came whole as well. `tmux -u` gave them whole even with LC_ALL=C. An ASCII name with \"_\" (a_b) is kept as it is. The names feed the ask's `where` only today, never a lane's key; row P3 (waking, 0.4.0) compares the session name to decide where to type.",
+   "promise": "Every tmux call of Pit Board's own carries `-u`, so a session or window name is read whole in every environment Pit Board runs in; a name that came out changed is never kept. The test's tmux stand-in prints \"_\" for each non-ASCII letter and for each tab between a format's fields unless the call carries `-u` (so a later call that asks two fields and splits at a tab cannot pass on a cure for names alone), and one world reads a session with such a name from an environment with LC_ALL=C and no TMUX.",
+   "test": "",
+   "proven": "",
+   "issue": 138
+  },
+  {
+   "id": "P72",
+   "codon": "G18.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 31 (a command in text is never handed to a shell unquoted), read in the code of the 0.1.3 release head before its tag: two lines uninstall prints carried a command that removes something between backticks. (a) The census's kept line for the catalog said \"removing it with `claude plugin marketplace remove <catalog>` also uninstalls every plugin installed from that catalog\". Seen 1 of 1 on Linux with a stand-in `claude` that only logs its arguments: the line, relayed by an agent's `echo \"...\"` in double quotes, ran \"plugin marketplace remove thewindstorm\"; with the real `claude` that removes the catalog and every plugin installed from it. That line is new in 0.1.3 (0.1.1 and 0.1.2 do not hold it), so no release printed it. (b) The refusal of --delete-asks-and-log away from a terminal, which is what an agent gets, said \"Nothing changed. `pitboard uninstall --apply` takes Pit Board off and keeps them.\"; not run. Three more lines carried `claude` in backticks (no command), and setup's note on the old spelling of the folder undo carried two commands in backticks. The new test went red on all of them on the code as it was.",
+   "promise": "No line uninstall or setup prints, on any road, carries a backtick or a dollar sign followed by a parenthesis: the catalog's kept line says what removing the catalog does without naming the command, and a command the person may type stands alone on a line of its own. A test runs uninstall (a plan, the apply twice, the delete refused away from a terminal, the catalog still listed, `claude` failing and missing, a lane busy, the list unreadable) and setup (a plan, the apply twice, its refusals, the folder mode and its refusals, the old spelling) and reads every printed line.",
+   "test": "test_G18_3_P72_no_line_uninstall_prints_is_run_by_a_shell",
+   "proven": "",
+   "issue": 139
+  },
+  {
+   "id": "P73",
+   "codon": "G9.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, the family's rule 31, read in the skill of the 0.1.3 release head: the skill showed `pitboard add --title \"<...>\" --suggested \"<...>\"` with the ask's words in double quotes, and the same for --step, --answer, --note and --reason, and said nothing about backticks. An agent copies the example line before it reads anything under it. An ask whose text quotes a command between backticks, typed that way, runs the command before pitboard starts; an ask is often about a risky command. The SessionStart reminder, which every session reads, showed --answer \"...\" and --reason \"...\" the same way. `pitboard add` takes its text only as arguments (reading it from a file or from standard input is planned for 0.1.4).",
+   "promise": "Every example in the skill that carries an ask's words puts them in single quotes, and the sentence under the add example says why: no backtick and no dollar sign in the words, a command named in plain words, because inside double quotes a shell runs what a pair of backticks holds before pitboard starts. The SessionStart reminder says the same in one clause and shows its own examples in single quotes. A test reads the skill and the reminder for a text argument in double quotes.",
+   "test": "test_G9_1_P73_the_skill_and_the_reminder_show_ask_text_in_single_quotes",
+   "proven": "",
+   "issue": 140
+  },
+  {
+   "id": "P74",
+   "codon": "G21.14",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, the family's rule 32 (a proven line that still owes part is not proof), read in tests/test_g21_promises.py at the 0.1.3 release head: the gate after a release (unproven_problems, called by test_G21_14_the_version_after_needs_proof_on_a_real_machine) counts a row due in an earlier version as proven whenever its proven line is not empty. There is no field for what is still owed, and Pit Board has no second gate (none before a tag for a row whose test leans on a stand-in). A word search over the file's 40 proven lines finds 15 that mention \"steered\", \"not seen\" or \"half\" (P16, P17, P25, P29, P30, P34, P41, P42, P43, P45, P47, P48, P49, P50, P54); each is read one by one as owed on a machine we have, or kept as \"not seen\" with why and a date.",
+   "promise": "A row may carry proof_owed: words that say what is still to be seen on a real machine; absent, empty or only spaces means nothing is owed. The gate after a release counts a row as proven only when its proven line is not empty and its proof_owed holds nothing, and its message names what is owed; it is never decided by words found in the proven line. One function decides, called by the gate's own test and by the rule's test. The rule's test reads the file's own rows first, then rows it makes itself: owed with a proven line (refused, the message carries what is owed), owed with no proven line (refused), no field but the words \"not proven yet\" in the line (passes), an empty field, a field of spaces, a row that ships in the version itself (not looked at). Seen red first on a real row that owes. A proven line written while part is unseen says what was seen, and the rest goes into proof_owed in the same commit.",
+   "test": "",
+   "proven": "",
+   "issue": 141
+  },
+  {
+   "id": "P75",
+   "codon": "G1.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.3",
+   "ship_in": "0.1.3",
+   "seen": "2026-11-24, in a trial of 0.1.2 and the 0.1.3 release head, the same on both, made homes, the CLI only. An ask whose text holds U+2028, U+2029 or NEL (U+0085) is stored whole as one line, because the writer leaves those characters raw (ensure_ascii off). The reader splits the log with Python's splitlines(), which also breaks at those three and at VT, FF, FS, GS and RS, so it cuts that event into pieces that are not JSON and skips them without a word. VT, FF and the C0 separators come through, because the writer escapes them. Right after add, the board still shows the ask, because add folds its own event into the state cache and the board reads that cache while it matches the log's size. Every road that folds the log loses it from the first moment: board --all, list --all, show, export. The board, status and reminder show it only until the state is next rebuilt. The roads that rebuild it in real use, as read in the code: (i) any act on an ID the cache does not hold live (an answer, ok, no, done, withdraw or update on a closed ask, a mistyped ID or the lost ask's own ID: the command retries with every ask and writes the state from a whole fold); (ii) every reopen; (iii) a write whose event sorts before the lane's newest, or names an ask the cache does not hold; (iv) uninstall, which removes the state and keeps the logs; (v) a cache that is missing, unreadable, or left behind by a writer stopped after its lines; (vi) a reader that finds the lane busy folds without writing, for that one read. An update from 0.1.2 is not one of them. After that rebuild, the next add gives out the lost ask's number again, so one log holds two different asks under one ID. An answer whose words hold one of those characters is lost the same way: answer said \"A1 answered.\", show said open, and after a rebuild the board counted it open again. The first sighting was on a road that folds the log. With only the reader cured, a cache an older copy wrote still matches the log's size and keeps the lost ask off the board, and answer, ok and done on a doubled ID each act on one of the two asks without saying so, the one the cache happens to hold.",
+   "promise": "One event is one line for every reader. The reader ends an event at a line feed only, so every ask and answer a log already holds is read again whole, and nothing in a log is rewritten. The writer stores U+2028, U+2029 and U+0085 as their backslash-u forms, so an older copy of the tool or a person's own line tool also sees one event per line. The state cache carries a mark of the reader that built it, and a cache without that mark is rebuilt on its first read, so a lost ask is back on the board at the first read after the update. Two asks under one ID, which only an older copy can have written, are both kept. Which ask an ID means never depends on the cache. A command given an ID that names two asks it could act on writes nothing (exit 4); its line names each (when it was asked, its title, its uid) and gives the one step: the same command with the uid. Where only one of the two can be acted on, the command acts on that one and its line names it by title. Every command that takes an ID takes a uid in its place. show prints every ask under the ID, with a first line saying how many share it. The line on the board, list and reminder that two asks share a number is P76, due 0.1.4; until then the changelog says what a person with such a log sees. Tests, each seen red first on the 0.1.3 release head, plant every character splitlines breaks at in every text field of every event type that takes text. They then read board, board --all, list, list --all, show, export, status and the reminder, once with the cache as the write left it and once with the state file gone, and check that an answer holding one stays an answer after a rebuild. A cache written by the release head's code over a log holding a cut event shows the lost ask at the first read, also after an answer on a closed ID. A planted log with two asks under one ID runs show, answer, ok, no, done, withdraw, update and reopen by ID and by uid, with the cache as left and with the state gone, and gets the same answer both times; by uid the one named changes and the other does not; the next add takes the next free number.",
+   "test": "test_G1_1_P75_an_event_ends_at_a_line_feed_only",
+   "proven": "",
+   "issue": 142
+  },
+  {
+   "id": "P76",
+   "codon": "G11",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24, with P75 (due 0.1.3): a log that an older copy of the tool cut (an ask holding U+2028, U+2029 or NEL), then rebuilt, then added to holds two different asks under one ID. Once P75 reads such a log whole, the board, list and the SessionStart reminder show two rows with the same ID and nothing says why, and the board's Answer hint offers that ID to the person. In 0.1.3 a command by that ID is refused and names both, and show prints both.",
+   "promise": "When two asks share an ID, the board, list and the SessionStart reminder say so in one line under them, naming the ID and the command that tells them apart (show with that ID), and the board's Answer hint leaves that ID out. A test plants such a log and reads all three, with the cache as the write left it and with the state file gone.",
+   "test": "",
+   "proven": "",
+   "issue": 143
+  },
+  {
+   "id": "P77",
+   "codon": "G21.14",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-25, read in PROMISES.json on the rows branch for 0.1.4: 14 of the 27 rows due in 0.1.4 had no tracking issue (P20, P23, P24, P26, P27, P28, P31, P32, P33, P34, P35, P39, P56, P58), so a stranger could not follow them; each now has one. Nothing in the promise gate looks at the issue field.",
+   "promise": "Every row not yet built carries its tracking issue. From 0.1.4 the promise gate refuses a row due in the next version whose issue is empty, and its message names the row. Its test reads the file's own rows, then a planted row with no issue, seen red first on that row.",
+   "test": "",
+   "proven": "",
+   "issue": 158
+  },
+  {
+   "id": "P78",
+   "codon": "G21.14",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-25, read in the release line's tree for 0.1.3 before its tag: its CHANGELOG named P76, a row its own PROMISES.json did not hold (the row was only on the rows branch for 0.1.4). The two branches had parted: the release tree held 69 rows and the rows branch 72, 8 rows were only on one side and 5 only on the other, 4 rows differed in their words, and 15 rows with no test had no issue in the release tree though each had one on the rows branch. Nothing checks that a row number a released text names is in the same tree's file. The rows were brought together on the release branch before the tag.",
+   "promise": "Every row number that a tagged tree's texts name is a row in that same tree's PROMISES.json (the family's rule 34). The texts are the README, the CHANGELOG with its older entries, the plan, the words of the rows themselves, and the comments and messages in its code, scripts and tests, in every form the tree writes a number (P75, p75, and _P75_ inside a test's name). A row due later belongs in the file too; it need not be built. Row numbers only, not issue numbers or codons. From 0.1.4 a test reads all of those texts in its own tree and fails naming the number and the file. It is seen red first on a planted number, once in a comment and once inside a test's name.",
+   "test": "",
+   "proven": "",
+   "issue": 160
+  },
+  {
+   "id": "P79",
+   "codon": "G20.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25, read in the suite at 572a207 (the release line for 0.1.3), in the code, not run for this: two places where a test could change something it did not make. tests/test_g20_ci.py:146, a probe in the planted tree that the guard test runs, renames a file of its own to <real home>/no-such-file-pit-board-guard-probe-dir/x. The real home comes from the password database. The rename fails only because that folder is not there. Where it is, the probe writes one file in the real home, and with the guard taken out nothing stops it. tests/test_g18_setup.py:546-547 changes the mode of every folder that rglob finds under a test home. os.chmod follows a link, so a link planted there would change the mode of the folder it points to. None is planted today. Neither runs in a person's install; both run wherever the suite runs.",
+   "promise": "The suite writes nothing in the real home and changes a mode only on a folder it made. The guard's probe for a write aimed at the real home can never write there, whatever the real home holds: the call is stopped before it reaches the system, by the test's own code, with the guard in place and with it taken out. The guard test still sees that write and still goes red when the guard is taken out. A folder walk that changes modes skips every link and never follows one, and what the setup test proves stays as it is. Seen red first with a planted link from the test home to a folder of the test's own outside it, that folder's mode read before and after.",
+   "test": "",
+   "proven": "",
+   "issue": 161
+  },
+  {
+   "id": "P80",
+   "codon": "G3.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25, read on a shared workstation with 0.1.2 at user scope: lanes.json held 373 entries. 91 belonged to sessions still running, each with a named lane. 282 belonged to sessions that had ended. All 282 are nameless session-<id> lanes whose first_seen equals last_seen, written from 2026-11-23 on: 232 from one-prompt print-mode sessions started in the home folder, two every 15 minutes 22 seconds, about 190 new entries a day; 48 from an evaluation harness's print-mode runs; 2 from folders under /dev/shm. Nothing removes an entry. P31 keeps a new session that records no ask from writing one; nothing clears the entries already written.",
+   "promise": "An entry in the lane map for a session that has ended with no open ask on its lane does not stay for ever. Pit Board removes it, with that session's own lock and state files, the next time it writes the map. Whether a session has ended has three answers: yes, no, could not be read. Only yes removes anything. An entry whose lane holds an open ask is never removed, and no lane log is touched. The README says when such an entry goes. A test plants ended, running and could-not-be-read sessions, each with and without an open ask, and is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": 162
+  },
+  {
+   "id": "P81",
+   "codon": "G7.7",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "2026-11-24 and 2026-11-25, on one shared Linux workstation where every lane ran 0.1.2, in board lines counted by pattern and read by the skill's owner: a product lane named the operator's own login step to a coordinator on the board three times and recorded no ask; the item had waited since before Pit Board arrived. The machine's keeper, a staff lane, read back on the board items of its own numbered list for the operator and recorded none. The staff lane that owns this skill had five asks waiting on the operator, the reminder in its context since 11-23, and recorded none until after the count. Kept: an ask's ID travelled on the board in lines of two lanes. The cause, read by the skill's owner before any cure: a second list (the keeper's numbered list for the operator, which the machine's standing instructions tell lanes to use by the board), and backlog (the reminder says every new ask; one open before the tool arrived is not new). Neither is moved by one more sentence in the skill.",
+   "promise": "(a) The first reminder a lane ever gets, while it has no lane log of its own, says to record what already waits on the operator, not only new asks. (b) The README says plainly what was seen where a team keeps another list for the operator. The test for (a) is proposed with 0.1.4's first cut, a model case in a home that is not the maintainer's. Once built, its proof is a fresh sample that nobody is told about, and that proof holds back the version after 0.1.4. No hook reads what a lane sends to a board or to another agent.",
+   "test": "",
+   "proven": "",
+   "issue": 163
+  },
+  {
+   "id": "P82",
+   "codon": "G7.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 in a made home on 0.1.3's code, after the skill's owner asked what happens now that one machine's lanes hold several asks with the same ID (IDs are per lane). Three lanes were set up: alpha with A1 to A3, beta with A1 to A4, gamma with A1. \"ok A3\" typed in a session of gamma, which holds no A3: nothing was approved, the agent was told nothing, and the log line says \"nothing\". The operator's answer is lost without a word. \"ok A3\" typed in a session of beta: beta's own A3 was approved, whichever A3 the operator meant. The line to the agent (\"the operator approved A3\") does not name the lane. The board, the list and the reminder each show one lane only, with the lane's name in the board's header. Only `pitboard export --all-lanes` shows every lane's asks side by side.",
+   "promise": "(a) An \"ok\" or \"no\" with an ID that the session's lane does not hold is never silent. The agent is told that no ask of this lane has that ID, and which lanes on this machine hold an open ask by that ID. Nothing is written. (b) Every line that says an ask was approved or declined names the lane it was acted on in. A test plants the three lanes above and types \"ok A3\" and \"no A3\" from each one's session. It is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": 164
+  },
+  {
+   "id": "P83",
+   "codon": "G7.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 in real use on 0.1.2, in two staff lanes of one machine. In the skill owner's lane, a message from another agent named that agent's own asks A1, A2 and A3, which are recorded in its own lane. The prompt hook added: \"this message answers or mentions A1, A2, A3. If it answers one, run: pitboard answer <ID> --by operator ...\". The receiving lane holds an A1, an A2 and an A3 of its own, and nobody had answered them. In the maintainer's lane the same hint came twice that morning, on two messages from another agent that only named asks. Nobody ran the command. A model that followed the hint would have marked the operator's asks answered, by the operator, on a peer's sentence. Read in the code: the hint matches any text shaped like an ID (A followed by a number) against this lane's open asks. It cannot tell whose ask the writer meant. \"ok A3\" and \"no A3\" act only when they are the whole message, so a wrapped peer message cannot approve or decline anything. In the session's own transcript a peer message is marked as one (an origin of kind \"peer\") and its text opens with the words that wrap it. Whether the hook's input carries either is not read; the recorded hook inputs hold no such field.",
+   "promise": "A message that did not come from the operator never leads to \"--by operator\". A text that names another lane's ask is not taken for this lane's ask. The hook decides a message's source from what its input carries, read and recorded first on the Claude Code versions in use; where the source cannot be read, the hint does not suggest \"--by operator\". The operator's own \"ok A3\" and \"no A3\" work as before, and an agent recording another agent's answer (--by agent) is unchanged. A test is seen red first with two shapes: a peer's message naming IDs this lane also holds, and the operator's own message naming them (the control, which must still work).",
+   "test": "",
+   "proven": "",
+   "issue": 165
+  },
+  {
+   "id": "P84",
+   "codon": "G11.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25: a coordinator lane keeps a numbered list for the operator, and has agreed to put a Pit Board ID on every line of that list, so the list and the board become one. Before its list could be printed from the board, it says the tool lacks one printed list across every lane on a machine, each line led by lane and ID, with times in the operator's own time zone. Once that printed list exists the coordinator's own list numbers retire, and lane and ID become the only name for an ask. So the coordinator asked for the list's default order, which is what is left of its numbers: by deadline first, then severity, then lane, with asks that have no deadline last. Read in 0.1.3's code: `pitboard export --all-lanes --format csv` already gives one line per ask across every lane, led by lane, lane name, machine and ID, but its times are UTC (ISO) and it is a data file, not a printed list. The board, the list and the reminder each show one lane only. Only the board prints times in the operator's zone.",
+   "promise": "One printed list of every lane's asks on a machine, each line led by the lane's name and the ask's ID, with every time in the operator's own zone as the board prints it. Its default order is by deadline first, then severity, then lane, with asks that have no deadline last. It changes nothing in any lane log.",
+   "test": "",
+   "proven": "",
+   "issue": 166
+  },
+  {
+   "id": "P85",
+   "codon": "G1.13",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-25: the coordinator lane in P84, which keeps a numbered list for the operator, says one more thing is lacking before its list and the board can be one: a \"relayed for\" field, for an ask one lane holds on another's behalf. It had also asked for an order key it could set (its own list numbers). It withdrew that the same day, once the printed list of P84 was promised, because its own numbers then retire. Read in 0.1.3's code: no ask has such a field. It would be new data in a lane log, which older copies also read; the format lets readers ignore unknown fields (G1.13).",
+   "promise": "An ask can name the lane it is held for, as an optional field. A log written with it is read the same as before by 0.1.2, 0.1.3 and 0.1.4, seen in a made home before the release.",
+   "test": "",
+   "proven": "",
+   "issue": 167
+  },
+  {
+   "id": "P86",
+   "codon": "G10.3",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.4",
+   "ship_in": "0.1.4",
+   "seen": "Seen 2026-11-25 on one loaded shared Linux machine (load about 18), measuring `pitboard status` as the status line runs it, the median of runs 2 to 10 of ten alternating rounds on a warm disk: 0.1.2 30 ms; 0.1.3 as shipped 48 ms (max 66); 0.1.3 with bytecode allowed 30 ms. A session start, measured the same way at load about 14: 0.1.2 46 ms; 0.1.3 as shipped 80 ms; 0.1.3 with bytecode allowed 53 ms. The cause: 0.1.3 writes no bytecode (P37), so every call compiles Pit Board's modules from source. The plan's G10.3 says status finishes in under 50 ms on a warm disk.",
+   "promise": "`pitboard status` and each hook call start as fast as 0.1.2's did, compared on the same machine in the same run, within a margin proposed with the first cut. Bytecode goes only into a folder of Pit Board's own that uninstall removes and its census names; nothing is compiled into the plugin's cache folder or anywhere else in the home, and P37 holds as written. The test compares against 0.1.2 in the same run and never rests on a fixed number alone.",
+   "test": "",
+   "proven": "",
+   "issue": 168
   }
  ],
  "declined": [

@@ -246,3 +246,51 @@ def test_G20_P51_the_guard_has_no_switch():
     reads = sorted({(f, k) for f, k in read if f != "os.environ.pop"})   # pop only takes the shell's settings away
     assert reads == [("os.environ.get", "PATH"), ("os.environ.setdefault", "PYTHONUSERBASE"), ("os.environ[]", "'HOME'"),
                      ("os.environ[]", "'TMUX_TMPDIR'")], reads
+
+
+def test_G20_6_P67_a_run_that_ends_early_fails_the_job(tmp_path):
+    """P67 (the family's gate recipe, ninth case): a test that ends pytest's process with os._exit(0) leaves pytest's
+    exit 0, no summary and no report, so a CI step that runs pytest alone is green after one test of hundreds. Every
+    job's pytest step writes the JUnit report and the next step is tests/report_check.py, which fails unless the
+    report holds every collected test. Planted here: the CI's own pytest command over a folder whose first test
+    calls os._exit(0) exits 0 (the hole, seen), and the check after it fails; over the same folder without that test
+    both pass."""
+    import shutil
+    import subprocess
+    import sys
+    text = dict(workflows())["tests.yml"]
+    lines = text.splitlines()
+    runs = [i for i, ln in enumerate(lines) if re.match(r"^\s+- run: python -m pytest ", ln)]
+    assert len(runs) == 2, runs                                     # the Linux job and the Mac job
+    for i in runs:
+        assert "--junitxml=report.xml" in lines[i].split(), lines[i]
+        after = [ln.strip() for ln in lines[i + 1:] if ln.strip().startswith("- ")]
+        assert after and after[0] == "- run: python -I tests/report_check.py report.xml tests/", (lines[i], after[:1])
+    cmd = lines[runs[0]].split("- run: ", 1)[1].split()
+    assert cmd[:3] == ["python", "-m", "pytest"] and cmd[-1] == "tests/", cmd
+    root = tmp_path / "planted"
+    (root / "tests").mkdir(parents=True)
+    (root / "tests" / "test_a_ends_early.py").write_text("import os\n\n\ndef test_a():\n    os._exit(0)\n")
+    (root / "tests" / "test_b_runs.py").write_text("def test_b():\n    assert True\n")
+    check = os.path.join(ROOT, "tests", "report_check.py")
+
+    def run(argv):
+        return subprocess.run(argv, cwd=str(root), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, text=True, timeout=120)
+
+    def ci():
+        report = root / "report.xml"
+        if report.exists():
+            report.unlink()
+        step = run([sys.executable] + cmd[1:3] + ["-p", "no:cacheprovider", "--rootdir", str(root), "-c", os.devnull]
+                   + cmd[3:])
+        return step, run([sys.executable, "-I", check, "report.xml", "tests/"])
+
+    step, after = ci()
+    assert step.returncode == 0, (step.returncode, step.stdout[-800:])          # the hole: pytest alone says green
+    assert after.returncode == 1 and "no readable test report" in after.stdout, (after.returncode, after.stdout)
+    (root / "tests" / "test_a_ends_early.py").unlink()
+    shutil.rmtree(root / "tests" / "__pycache__", ignore_errors=True)
+    step, after = ci()
+    assert step.returncode == 0 and after.returncode == 0, (step.stdout[-800:], after.stdout)
+    assert "1 of 1 collected tests are in the report" in after.stdout, after.stdout

@@ -330,9 +330,18 @@ def is_valid(ev):
 
 # ---------------------------------------------------------------- lines
 
+# P75: characters some line readers (Python's splitlines among them) take as a line end. json.dumps with
+# ensure_ascii off leaves them raw, and only inside strings, so they are written as their \\u forms.
+LINE_BREAKS_KEPT_RAW = {"\u2028": "\\u2028", "\u2029": "\\u2029", "\u0085": "\\u0085"}
+
+
 def serialize(ev):
-    """G1.1: one line, UTF-8, compact, ensure_ascii off; refused over 16 384 bytes."""
-    line = json.dumps(ev, ensure_ascii=False, separators=(",", ":")) + "\n"
+    """G1.1: one line, UTF-8, compact, ensure_ascii off; refused over 16 384 bytes. P75: U+2028, U+2029 and
+    U+0085 are written as \\u escapes, so one event is one line for any reader."""
+    line = json.dumps(ev, ensure_ascii=False, separators=(",", ":"))
+    for ch, esc in LINE_BREAKS_KEPT_RAW.items():
+        line = line.replace(ch, esc)
+    line += "\n"
     raw = line.encode("utf-8")
     if len(raw) > MAX_LINE_BYTES:
         raise ContractError(f"the event is {len(raw)} bytes; the limit is {MAX_LINE_BYTES}")
@@ -359,11 +368,16 @@ def parse_line(line):
 
 
 def read_events(raw):
-    """All lines of a log (bytes or str) to (events, bad_count). Bad lines are skipped (INV9)."""
-    if isinstance(raw, bytes):
-        raw = raw.decode("utf-8", errors="replace")
+    """All lines of a log (bytes or str) to (events, bad_count). Bad lines are skipped (INV9).
+    P75: a line ends at a line feed only; never splitlines(), which also breaks inside a string at U+2028,
+    U+2029, U+0085 and the C0 separators."""
+    nl = b"\n" if isinstance(raw, bytes) else "\n"
     events, bad = [], 0
-    for line in raw.splitlines(keepends=True):
+    pieces = raw.split(nl)                       # split the bytes first, then decode each line
+    for i, piece in enumerate(pieces):
+        if isinstance(piece, bytes):
+            piece = piece.decode("utf-8", errors="replace")
+        line = piece + "\n" if i < len(pieces) - 1 else piece   # the last piece has no line feed: torn
         if not line.strip():
             continue
         ev = parse_line(line)
@@ -470,7 +484,16 @@ def fold(events):
     asks = {}
     for ev in good:
         stats["applied" if apply_event(asks, ev) else "ignored"] += 1
+    stats["doubled"] = doubled_ids(asks.values())
     return asks, stats
+
+
+def doubled_ids(asks):
+    """P75: ask IDs that name more than one ask (only an older copy of Pit Board can have given one out twice)."""
+    seen, twice = set(), set()
+    for a in asks:
+        (twice if a["ask"] in seen else seen).add(a["ask"])
+    return sorted(twice, key=ask_number)
 
 
 def make_event(etype, *, uid, ask, lane, lane_name, machine, session_id, by, data,

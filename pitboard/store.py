@@ -23,6 +23,7 @@ LOCK_WAIT_COMMAND = 3.0
 LOCK_WAIT_HOOK = 1.0
 BIG_LOG_BYTES = 20 * 1024 * 1024
 LIVE = ("open", "answered")
+READER = 2   # P75: the reader that built a cache; one without this mark (an older copy's) is rebuilt on first read
 
 DEFAULTS = {
     "machine": None,              # filled from the host name
@@ -206,8 +207,10 @@ class View:
           every ask when full is True (and then events holds every event).
     """
 
-    def __init__(self, asks, max_ask, events=None, full=False):
+    def __init__(self, asks, max_ask, events=None, full=False, doubled=None):
         self.asks, self.max_ask, self.events, self.full = asks, max_ask, events, full
+        # P75: IDs that name two asks; a full view counts them itself, a cache view takes the cache's list
+        self.doubled = contract.doubled_ids(asks.values()) if full else list(doubled or [])
 
     def next_ask_id(self):
         return f"A{self.max_ask + 1}"
@@ -217,6 +220,19 @@ class View:
             if a["ask"] == ask_id:
                 return a
         return None
+
+    def matching(self, ref):
+        """P75: every ask an ID names, or the one ask a uid names."""
+        return matching(self.asks.values(), ref)
+
+
+def is_uid(ref):
+    return isinstance(ref, str) and contract.HEX32.fullmatch(ref) is not None
+
+
+def matching(asks, ref):
+    key = "uid" if is_uid(ref) else "ask"
+    return [a for a in asks if a[key] == ref]
 
 
 def _key(ev):
@@ -234,6 +250,7 @@ def _state(key, asks, stats, size, cfg, now=None):
         "worst_flag": flags.worst(open_rows, now, escalate_after_hours=cfg["escalate_after_hours"],
                                   urgent_deadline_hours=cfg["urgent_deadline_hours"]),
         "max_ask": stats.get("max_ask", 0), "last_applied": stats.get("last_applied"),
+        "reader": READER, "doubled": list(stats.get("doubled") or []),
         "stats": {k: v for k, v in stats.items() if k in ("duplicate", "invalid", "skipped", "ignored", "applied")},
         "asks": live,
     }
@@ -242,7 +259,7 @@ def _state(key, asks, stats, size, cfg, now=None):
 def _cache_fresh(cache, size):
     return (isinstance(cache, dict) and cache.get("v") == contract.V and cache.get("log_bytes") == size
             and isinstance(cache.get("max_ask"), int) and isinstance(cache.get("asks"), list)
-            and "last_applied" in cache)
+            and "last_applied" in cache and cache.get("reader") == READER and isinstance(cache.get("doubled"), list))
 
 
 class _Fold:
@@ -278,6 +295,7 @@ class _Fold:
         self.stats["lane_name"] = ev["lane_name"]
         if ev["type"] == "asked":
             self.stats["max_ask"] = max(self.stats.get("max_ask", 0), contract.ask_number(ev["ask"]))
+            self.stats["doubled"] = contract.doubled_ids(self.asks.values())
 
 
 def rebuild_state(key, cfg=None, lock_timeout=LOCK_WAIT_COMMAND):
@@ -369,8 +387,8 @@ def append(key, build, mode="refuse", lock_timeout=LOCK_WAIT_COMMAND, cfg=None, 
         if not full and _cache_fresh(cache, log_size(key)):
             asks = {a["uid"]: dict(a) for a in cache["asks"]}
             stats = dict(cache["stats"], max_ask=cache["max_ask"], last_applied=cache["last_applied"],
-                         lane_name=cache["lane_name"])
-            view = View(asks, cache["max_ask"])
+                         lane_name=cache["lane_name"], doubled=cache["doubled"])
+            view = View(asks, cache["max_ask"], doubled=cache["doubled"])
             end = cache["log_bytes"]
         else:
             if pre is None:

@@ -79,3 +79,23 @@ def test_G9_3_board_skill_runs_the_plain_board_and_shows_it_as_is():
     _, body = frontmatter(read("board"))
     assert "`pitboard board --plain`" in body and "`pitboard board --all --plain`" in body
     assert "$ARGUMENTS" in body and "code block" in body and "no comment before or after" in body
+
+
+def test_G9_1_P73_the_skill_and_the_reminder_show_ask_text_in_single_quotes():
+    """P73 (the family's rule 31): an agent copies the skill's example line before it reads the sentence under it, and
+    inside double quotes a shell runs what a backtick pair holds before pitboard starts. So every example that carries
+    an ask's words puts them in single quotes, the sentence says why, and the SessionStart reminder, which every
+    session reads, says the same."""
+    import re
+    from datetime import datetime, timezone
+    from pitboard import render
+    skill = read("pit-board")
+    assert not re.findall(r'--(?:title|suggested|answer|note|reason|step) "', skill), "a text argument in double quotes"
+    assert "--title '<the question or action, one line>' --suggested '<the answer you recommend and why, short>'" in skill
+    assert ("Inside double quotes a shell runs what a pair of backticks holds before pitboard even starts, and an ask is "
+            "often about a risky command.") in skill
+    text = render.reminder_text("k", "Lane", "m", [], timezone.utc, datetime(2026, 11, 24, tzinfo=timezone.utc),
+                                cfg={"operator_name": "Dana"})
+    rules = [ln for ln in text.splitlines() if ln.startswith("Rules:")]
+    assert len(rules) == 1 and "Put the ask's words in single quotes, with no backtick and no dollar sign in them." in rules[0]
+    assert not re.findall(r'--(?:answer|reason) \\?"', text), text

@@ -277,11 +277,12 @@ def reminder_text(key, lane_name, machine, asks, tz, now=None, cfg=None):
         op = "the operator"
     limit = int(cfg.get("reminder_max_items") or 20)
     first = f'Pit Board: you are lane "{lane_name}" (key {key}) on {machine}.'
-    rules_add = ("Rules: record every new ask with `pitboard add` before you ask it, and start the question with its ID. "
+    rules_add = ("Rules: record every new ask with `pitboard add` before you ask it, and start the question with its ID."
+                 " Put the ask's words in single quotes, with no backtick and no dollar sign in them. "
                  f"That includes an ask only {op} can answer that you send to another agent (a coordinator, a reviewer) "
                  "or a shared board instead of the chat.")                              # plan 1.24, P13
-    rules_more = (f"If {op} has answered one, run `pitboard answer <ID> --by operator --answer \"...\"`. "
-                  "If it no longer matters, `pitboard withdraw <ID> --reason \"...\"`. "
+    rules_more = (f"If {op} has answered one, run `pitboard answer <ID> --by operator --answer '...'`. "
+                  "If it no longer matters, `pitboard withdraw <ID> --reason '...'`. "
                   "Do not ask again in chat unless it still blocks your next step.")
     open_asks = flags.sort_asks([a for a in asks if a.get("status") == "open"], "severity", now_dt,
                                 escalate_after_hours=cfg.get("escalate_after_hours", 24),

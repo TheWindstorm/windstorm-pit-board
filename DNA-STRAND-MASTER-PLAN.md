@@ -1,6 +1,6 @@
 # Windstorm Pit Board · DNA Strand Master Plan
 
-**Plan version 1.34 · 2026-11-24 · The Windstorm**
+**Plan version 1.35 · 2026-11-24 · The Windstorm**
 
 > In racing, the pit board is the sign the crew holds out over the pit wall as the car flashes past at full speed: big, short, readable in one second. You are the driver. Your agents are the crew. Pit Board is the sign.
 
@@ -210,7 +210,7 @@ Every codon is a requirement. "Must" means must.
 
 The event format is the most important part of this plan. Every other gene can be rewritten in any language later without losing a single ask, as long as this format is kept.
 
-**G1.1 One event per line.** A lane log is UTF-8 text. Each line is one JSON object written with `json.dumps(event, ensure_ascii=False, separators=(",", ":"))`, followed by `\n`. A writer refuses an event whose line would be longer than 16 384 bytes (exit code 6).
+**G1.1 One event per line.** A lane log is UTF-8 text. Each line is one JSON object written with `json.dumps(event, ensure_ascii=False, separators=(",", ":"))`, followed by `\n`. A writer refuses an event whose line would be longer than 16 384 bytes (exit code 6). U+2028, U+2029 and U+0085, which `json.dumps` leaves raw and only inside strings, are written as `\u2028`, `\u2029` and `\u0085` (P75), so a reader that also ends lines at them, an older copy of Pit Board or a person's own line tool, still sees one event per line. A reader ends a line at a line feed only: it splits the bytes at `\n` and decodes each line after, never with Python's `splitlines()`, which also breaks at those three and at VT, FF, FS, GS and RS.
 
 **G1.2 Envelope.** Every event has exactly these top-level fields:
 
@@ -274,7 +274,7 @@ The event format is the most important part of this plan. Every other gene can b
 
 The fold also records, per ask: `asked_at` (the `asked` event's `ts`), `answered_at`, `answer`, `answered_by`, `answered_via`, `done_at`, `done_note`, `withdrawn_at`, `withdrawn_reason`, `updated_at` (the last event applied), and `events` (the count applied). `reopened` clears `answered_*`, `answer`, `done_*` and `withdrawn_*` (they stay in the event history).
 
-**G1.12 Short IDs.** A new ask's `ask` is `A` + (1 + the highest number used by any `asked` event in that lane log, or 0 if none). Short IDs are never reused, even after `withdrawn`. They are unique within a lane, not across lanes; across lanes, use `uid`.
+**G1.12 Short IDs.** A new ask's `ask` is `A` + (1 + the highest number used by any `asked` event in that lane log, or 0 if none). Short IDs are never reused, even after `withdrawn`. They are unique within a lane, not across lanes; across lanes, use `uid`. Two asks under one ID can only be in a log an older copy wrote (before P75 its reader lost an ask holding U+2028, U+2029 or U+0085, and after a rebuild gave its number out again). Both are kept, and which ask an ID means never depends on the cache: every command that takes an ID takes a `uid` in its place; one given an ID that names two asks it could act on writes nothing (exit 4), and its message names each (uid, status, when it was asked, title) and says to give the uid; where only one of them can be acted on, it acts on that one and names it; `show` prints every ask under the ID, its first line saying how many share it. The cache's `doubled` lists such IDs, so a command looks them up in the whole log.
 
 **G1.13 Compatibility.** Readers must ignore unknown fields. A future format adds fields freely; it raises `v` only when an existing field changes meaning, and then this plan gets a migration section.
 
@@ -303,9 +303,9 @@ The fold also records, per ask: `asked_at` (the `asked` event's `ts`), `answered
             "updated_at": "...", "source": "agent", "where": {}} ]}
 ```
 
-`asks` holds only **live** asks (status `open` or `answered`), so the cache stays small however long the log grows; views that show closed asks (`board --all`, `list --all`, `show`, `export`) fold the log. The cache also holds `max_ask` (the highest short ID number used, for G1.12), `last_applied` (G2.11) and the fold `stats`, and each ask carries the `session_id` of its `asked` event. `worst_flag` is computed at build time with [G5](#g5-flags-colour-and-order) and is a hint only; readers that show flags recompute them at read time (flags change with age).
+`asks` holds only **live** asks (status `open` or `answered`), so the cache stays small however long the log grows; views that show closed asks (`board --all`, `list --all`, `show`, `export`) fold the log. The cache also holds `max_ask` (the highest short ID number used, for G1.12), `last_applied` (G2.11), `reader` (the mark of the reader that built it, G2.7), `doubled` (IDs that name two asks, G1.12) and the fold `stats`, and each ask carries the `session_id` of its `asked` event. `worst_flag` is computed at build time with [G5](#g5-flags-colour-and-order) and is a hint only; readers that show flags recompute them at read time (flags change with age).
 
-**G2.7 Stale cache.** A reader that finds `log_bytes` different from the log's size on disk rebuilds the cache (taking the lock) before using it.
+**G2.7 Stale cache.** A reader that finds `log_bytes` different from the log's size on disk, or a cache whose `reader` is not this reader's mark (P75: a cache an older copy built can lack an ask its reader lost; such a cache is rebuilt once), rebuilds the cache (taking the lock) before using it.
 
 **G2.8 Reads without the lock.** Readers (status, board, list) never take the lock unless they rebuild. A torn last line (no trailing `\n`) is ignored.
 
@@ -516,8 +516,8 @@ Each handler writes at most one JSON object to stdout. Context for the model goe
 Pit Board: you are lane "<lane_name>" (key <key>) on <machine>. <n> ask(s) wait on <operator_name>:
 - A12 [RED, 2d] Merge #651 now or wait for review? Suggested: merge now.
 - A14 [BLUE, 5h] YOUR HAND: create a Stripe account. Due Thu 5:00 PM ET.
-Rules: record every new ask with `pitboard add` before you ask it, and start the question with its ID. That includes an ask only <operator_name> can answer that you send to another agent (a coordinator, a reviewer) or a shared board instead of the chat.
-If <operator_name> has answered one, run `pitboard answer <ID> --by operator --answer "..."`. If it no longer matters, `pitboard withdraw <ID> --reason "..."`. Do not ask again in chat unless it still blocks your next step.
+Rules: record every new ask with `pitboard add` before you ask it, and start the question with its ID. Put the ask's words in single quotes, with no backtick and no dollar sign in them. That includes an ask only <operator_name> can answer that you send to another agent (a coordinator, a reviewer) or a shared board instead of the chat.
+If <operator_name> has answered one, run `pitboard answer <ID> --by operator --answer '...'`. If it no longer matters, `pitboard withdraw <ID> --reason '...'`. Do not ask again in chat unless it still blocks your next step.
 ```
 
 When asks of this lane were answered on the master list (`via: page`) and are not `done` yet, add after the open asks, one line each: `Answered on the master list, not done yet: A12 → "<answer>"`.
@@ -1244,24 +1244,25 @@ If `command -v pitboard` finds nothing, use `~/.pitboard/bin/pitboard` wherever 
 
 Before you ask the operator anything that you need an answer or an action for (a decision, an approval, a login, a payment, a signature, an account, a purchase, information only they have):
 
-1. Record it: `pitboard add --title "<the question or action, one line>" --suggested "<the answer you recommend and why, short>"`.
-   - Something only they can do with their own hands (pay, sign, log in, create an account, buy): add `--kind hand` and one `--step "..."` per step, and no `--suggested`.
+1. Record it: `pitboard add --title '<the question or action, one line>' --suggested '<the answer you recommend and why, short>'`.
+   - The ask's words go in single quotes, as above, with no backtick and no dollar sign in them; name a command in plain words. Inside double quotes a shell runs what a pair of backticks holds before pitboard even starts, and an ask is often about a risky command. An apostrophe ends single quotes: leave it out or say it another way.
+   - Something only they can do with their own hands (pay, sign, log in, create an account, buy): add `--kind hand` and one `--step '...'` per step, and no `--suggested`.
    - It truly cannot wait (a deadline today, something breaking): `--severity urgent`. You can carry on without it for now: `--severity can-wait`. Otherwise leave the default (blocking).
    - A real deadline: `--deadline "YYYY-MM-DD HH:MM"` or `--deadline +2d`.
 2. Ask in chat, starting with the ID it printed: "A12: Merge #651 now? I suggest merging now because ..."
 3. One ask per decision. Do not bundle three questions into one.
 4. If the answer is the operator's to give but you send the ask somewhere else instead of the chat (another agent, such as a coordinator or a reviewer, or a shared board), record it first all the same, and put its ID and this line in your message: "A12 is recorded on the Pit Board for the operator. Answer under A12, or say 'not mine to answer' under A12."
-   - They answer under the ID: `pitboard answer A12 --by agent --answer "<who>: <their answer>"`.
+   - They answer under the ID: `pitboard answer A12 --by agent --answer '<who>: <their answer>'`.
    - They say it is not theirs to answer: the ask stays open for the operator. Ask the operator in chat, starting with A12.
 
 Do not record: questions to yourself, questions to other agents that they can answer themselves, rhetorical questions, status updates.
 
 ## When it is answered or no longer needed
 
-- The operator answers in chat: `pitboard answer A12 --by operator --answer "<their answer, a few words>"`.
+- The operator answers in chat: `pitboard answer A12 --by operator --answer '<their answer, a few words>'`.
 - The operator types `ok A12` or `no A12`: it is already recorded; just act on it.
-- The work is finished: `pitboard done A12 --note "<what you did, one line>"`.
-- It no longer matters: `pitboard withdraw A12 --reason "<why>"`.
+- The work is finished: `pitboard done A12 --note '<what you did, one line>'`.
+- It no longer matters: `pitboard withdraw A12 --reason '<why>'`.
 
 ## Never
 
