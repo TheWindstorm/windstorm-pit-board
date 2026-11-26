@@ -9,6 +9,7 @@ import sys
 
 import pytest
 
+from capped import again_while_cut
 from conftest import NO_CLAUDE_PATH
 from pitboard import __version__, cli, setup as S
 
@@ -108,9 +109,9 @@ def test_G18_1_second_apply_changes_nothing_and_keeps_the_original(world):
 def test_G18_1_existing_config_is_kept(world):
     home, pb = world
     pb.mkdir(mode=0o700)
-    (pb / "config.json").write_text('{"operator_name": "Grant"}')
+    (pb / "config.json").write_text('{"operator_name": "Sam"}')
     run("setup", "--minimal", "--apply")
-    assert json.loads((pb / "config.json").read_text()) == {"operator_name": "Grant"}
+    assert json.loads((pb / "config.json").read_text()) == {"operator_name": "Sam"}
 
 
 def test_G18_1_no_settings_file_and_bad_settings(world):
@@ -150,8 +151,8 @@ def test_G10_5_wrapper_joins_the_operator_line_and_the_segment(world, own):
     mine = {"printf 'MINE'": "MINE", "printf 'L1\\nL2'": "L1\nL2"}.get(own, "")
     assert line() == mine                                         # nothing waits: no segment
     run("add", "--lane", "api", "--title", "Go?", "--suggested", "yes")
-    out = line()
     seg = "🔴 1 ask · oldest 0m"
+    out = again_while_cut(line, lambda o: seg in o)               # P142: a run cut at the cap is made again
     assert out.startswith("\x1b[31m") and seg in out             # the segment comes first
     if mine == "MINE":
         assert out.endswith(" · MINE") and "\n" not in out        # before a one-line status line

@@ -19,7 +19,8 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from pitboard import __version__, cli, contract as c, lane as L, render as R
+from capped import TRIES, again_while_cut, said
+from pitboard import __version__, cli, contract as c, lane as L, render as R, setup as S
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIX = os.path.join(ROOT, "tests", "fixtures", "statusline")
@@ -91,6 +92,54 @@ def segfile(w):
     return w["pb"] / "state" / (SID + ".seg")
 
 
+
+def _seg_id(w):
+    try:
+        st = os.stat(segfile(w))
+    except FileNotFoundError:
+        return None
+    return st.st_ino, st.st_mtime_ns
+
+
+def kept(w, data, shell=("sh",), shown=None, **env):
+    """A redraw that runs Pit Board, made again only while the wrapper cut that run at its cap (P52: a run cut at the
+    cap keeps no segment, and the next redraw runs Pit Board again). Kept: this redraw wrote the segment file anew,
+    or, where the test's world keeps no file, what it printed holds `shown`. Every try must have started python3, so
+    it is never made again after a redraw that took the quiet road; a try is made again only when it kept nothing
+    and took the cap's time. A try beyond the first is said, as a warning naming the test and the tries. What was
+    printed and which programs started are asserted by the test on the try that kept it. Returns (bytes printed,
+    the programs it started)."""
+    times = []
+    for _ in range(TRIES):
+        before = _seg_id(w)
+        t = time.monotonic()
+        out, starts = redraw(w, data, shell, **env)
+        times.append(time.monotonic() - t)
+        assert "python3" in starts, (len(times), starts)
+        now = _seg_id(w)
+        if (now is not None and now != before) if shown is None else shown in out:
+            if len(times) > 1:
+                said("segment kept", times)
+            return out, starts
+        if times[-1] < S.STATUS_CAP_SECONDS:
+            break                                        # not cut at the cap: nothing to try again
+    raise AssertionError(f"Pit Board's segment was not kept: {len(times)} tries, times "
+                         + ", ".join(f"{x:.2f} s" for x in times))
+
+
+def hold_first_run(w, seconds=10):
+    """A slow shim, not a slow runner: the python3 that runs Pit Board's launcher (never the wrapper's cap, never the
+    launcher's own check of python3) sleeps past the cap once, then goes on as before. Returns the file that says the
+    hold was reached; take it away to hold the next run."""
+    held = w["tmp"] / "held"
+    real, sleep = shutil.which("python3"), shutil.which("sleep")
+    with open(os.path.join(w["shims"], "python3"), "w") as f:
+        f.write(f'#!/bin/sh\necho python3 >> "{w["log"]}"\n'
+                f'case "$*" in *"/pitboard/launch.py"*) [ -e "{held}" ] || {{ : > "{held}"; "{sleep}" {seconds}; }} ;; esac\n'
+                f'exec "{real}" "$@"\n')
+    return held
+
+
 def add(title="Go?"):
     assert run("add", "--lane", "api-server", "--title", title, "--suggested", "yes")[0] == 0
 
@@ -125,7 +174,7 @@ def test_G10_5_P54_a_redraw_with_nothing_changed_starts_only_cat_and_date(world,
     for _ in range(asks):
         add()
     data = fixture(inp)
-    first, s1 = redraw(world, data, shell)
+    first, s1 = kept(world, data, shell)
     assert "python3" in s1 and segfile(world).exists()                     # the first redraw runs Pit Board
     assert (b"1 ask" in first) == bool(asks)
     second = until_quiet(world, data, shell)                                # every start counted: cat and date only
@@ -156,7 +205,7 @@ def test_G10_5_P54_an_input_that_is_not_there_is_not_a_change_under_any_shell(wo
         p.mkdir()
     else:
         p.write_text("{}")
-    out, starts = redraw(world, data, shell)
+    out, starts = kept(world, data, shell)
     assert "python3" in starts
     assert (b"1 ask" in out) == (missing == "lane log")
     assert until_quiet(world, data, shell) == out
@@ -189,7 +238,7 @@ def test_G10_5_P54_each_change_runs_pit_board_once_then_quiet_again(world, chang
         p.write_bytes(p.read_bytes())
     else:
         env = {"NO_COLOR": "1"}
-    out, starts = redraw(world, data, **env)
+    out, starts = kept(world, data, **env)
     assert "python3" in starts, change
     if change == "ask added":
         assert b"2 asks" in out
@@ -202,10 +251,41 @@ def test_G10_5_P54_each_change_runs_pit_board_once_then_quiet_again(world, chang
 
 def test_G10_5_P54_an_input_of_the_same_time_as_the_file_counts_as_changed(world):
     data = fixture("no-name.json")
-    redraw(world, data)
+    kept(world, data)
     st = os.stat(segfile(world))
     os.utime(world["pb"] / "lanes.json", ns=(st.st_mtime_ns, st.st_mtime_ns))
     assert "python3" in redraw(world, data)[1]
+
+
+def test_G10_5_P54_a_run_cut_at_the_cap_keeps_no_segment_and_the_next_redraw_runs_pit_board_and_keeps_it(world):
+    """P52 with P54, seen a third time on 2026-11-26, on main (CI's Mac leg): a first run of Pit Board that took
+    longer than the cap kept no segment, and a test that wanted the segment from that one redraw was red on a right
+    tree. Here the run is held past the cap by a slow shim: that redraw prints the person's own line alone and keeps
+    no segment; the next redraw runs Pit Board again and keeps it. Then the same once more through the tests' own
+    helper, so its second try runs in every suite run, and is said. No part leans on a run that is not held ending
+    inside the cap: the redraw after the held one goes through the helper too, and the warning may name any try."""
+    s = world["home"] / ".claude" / "settings.json"
+    d = json.loads(s.read_text())
+    d["statusLine"]["command"] = "printf MINE"
+    s.write_text(json.dumps(d))
+    assert run("setup", "--minimal", "--apply")[0] == 0
+    add()
+    held = hold_first_run(world)
+    data = fixture("name-1.json")
+    t = time.monotonic()
+    out, starts = redraw(world, data)
+    took = time.monotonic() - t
+    assert held.exists() and "python3" in starts, starts                    # Pit Board was started, and held
+    assert out == b"MINE" and not segfile(world).exists(), out              # the person's own line alone, no segment
+    assert S.STATUS_CAP_SECONDS <= took < S.STATUS_CAP_SECONDS + 5, took    # cut at the cap, long before the hold ends
+    out, starts = kept(world, data)                                         # the next redraw runs Pit Board again
+    assert "python3" in starts and segfile(world).exists(), starts
+    assert b"1 ask" in out and out.endswith(" · MINE".encode()), out
+    add("Second?")
+    held.unlink()                                                           # held once more, now inside the helper
+    with pytest.warns(UserWarning, match=f"segment kept on try [2-{TRIES}] of {TRIES}"):
+        out, starts = kept(world, data)
+    assert b"2 asks" in out and out.endswith(" · MINE".encode()), out
 
 
 def test_G10_5_P54_an_ask_that_lands_between_the_read_and_the_write_is_never_hidden(world, monkeypatch):
@@ -233,7 +313,7 @@ def test_G10_5_P54_an_ask_that_lands_between_the_read_and_the_write_is_never_hid
         cli.sys.stdin = real_stdin
     assert out.getvalue() == "" and segfile(world).exists()                  # it read nothing open
     monkeypatch.setattr(store, "read_state", real)
-    shown, starts = redraw(world, data)
+    shown, starts = kept(world, data)
     assert "python3" in starts and b"1 ask" in shown
 
 
@@ -265,7 +345,7 @@ def test_G10_5_P54_a_file_that_cannot_be_trusted_runs_pit_board(world, spoil):
         f.write_bytes(b"\n".join(lines))
     else:
         f.write_bytes(b"\n".join(lines[:-2] + lines[-1:]))
-    out, starts = redraw(world, data)
+    out, starts = kept(world, data)
     assert "python3" in starts, spoil
     assert out == good                                                      # Pit Board's own answer, never nothing
 
@@ -287,7 +367,7 @@ def test_G10_5_P54_the_name_is_one_text_the_wrapper_cut_and_a_rename_after_an_es
     settle(world, one)
     assert segfile(world).read_bytes().split(b"\n")[1] == 'Pit \\"Bo\\\\ard\\" é·1'.encode()
     assert L.read_map()[SID]["lane_name"] == 'Pit "Bo\\ard" é·1'
-    out, starts = redraw(world, two)                                         # differs only after the quote
+    out, starts = kept(world, two)                                           # differs only after the quote
     assert "python3" in starts
     assert segfile(world).read_bytes().split(b"\n")[1] == 'Pit \\"Bo\\\\ard\\" é·2'.encode()
     until_quiet(world, two)
@@ -302,7 +382,7 @@ def test_G10_5_P54_the_name_is_one_text_the_wrapper_cut_and_a_rename_after_an_es
     seen_p.write_text(json.dumps(seen))
     head[3] = str(int(time.time()) - 1).encode()
     segfile(world).write_bytes(b"\n".join([b" ".join(head)] + lines[1:]))
-    assert "python3" in redraw(world, two)[1]
+    assert "python3" in kept(world, two)[1]
     assert L.read_map()[SID]["lane_name"] == 'Pit "Bo\\ard" é·2'
 
 
@@ -319,7 +399,7 @@ def test_G10_5_P54_a_key_given_twice_keeps_no_file_and_always_runs_pit_board(wor
 def test_G10_5_P54_the_file_is_private_holds_no_asks_words_and_never_outlives_its_version(world):
     add("Secret plan words?")
     data = fixture("no-name.json")
-    redraw(world, data)
+    kept(world, data)
     f = segfile(world)
     assert os.stat(f).st_mode & 0o777 == 0o600
     raw = f.read_bytes()
@@ -349,7 +429,7 @@ def test_G10_5_P54_old_files_go_and_only_ours(world):
     unreadable = state / "11111111-0000-4000-8000-000000000004.seg"
     unreadable.write_text(f"{cli.SEG_MARK} 0.0.1\n")
     os.chmod(unreadable, 0)
-    redraw(world, fixture("no-name.json"))
+    kept(world, fixture("no-name.json"))
     left = sorted(p.name for p in state.iterdir() if p.name.endswith(".seg"))
     assert left == sorted([not_ours.name, other_name.name, SID + ".seg"]
                           + ([unreadable.name] if os.geteuid() != 0 else []))
@@ -423,10 +503,12 @@ def test_G10_5_P54_rule2_the_persons_status_script_gets_the_environment_and_inpu
     env = {"HOME": str(world["home"]), "PATH": os.environ["PATH"], **lived, **_clock()}
     data = fixture("name-1.json")
     direct = subprocess.run(["/bin/sh", "-c", own], input=data, capture_output=True, env=env, timeout=30).stdout
+    def one():
+        return subprocess.run([shutil.which(shell[0]), *shell[1:], str(world["pb"] / "statusline.sh")], input=data,
+                              capture_output=True, env=env, timeout=30).stdout.decode()
+
     for _ in range(3):                                               # Pit Board run, then the quiet road
-        r = subprocess.run([shutil.which(shell[0]), *shell[1:], str(world["pb"] / "statusline.sh")], input=data,
-                           capture_output=True, env=env, timeout=30).stdout
-        text = r.decode()
+        text = again_while_cut(one, lambda t: " ask · oldest " in t) if asks else one()   # P142: a cut is made again
         assert (" ask · oldest " in text) == bool(asks)                      # Pit Board's segment, then the person's
         got = json.loads(text[text.index("{"):])
         want = json.loads(direct)
@@ -459,7 +541,7 @@ def test_G10_5_P54_the_wrappers_cut_is_checked_against_the_real_parse(world, for
     data = t.encode()
     json.loads(data)
     for _ in range(3):
-        out, starts = redraw(world, data)
+        out, starts = kept(world, data, shown=b"1 ask")
         assert "python3" in starts and b"1 ask" in out, (form, starts)
         assert not segfile(world).exists(), form
 

@@ -1,11 +1,11 @@
 """G3: lane identity. Every test uses a temporary PITBOARD_HOME."""
 import json
 import os
-import subprocess
 import sys
 
 import pytest
 
+from children import run_children
 from pitboard import contract as c
 from pitboard import lane as L
 from pitboard import store as s
@@ -129,8 +129,7 @@ def test_G3_5_two_live_sessions_one_lane_unique_ids():
             " lane_name='Shared', machine='m', session_id=%r, by='agent', data={'kind': 'decision',"
             " 'severity': 'can-wait', 'title': 'Q?', 'suggested': 'yes', 'source': 'agent'}))\n"
         ) % (key, key, sid)
-        procs = [subprocess.Popen([sys.executable, "-c", code], cwd=ROOT) for _ in range(2)]
-        assert all(p.wait(timeout=60) == 0 for p in procs)
+        assert run_children([[sys.executable, "-c", code]] * 2, timeout=60, cwd=ROOT) == []   # P102: a red names the child
     events, bad = s.read_log("shared")
     asks = [e["ask"] for e in events]
     assert bad == 0 and len(asks) == 60 and len(set(asks)) == 60

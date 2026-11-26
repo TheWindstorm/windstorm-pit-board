@@ -346,6 +346,107 @@ def default_home():
     return os.path.join(_home_dir(), ".pitboard")
 
 
+# ------------------------------------------------------------------ the status line setting, as a shell reads it (P99)
+_PLAIN = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_@%+=:,./-")
+_NAME_IS = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=")
+
+
+def one_word(path):
+    """P99: the path as ONE shell word, which is what setup writes as statusLine.command: Claude Code hands that
+    string to /bin/sh -c as it stands. Unchanged when no character in it means anything to a shell, else in single
+    quotes."""
+    return shlex.quote(path)
+
+
+def _literal_word(command):
+    """What a shell takes the command for, when it is one word that nothing is expanded in: (the word, tilde) where
+    tilde says it began with an unquoted ~/ ; "other" when it is more than one word or holds anything a shell would
+    expand or act on; "unread" when a quote is left open. Nothing is run. Stricter than a shell where shells differ:
+    what is not plainly literal is "other"."""
+    s = command.strip(" \t")
+    if not s or _NAME_IS.match(s):                           # NAME=value at the start sets a variable, runs nothing
+        return "other"
+    out, i, n, tilde = [], 0, len(s), s.startswith("~/")
+    while i < n:
+        c = s[i]
+        if c == "'":
+            j = s.find("'", i + 1)
+            if j < 0:
+                return "unread"
+            out.append(s[i + 1:j])
+            i = j + 1
+        elif c == '"':
+            j, buf = i + 1, []
+            while j < n and s[j] != '"':
+                if s[j] == "\\":
+                    if j + 1 >= n:
+                        return "unread"
+                    if s[j + 1] in '$`"\\':
+                        buf.append(s[j + 1])
+                        j += 2
+                        continue
+                    if s[j + 1] == "\n":
+                        return "other"
+                    buf.append("\\")
+                    j += 1
+                    continue
+                if s[j] in "$`":
+                    return "other"
+                buf.append(s[j])
+                j += 1
+            if j >= n:
+                return "unread"
+            out.append("".join(buf))
+            i = j + 1
+        elif c == "\\":
+            if i + 1 >= n:
+                return "unread"
+            if s[i + 1] == "\n":
+                return "other"
+            out.append(s[i + 1])
+            i += 2
+        elif c in _PLAIN or c.isalnum() or (c == "~" and (i > 0 or tilde)):   # a letter of any script is literal
+            out.append(c)
+            i += 1
+        else:
+            return "other"
+    return "".join(out), tilde
+
+
+def reads_as(command, wpath, userhome=None):
+    """P99: does a shell take this statusLine.command as the one path wpath? True, False, or None when it could not be
+    read (not text, or a quote left open). The tilde form counts: an unquoted ~/ at the start is the person's home."""
+    if not isinstance(command, str):
+        return None
+    got = _literal_word(command)
+    if got == "unread":
+        return None
+    if got == "other":
+        return False
+    word, tilde = got
+    if tilde:
+        word = os.path.join(userhome or _home_dir(), word[2:])
+    return word == wpath
+
+
+def setting_kind(command, wpath, userhome=None):
+    """P99: whose is this statusLine.command? "ours": a form a known version of setup wrote, or the tilde form (the
+    plain full path as every version before 0.1.4 wrote it, whatever a shell makes of it; the one shell word 0.1.4
+    writes). "changed": it names the wrapper in another form, so the person changed it: kept and named, never
+    rewritten. "unread": it could not be read. "other": it is not about the wrapper at all."""
+    if command is None:
+        return "other"
+    if not isinstance(command, str):
+        return "unread"
+    if command == wpath or reads_as(command, wpath, userhome) is True:
+        return "ours"
+    h = userhome or _home_dir()
+    names = {wpath, one_word(wpath)} | ({"~" + wpath[len(h):]} if wpath.startswith(h + os.sep) else set())
+    if not any(x in command for x in names):
+        return "other"
+    return "unread" if _literal_word(command) == "unread" else "changed"
+
+
 def claude_dir():
     return os.path.join(_home_dir(), ".claude")
 
@@ -359,7 +460,8 @@ class NoRecord(Exception):
 def _drop(d, home, plugin, strip_env=True):
     """d without Pit Board's entries: the home's wrapper as statusLine, the plugin key, the home in env."""
     d = dict(d)
-    if (d.get("statusLine") or {}).get("command") == os.path.join(home, WRAPPER):
+    sl = d.get("statusLine")                                  # P99 (c): ours in any form a known version wrote
+    if isinstance(sl, dict) and setting_kind(sl.get("command"), os.path.join(home, WRAPPER)) == "ours":
         d.pop("statusLine")
     env = dict(d.get("env") or {})
     if strip_env and env.get("PITBOARD_HOME") == home:
@@ -498,8 +600,18 @@ def settings_back(path, home, entry, census, apply):
             return True
         d = read_object(path)
         sl = d.get("statusLine")
-        if not (isinstance(sl, dict) and sl.get("command") == wpath):
+        kind = setting_kind(sl.get("command"), wpath) if isinstance(sl, dict) else "other"      # P99 (c)
+        if kind == "other":
             return True
+        if kind == "unread":
+            census.kept(f"status line setting in {_short(path)}", "statusLine.command could not be read; the file "
+                        "was not touched", INCOMPLETE)
+            return False
+        if kind == "changed":                                  # never rewritten, never printed: named by its place
+            census.kept(f"status line setting in {_short(path)}", "it names Pit Board's wrapper in a form setup did "
+                        "not write, so you changed it: left as it is. Take the wrapper out of statusLine.command "
+                        "there, then run uninstall again", INCOMPLETE)
+            return False
         old = None
         if entry and entry.get("before"):
             try:

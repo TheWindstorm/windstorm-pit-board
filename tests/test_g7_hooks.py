@@ -122,6 +122,75 @@ def test_G7_0_command_runs_through_the_launcher(home):
     assert json.loads(r.stdout)["hookSpecificOutput"]["hookEventName"] == "SessionStart"
 
 
+PLUGIN_VAR = "CLAUDE_PLUGIN_ROOT"
+
+
+def hook_commands(obj):
+    """Every command in a hooks.json object, with its event: (event, command)."""
+    return [(event, hk["command"]) for event, entries in obj["hooks"].items() for entry in entries
+            for hk in entry["hooks"] if hk.get("type") == "command"]
+
+
+def quote_problems(event, cmd):
+    """P101: where a variable in a hook command does not stand inside double quotes. A command this cannot read
+    (a command substitution, a quote left open) is a problem too, never a pass."""
+    out, names, state, i = [], [], None, 0
+    while i < len(cmd):
+        ch = cmd[i]
+        if state != "'" and ch == "\\":
+            i += 2
+            continue
+        if state != "'" and (ch == "`" or cmd.startswith("$(", i)):
+            return [f"{event}: the command holds a command substitution, which this check cannot read"]
+        m = re.match(r"\$\{?([A-Za-z_][A-Za-z0-9_]*)", cmd[i:]) if ch == "$" else None
+        if state is None and ch in "'\"":
+            state = ch
+        elif ch == state:
+            state = None
+        elif m:
+            names.append(m.group(1))
+            if state is None:
+                out.append(f"{event}: ${m.group(1)} stands outside double quotes")
+            elif state == "'" and m.group(1) == PLUGIN_VAR:
+                out.append(f"{event}: ${m.group(1)} stands inside single quotes")
+        i += 1
+    if state:
+        out.append(f"{event}: a quote is not closed")
+    if PLUGIN_VAR not in names:
+        out.append(f"{event}: the command does not name ${PLUGIN_VAR}")
+    return out
+
+
+def test_G7_0_every_variable_in_a_hook_command_stands_inside_double_quotes():
+    """P101: read from the file, whatever shape a later command takes: each command names the plugin's folder through
+    Claude Code's variable, and that variable and every other one stand inside double quotes."""
+    with open(os.path.join(ROOT, "hooks", "hooks.json"), encoding="utf-8") as f:
+        cmds = hook_commands(json.load(f))
+    assert {event for event, _ in cmds} == set(HOOK_TABLE.values())
+    assert [p for event, cmd in cmds for p in quote_problems(event, cmd)] == []
+    good = cmds[0][1]
+    for change, want in [
+        (('R="${CLAUDE_PLUGIN_ROOT}"', 'R="$CLAUDE_PLUGIN_ROOT"'), []),                  # without braces, in quotes
+        (('"$R/pitboard/launch.py" hook', '"$R"/pitboard/launch.py hook'), []),          # the variable alone in quotes
+        (('R="${CLAUDE_PLUGIN_ROOT}"', 'R=${CLAUDE_PLUGIN_ROOT}'), ["E: $CLAUDE_PLUGIN_ROOT stands outside double quotes"]),
+        (('R="${CLAUDE_PLUGIN_ROOT}"', 'R=$CLAUDE_PLUGIN_ROOT'), ["E: $CLAUDE_PLUGIN_ROOT stands outside double quotes"]),
+        (('R="${CLAUDE_PLUGIN_ROOT}"', "R='${CLAUDE_PLUGIN_ROOT}'"), ["E: $CLAUDE_PLUGIN_ROOT stands inside single quotes"]),
+        (('[ -f "$R/pitboard/launch.py" ]', '[ -f $R/pitboard/launch.py ]'), ["E: $R stands outside double quotes"]),
+        (('exec "$P"', 'exec $P'), ["E: $P stands outside double quotes"]),
+        (('hook session-start', 'hook session-start "'), ["E: a quote is not closed"]),
+        (('R="${CLAUDE_PLUGIN_ROOT}"', 'R="$(dirname "$0")"'),
+         ["E: the command holds a command substitution, which this check cannot read"]),
+        (('R="${CLAUDE_PLUGIN_ROOT}"', 'R="/opt/pit board"'), ["E: the command does not name $CLAUDE_PLUGIN_ROOT"]),
+    ]:
+        bad = good.replace(*change)
+        assert bad != good, change
+        assert quote_problems("E", bad) == want, change
+    planted = {"hooks": {"PostToolUse": [{"matcher": "*", "hooks": [{"type": "command", "command": good}]},
+                                         {"hooks": [{"type": "command", "command": good.replace('exec "$P"', "exec $P")}]}]}}
+    assert [p for event, cmd in hook_commands(planted) for p in quote_problems(event, cmd)] == [
+        "PostToolUse: $P stands outside double quotes"]                                  # every entry of an event is read
+
+
 # The hooks.json each generation was released with. Changing hooks.json means raising
 # hooks/generation.json and adding its hash here (G21.6).
 GENERATIONS = {1: "d0d306ca49c483878632c4a25b0edad680cb44af0fc85447bad33169f175fdcc"}
@@ -212,9 +281,9 @@ def test_G7_7_operator_name_limit_and_3000_chars():
     asks = [{"uid": f"{n:032x}", "ask": f"A{n}", "status": "open", "kind": "question", "severity": "blocking",
              "title": "x" * 110, "suggested": "y" * 400, "asked_at": c.ts_of(now - timedelta(hours=1))}
             for n in range(1, 41)]
-    text = R.reminder_text("k", "Lane", "m", asks, NY, now, cfg={"operator_name": "Grant",
+    text = R.reminder_text("k", "Lane", "m", asks, NY, now, cfg={"operator_name": "Sam",
                                                                     "reminder_max_items": 20})
-    assert len(text) < 3000 and "wait on Grant:" in text and "If Grant has answered one" in text
+    assert len(text) < 3000 and "wait on Sam:" in text and "If Sam has answered one" in text
     assert re.search(r"\(\+\d+ more: pitboard list\)", text)
     few = R.reminder_text("k", "Lane", "m", asks[:5], NY, now, cfg={"reminder_max_items": 3})
     assert "(+2 more: pitboard list)" in few and few.count("\n- A") == 3
@@ -308,7 +377,7 @@ def test_G7_2_without_session_start_the_other_hooks_still_work(home, monkeypatch
     """The family's rule 24 (a reload loads too): a session that got Pit Board by /reload-plugins never runs
     session-start. Today: the first prompt hook makes the lane row on first sight, an ask recorded with no --lane
     finds that lane through the session id, stop marks it idle, and cwd-changed writes the env line. What is
-    missing is the reminder: the prompt hook gives the model no rules and no open asks. P35 (due 0.1.4) changes
+    missing is the reminder: the prompt hook gives the model no rules and no open asks. P35 (due 0.1.5) changes
     the last assert: the first prompt hook of such a session gives session-start's reminder once."""
     first = hook("user-prompt-submit", fixture("user-prompt-submit", "basic", prompt="go on", session_title="API Server",
                                                transcript_path=transcript(home, "API Server")))

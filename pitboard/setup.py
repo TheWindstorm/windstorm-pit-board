@@ -46,6 +46,34 @@ def wrapper_path(home=None):
     return os.path.join(home or store.home(), WRAPPER_NAME)
 
 
+reads_as = leave.reads_as                # P99: how a shell takes a statusLine.command (True, False, None = unread)
+OWN_KEPT = "the backup made beside this file"            # the plan's words; --apply puts the backup's own path here
+
+
+def read_back(settings_path, wpath):
+    """P99 (b): the status line setting read again from the file, the way it will be read: True when a shell takes it
+    as the wrapper's path, False when it does not, None when the file or the setting could not be read."""
+    try:
+        d = leave.read_object(settings_path)
+    except leave.Unread:
+        return None
+    sl = (d or {}).get("statusLine")
+    cmd = sl.get("command") if isinstance(sl, dict) else None
+    return False if cmd is None else leave.reads_as(cmd, wpath)
+
+
+def wrapper_word(home):
+    """P99 (a): the wrapper's path as the one shell word a status line setting holds. Refused before the first write,
+    the character named, when this version cannot write the path so that it is read back as that path."""
+    wpath = wrapper_path(home)
+    word = leave.one_word(wpath)
+    if leave.reads_as(word, wpath) is not True:
+        odd = next((c for c in wpath if c not in leave._PLAIN and not c.isalnum() and c not in " '\"$`\\"), "?")
+        raise ValueError(f"the path of Pit Board's home holds a character this version cannot write as one word: "
+                         f"{odd!r}\n  home: {leave._short(home)}\nNothing changed.")
+    return word
+
+
 def original_from_wrapper(path):
     """The operator's own status line command, as recorded in our wrapper (None if none)."""
     raw = _read(path)
@@ -377,12 +405,15 @@ def closing_items(home, settings_path):
     return items
 
 
-def plan_minimal(home=None, settings_path=None, root=None):
-    """The --minimal items, in order (G18.1)."""
+def plan_minimal(home=None, settings_path=None, root=None, setting=True):
+    """The --minimal items, in order (G18.1). setting=False (the one-folder road): the person's own status line
+    setting is read for the command the wrapper carries on, and is never an item."""
     home = home or store.home()
     settings_path = settings_path or claude_settings_path()
     root = root or _root()
     items = []
+    wpath = wrapper_path(home)
+    word = wrapper_word(home)
 
     cfg_path = os.path.join(home, "config.json")
     if os.path.exists(cfg_path):
@@ -399,7 +430,6 @@ def plan_minimal(home=None, settings_path=None, root=None):
     items.append(_file_item("stable launcher copy", os.path.join(home, stablecopy.MARKER),
                             f"{__version__}\n".encode("utf-8"), 0o644))       # copied-from (G21.4)
 
-    wpath = wrapper_path(home)
     try:
         with open(settings_path, encoding="utf-8") as f:
             settings = json.load(f)
@@ -409,21 +439,37 @@ def plan_minimal(home=None, settings_path=None, root=None):
         raise ValueError(f"not a JSON object: {settings_path}")
     sl = settings.get("statusLine")
     current = sl.get("command") if isinstance(sl, dict) else None
-    if current == wpath:
+    kind = leave.setting_kind(current, wpath)          # P99 (c): ours in a known form, changed by the person, unread
+    if kind == "unread" and setting:
+        raise ValueError("statusLine.command could not be read: it is not text, or a quote in it is left open.\n"
+                         f"  in: {leave._short(settings_path)}\n"       # short lines: none is cut at the CLI's width
+                         "Setup cannot tell whether that line is its own. Nothing changed.")
+    if kind in ("ours", "changed"):
         original = original_from_wrapper(wpath)       # already wrapped: keep the recorded original
     else:
         original = current if isinstance(current, str) and current.strip() else None
     items.append(_file_item("status line wrapper", wpath, wrapper_text(original, home).encode("utf-8"), 0o755))
+    if not setting:
+        return items + closing_items(home, settings_path)
 
-    if current == wpath:
+    if kind == "ours" and leave.reads_as(current, wpath) is True:
         items.append(Item("status line setting", settings_path, "keep (already points at the wrapper)"))
+    elif kind == "changed":
+        items.append(Item("status line setting", settings_path, "keep (it names the wrapper in a form setup did not "
+                          "write: yours, left as it is)"))
     else:
         new = dict(settings)
         new_sl = dict(sl) if isinstance(sl, dict) else {}
-        new_sl.update({"type": "command", "command": wpath})
+        new_sl.update({"type": "command", "command": word})
         new["statusLine"] = new_sl
-        was = f"was {json.dumps(current)}" if current else "no status line before"
-        said, more = mode_text(settings_path)
+        said, more = mode_text(settings_path)           # short lines: the CLI's width cut never hides them
+        if kind == "ours":                              # the plain path an older setup wrote, not one word here
+            was, more = "as one word", ["an older setup wrote it in a form that is not read as one path here"] + more
+        elif current:                                   # never the person's command itself: it can hold a secret
+            was = "your own status line command is kept"
+            more = ["the wrapper keeps running your own command; the command itself also stays in", OWN_KEPT] + more
+        else:
+            was = "no status line before"
         items.append(Item("status line setting", settings_path,
                           "\n".join([f"set statusLine.command to the wrapper ({was}; {said})"] + more), json_obj=new))
     return items + closing_items(home, settings_path)
@@ -510,6 +556,8 @@ def apply(items, home=None):
         else:
             content, mode = it.content, it.mode
         leave.write_atomic(it.path, content, mode)       # P41: opened new at its mode, never narrowed after
+        if bak and OWN_KEPT in it.action:                # where the person's own command is kept, by its path
+            it.action = it.action.replace(OWN_KEPT, f"the backup {leave._short(bak)}", 1)
         done.append(it)
         if new_here and home and it.json_obj is None and os.path.dirname(it.path) == home:
             note(home, made=[os.path.basename(it.path)])       # P40: config.json and the wrapper, by record
