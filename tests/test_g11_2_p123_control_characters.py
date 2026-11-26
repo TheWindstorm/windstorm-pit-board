@@ -17,9 +17,9 @@ SID = "00000000-0000-4000-8000-000000000001"
 MARK = "�"
 CONTROL = re.compile("[\x00-\x08\x0b-\x1f\x7f-\x9f]")           # every C0 but tab and line feed, DEL, every C1
 OWN_COLOURS = sorted({v for v in flags.ANSI.values() if v} | {flags.RESET}, key=len, reverse=True)
-ONE_OF_EACH = {"ESC": "\x1b", "C0, the first": "\x01", "C0, the bell": "\x07", "C0, backspace": "\x08",
-               "C0, carriage return": "\r", "C0, the last": "\x1f", "DEL": "\x7f", "C1, the first": "\x80",
-               "C1, next line": "\x85", "C1, the one-character CSI": "\x9b", "C1, the last": "\x9f"}
+ONE_OF_EACH = {"C0, 1 of 6": "\x1b", "C0, 2 of 6": "\x01", "C0, 3 of 6": "\x07", "C0, 4 of 6": "\x08",
+               "C0, 5 of 6": "\r", "C0, 6 of 6": "\x1f", "DEL": "\x7f", "C1, 1 of 4": "\x80",
+               "C1, 2 of 4": "\x85", "C1, 3 of 4": "\x9b", "C1, 4 of 4": "\x9f"}    # named by class and number only
 FIELDS = {"title": "ti", "suggested": "su", "why": "wh", "detail": "de", "hand": "ha", "step": "st", "lane": "la",
           "answer": "an", "note": "no", "reason": "re", "withdrawn": "wi", "deadline": "dl", "third": "th",
           "fourth": "fo", "changed": "ch", "json": "js", "none": "A9", "key": "ke"}
@@ -202,7 +202,7 @@ def test_G11_2_P123_every_control_character_there_is_in_two_titles(home, monkeyp
 
 def test_G11_2_P123_the_stored_event_and_the_exports_hold_the_text_as_it_was_given(home, monkeypatch):
     faults = []
-    for name in ("ESC", "C0, the bell", "DEL", "C1, the one-character CSI"):
+    for name in ("C0, 1 of 6", "C0, 3 of 6", "DEL", "C1, 3 of 4"):
         c = ONE_OF_EACH[name]
         pb = home / ("pb-" + name.replace(" ", "-").replace(",", ""))
         monkeypatch.setenv("PITBOARD_HOME", str(pb))
