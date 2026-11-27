@@ -19,7 +19,7 @@
    "ship_in": "0.1.0",
    "test": "test_G10_5_wrapper_joins_the_operator_line_and_the_segment",
    "proven": "2026-11-22 Eastern, the overnight stress test (the skill's owner named this as P1's proof): in a working session on a shared Linux laptop and one on an Intel Mac, each holding an ask it had recorded by itself, the first line of the status line was '🔴 1 ask · oldest 28m' (Linux) and '🔴 1 ask · oldest 27m' (Mac), above the operator's own status line of several lines. 0.1.0 from the catalog, local scope in each session's own folder.",
-   "issue": null,
+   "issue": "",
    "moved_why": "",
    "moved_by_person": ""
   },
@@ -33,7 +33,7 @@
    "ship_in": "0.1.0",
    "test": "test_INV2_cache_can_be_deleted_without_loss",
    "proven": "The pilot machine, 0.1.0 (the pilot copy), 2026-11-22T04:19Z: reads of the lane log, the asks and the board before the reboot and after it matched. And an Intel Mac, round 2 of the overnight stress test (a clean reboot), 0.1.0 from the catalog in three sessions' own folders, 2026-11-22T06:45Z: all three lane logs byte-identical, the three open asks still open and shown first on their status lines, and the start-up reminder listed them after the restorer resumed the sessions. The same Mac, later rounds of that test: an ungraceful quick restart (07:30Z), a clean reboot with the status line's wrapped command missing (08:15Z), a clean reboot in the middle of work (09:45Z: an ask writer cut at the reboot left every line whole) and a clean reboot after all three skills were uninstalled and installed again in another order (11:15Z): every lane log byte-identical and every open ask still open and first on its status line. And a shared Linux laptop (bash), 2026-11-22: a sudden reset in the middle of work (12:26Z; the ask writer's last event, written just before the reset, is in the log, every line whole, none lost) and two clean reboots 2 minutes 19 seconds apart (12:51Z and 12:53Z, the second during the restore): every lane log byte-identical, every open ask still open and first on its status line, and each session's start-up hook ran once.",
-   "issue": null,
+   "issue": "",
    "moved_why": "",
    "moved_by_person": ""
   },
@@ -61,7 +61,7 @@
    "ship_in": "0.1.2",
    "test": "test_G9_1_pit_board_body_is_appendix_A5_word_for_word",
    "proven": "Proven 2026-11-25 on one machine, a shared Linux workstation. The set: every lane there whose session carried 0.1.2's reminder, each counted from its own first session with it, the maintainer's own lane left out. A product lane outside the skill family recorded asks for the operator with pitboard add, by the agent, at 2026-11-24T14:33:20.759Z and 2026-11-25T11:44:30.434Z: two Eastern days, 21 h 11 min apart. Four more lanes outside the family recorded asks on those days: 13 asks in 5 lanes in all, the \"asked\" events by the agent from 2026-11-24T14:33:20.759Z to the window's end, 2026-11-25T11:44:30.434Z (2 + 4 + 1 + 1 + 5). Read from the tool's own records (ids and times, never an ask's text), counted by the maintainer and read by the skill's owner; nothing was told to any lane about the count. What it does not show: in the same days, steps only the operator could take were also named on the shared board with no ask recorded (P13, P81).",
-   "issue": null,
+   "issue": "",
    "moved_why": "Moved from 0.1.1 to 0.1.2 on 2026-11-23 by the skill's owner. In M2a, under 0.1.1's words, the one real ask in the week's sample was not recorded (it went to the shared board), so the promise as shipped was not kept. P13 changes the words in 0.1.2. P4's two days count from the day all three pilot lanes run 0.1.2, and its proof then holds back 0.1.3, not 0.1.2.",
    "moved_by_person": "",
    "proof_needed": "Two calendar days, each with at least one real ask recorded unprompted in a pilot lane, counted from the day all three pilot lanes run 0.1.2; name the dates and the lanes."
@@ -308,7 +308,7 @@
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.5",
    "seen": "2026-11-23, the rest of P19's reading: outside the launcher's choice of version, other reads a decision hangs on (the stable copy's refresh, setup's and the folder installer's reads of settings and records, lane logs) may also treat a file that cannot be read as absent.",
-   "promise": "Every other read a decision hangs on has three answers (yes, no, could not be read). Nothing is deleted, emptied, started or reported gone on the third, and one test fails each read in turn.",
+   "promise": "Every other read a decision hangs on has three answers (yes, no, could not be read). Nothing is deleted, emptied, started or reported gone on the third, and one test fails each read in turn. Not held: `pitboard version` says nothing of a failed read of good-versions, bad-versions or a version folder it could not look at; the hook's log names each.",
    "test": "",
    "proven": "",
    "issue": 145,
@@ -715,11 +715,12 @@
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.5",
    "seen": "2026-11-24, the family's rule 2, parts 1 and 2: Pit Board starts no long-running program, but its own short ones (the launcher from the wrapper and the cap, python3 -I) are handed the whole environment Claude Code gave the hook or the status line; and setup and uninstall run Claude Code's own `claude plugin` commands, a program of the person's whose road their settings can move.",
-   "promise": "Pit Board's own programs get an environment Pit Board built, by name: what they need (HOME, PATH, the settings the README names, the facts Claude Code and the terminal give), never the person's whole environment. The `claude plugin` commands setup and uninstall run have their road fixed where Claude Code allows it; where the person's settings can still move it, Pit Board reads what the command will really do, does not act on \"not as set\" or \"could not be read\", and says so with the one next step.",
+   "promise": "Pit Board's own programs get an environment Pit Board built, by name: the launcher's first act keeps only the names on its list, each with what reads it (HOME, PATH, the locale, the time zone, the temporary folder, the terminal and tmux's socket; the settings the README names, Pit Board's own marks, the facts Claude Code and the terminal give), so a program Pit Board starts as its own receives no other name of the person's. The `claude plugin` commands setup and uninstall run in the person's own environment, kept aside in memory for them alone, by the full path found once and named in the plan, in the folder the call is for, and only where Claude Code's config folder is the one whose plugin list Pit Board reads; after the command Pit Board reads that list, does not act on \"not as set\" or \"could not be read\", and says so with the one next step. Where Claude Code runs under another config folder, a folder's setup says that Pit Board does not work there in this version and that nothing changed, and names no step, because there is none.",
    "test": "",
    "proven": "",
    "issue": 156,
-   "moved_why": "Renumbered from 0.1.4 to 0.1.5 on 2026-11-25 by the maintainer: a small release took the number 0.1.4; the day this row is due did not change, Thu 2026-12-03."
+   "moved_why": "Renumbered from 0.1.4 to 0.1.5 on 2026-11-25 by the maintainer: a small release took the number 0.1.4; the day this row is due did not change, Thu 2026-12-03.",
+   "promise_changed": "Part (a) changed on 2026-11-27 by the maintainer's ruling: the environment is the launcher's list by name, and the `claude plugin` commands run only where the config folder is the one whose list Pit Board reads."
   },
   {
    "id": "P57",
@@ -818,7 +819,7 @@
    "first_ship_in": "0.1.4",
    "ship_in": "0.1.5",
    "seen": "2026-11-24, in a scratch home on Linux (the code of 0.1.2 and of main that day), the family's rule 24 (A SETTING SAYS WHAT WAS ASKED FOR, NOT WHAT IS THERE): `pitboard version` takes \"installed\" from Claude Code's plugin registry alone. The registry keeps Pit Board's row while its version folder is gone: \"0.1.2 (installed 0.1.2, hooks gen 1)\", exit 0. The registry cannot be read (not JSON, or no read permission): \"installed none\" (rule 6: \"could not be read\" printed as \"none\"); a later line says the registry could not be read, under \"open to other accounts\". Read in the code the same day: a registry that is not there gives \"installed none\" as well, the same line as a registry with no row. Read in the code the same day: the launcher folds a key with an empty list, and rows with no installPath, into the same \"no row\" that makes it say \"Pit Board was removed by Claude Code\".",
-   "promise": "`pitboard version` says \"installed X\" only when the registry's row and its version folder are both there; the folder gone, the same line says the list names X and its folder is gone, with the one next step; the registry unreadable, the same line says it could not be read, never \"none\", and not under another heading; a registry that is not there is said as such in the same line (\"no plugin list\"), never \"none\" (the family's rule 29 (e)); and the launcher's \"Pit Board was removed by Claude Code\" only when the list was read and has no key for the plugin, a key with an empty list or a row with no installPath being \"could not be read\" (Claude Code's own uninstall was seen to take the key off, never to leave it empty). One test for each half takes the thing away while the record stays, and reads the line. Due 0.1.5, not 0.1.3, by the maintainer's ruling: both states need the registry and the folder to disagree or the registry to be unreadable, which no stock install and no leave of Pit Board makes; the line tells a version and starts, stops or deletes nothing; and a code change now would send 0.1.3's rounds round again.",
+   "promise": "`pitboard version` says \"installed X\" only when the registry's row and its version folder are both there; the folder gone, the same line says the list names X and its folder is gone, with the one next step; the registry unreadable, the same line says it could not be read, never \"none\", and not under another heading; a registry that is not there is said as such in the same line (\"no plugin list\"), never \"none\" (the maintainer's ruling of 2026-11-24); and the launcher's \"Pit Board was removed by Claude Code\" only when the list was read and has no key for the plugin, a key with an empty list or a row with no installPath being \"could not be read\" (Claude Code's own uninstall was seen to take the key off, never to leave it empty). One test for each half takes the thing away while the record stays, and reads the line. Due 0.1.5, not 0.1.3, by the maintainer's ruling: both states need the registry and the folder to disagree or the registry to be unreadable, which no stock install and no leave of Pit Board makes; the line tells a version and starts, stops or deletes nothing; and a code change now would send 0.1.3's rounds round again. Not held: where no version can run (the plugin list keeps Pit Board's row and its version folder is gone, or there is no list and nothing that runs), the status line shows nothing and the hook at a session's start says nothing and logs nothing; this row's cure changes only the words on the error stream.",
    "test": "",
    "proven": "",
    "issue": 128,
@@ -1462,7 +1463,7 @@
    "owner": "maintainer",
    "first_ship_in": "0.1.5",
    "ship_in": "0.1.5",
-   "seen": "Seen 2026-11-25 in a test account on a Mac (macOS 13, Claude Code 2.1.332, the 0.1.3 release head), with Pit Board installed for every project and for one folder as well: after `pitboard uninstall --apply` the census printed the same line twice, one under the other: \"kept: ~/.claude/plugins/cache/thewindstorm/windstorm-pit-board/0.1.3 (Pit Board's code, a version folder Claude Code keeps in its plugin cache ...)\". By the code, the version folders are listed once for each install that was taken off, and both installs keep their code in the same folder. In a guest with the one install for every project each folder was named once.",
+   "seen": "Seen 2026-11-25 in a test account on a Mac (macOS 13, Claude Code 2.1.332, the 0.1.3 release head), with Pit Board installed for every project and for one folder as well: after `pitboard uninstall --apply` the census printed the same line twice, one under the other: \"kept: ~/.claude/plugins/cache/thewindstorm/windstorm-pit-board/0.1.3 (Pit Board's code, a version folder Claude Code keeps in its plugin cache ...)\". By the code, the version folders are listed once for each install that was taken off, and both installs keep their code in the same folder. In a guest with the one install for every project each folder was named once. Seen again 2026-11-26 on a stock Ubuntu 24.04.5 machine with Claude Code 2.1.332, the plugin installed in user scope and in local scope at one version: the census's kept line for the version folder Claude Code keeps in its plugin cache printed twice, word for word (row P140).",
    "promise": "The census names a kept thing once, however many installs led to it. A test takes Pit Board off a home with an install for every project and one for a folder, and finds no two census lines alike; seen red first on the release's code.",
    "test": "",
    "proven": "",
@@ -1589,6 +1590,30 @@
    "issue": 208
   },
   {
+   "id": "P126",
+   "codon": "G2.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.6",
+   "ship_in": "0.1.6",
+   "seen": "Seen 2026-11-25 in made homes, with the 0.1.3 release head: with a lane's log that cannot be opened, a typed \"ok A1\" ends with exit 0, says nothing and records nothing, so the person's answer is gone and nobody is told; `pitboard add` ends in \"unexpected error: PermissionError\"; and the board, the list, the status line and the reminder go on showing the asks of the state file as if all were well. `pitboard uninstall`'s plan stops and names the file (exit 11): that half is right. Not seen: on a real home; a full disk.",
+   "promise": "An answer or an ask that Pit Board could not write to the lane's log is never lost in silence. A typed answer that could not be recorded is said to the session in one line that names the ask and the file, so that the agent can tell the person; `add` names the file and the one next step, never \"unexpected error\"; and a view that shows asks from the state file while the log cannot be read says so in a line of its own (P66 holds the status line's part). A test takes the log away each way, reads each line, and is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P127",
+   "codon": "G2.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.6",
+   "ship_in": "0.1.6",
+   "seen": "Seen 2026-11-25 in made homes, with the 0.1.3 release head: a lane's log that was cut short lost its last asks with no word in any view, and the next `add` gave the lost ask's number out a second time (A3 twice, for two different asks). Lines that are not events (not JSON, a list, a word, a number) are passed over with no word. A log of 0 bytes is shown as no asks, though the state file beside it still held three. Not seen: on a real home.",
+   "promise": "A lane's log that lost something is said, and a number is never given out twice. The board says in one line how many lines of the log are not events, and names the file; a log that holds fewer asks than the state file knew is said before the state file is made anew from it; and `add` never gives out a number that the log or the state file still shows as given. Pit Board changes and repairs nothing in the log. A test cuts the log at each line, plants each kind of bad line, reads the words and the next number, and is seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
    "id": "P128",
    "codon": "G18.1",
    "owner": "maintainer",
@@ -1611,6 +1636,18 @@
    "test": "",
    "proven": "",
    "issue": 210
+  },
+  {
+   "id": "P130",
+   "codon": "G10.5",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.6",
+   "ship_in": "0.1.6",
+   "seen": "Seen 2026-11-25 in made homes, with the 0.1.3 release head: the status line wrapper holds the person's own status line command. With a wrapper that is not there, of 0 bytes, or not a shell file, `setup --apply` writes a new wrapper without the person's own line; the plan's line says \"create\" or \"replace (backup kept)\" and not that their line is no longer shown. Setup's record still holds their setting from before, so uninstall puts it back. A wrapper that cannot be opened ends the status line in \"permission denied\". Not seen: on a real home.",
+   "promise": "Setup never drops the person's own status line in silence. When it writes the wrapper anew and cannot take the person's command from the old one, it takes it from its own record; when it has neither, the plan and the apply say in one line that their own status line is not shown, and how to get it back. A test damages the wrapper each way with a person's command in it, reads the plan's line and the new wrapper, and is seen red first. Already in 0.1.5, by P128: where setup writes the wrapper anew and the old one neither holds a command nor says that there was none, the line for the command is written as not known, and uninstall then says that the person's own status line could not be put back, with each backup of the settings file by name. This row is the rest: the plan's line and the apply say it before the write.",
+   "test": "",
+   "proven": "",
+   "issue": ""
   },
   {
    "id": "P131",
@@ -1706,7 +1743,7 @@
    "promise": "No release tag is pushed before the whole suite has passed with that tag at its head: the release step itself makes the tag locally in a fresh clone of the release commit, runs the whole suite there, and refuses to push on anything but exit 0; a test holds the refusal. The second part, the run a tag's push starts on GitHub, is P141.",
    "test": "",
    "proven": "",
-   "issue": "217"
+   "issue": 217
   },
   {
    "id": "P139",
@@ -1715,10 +1752,11 @@
    "first_ship_in": "0.1.5",
    "ship_in": "0.1.5",
    "seen": "2026-11-26, on a clone of the tag v0.1.3, in a made home with a stand-in for Claude Code's own command: one account set up twice, first with the default Pit Board home, then with PITBOARD_HOME naming a second home. `pitboard uninstall --apply`, run with the variable set, ended exit 0 and said the status line setting was put back byte for byte; the account's setting then named the first home's wrapper, which the same run had removed, and the person's own status line command was only in the first backup of settings.json that setup made. A second run of the same uninstall took the entry out and said nothing of the person's own status line. Not seen: on a real home; with Claude Code's real command; what a session then shows.",
-   "promise": "(i) Uninstall never ends saying the setting is put back while the setting names a wrapper the same run removed: it takes Pit Board's entry out in that run, and one line says that the person's own status line was not put back and which backup of setup's holds it, with the one step. Three answers, as always: put back; not put back, and said; could not be read, and said, with nothing reported gone. (ii) The person's own status line command is put back across two homes.",
+   "promise": "(i) Uninstall never ends saying the setting is put back while the setting names a wrapper the same run removed: it takes Pit Board's entry out in that run, and one line says that the person's own status line was not put back and names each backup of setup's as a place to look; it reads none of them. Three answers, as always: put back; not put back, and said; could not be read, and said, with nothing reported gone. (ii) The person's own status line command is put back across two homes. Not held: more than two homes for one account; seen in made homes, it then takes more than one run, the first does not say so, and the person's own line is named in a backup by the last run's block.",
    "test": "",
    "proven": "",
-   "issue": "218"
+   "issue": 218,
+   "promise_changed": "Part (i) changed on 2026-11-27 by the maintainer's ruling: to what is built, each backup of setup's named as a place to look, none read; no command is taken out of a backup."
   },
   {
    "id": "P140",
@@ -1726,11 +1764,12 @@
    "owner": "maintainer",
    "first_ship_in": "0.1.5",
    "ship_in": "0.1.5",
-   "seen": "2026-11-26, at P68's and P72's taking after the tag (a stock Ubuntu 24.04.5 machine): seen once, when the plugin was installed in user scope and in local scope at one version, Claude Code 2.1.332. `pitboard uninstall --apply` printed the census's kept line for the version folder Claude Code keeps in its plugin cache twice, word for word: one folder, two installs. Nothing in that line is false, and nothing of the person's was lost.",
-   "promise": "The census names each kept thing once: one line for one folder, however many installs point at it. A test makes two installs at one version and reads one line.",
+   "seen": "2026-11-26, a stock Ubuntu 24.04.5 machine, Claude Code 2.1.332: P115's fault seen again, on Linux (one version folder, two installs, its kept line printed twice).",
+   "promise": "P115's promise, with its test and its proof: this row is P115's second sighting.",
    "test": "",
    "proven": "",
-   "issue": "219"
+   "issue": 219,
+   "promise_changed": "Part (a) changed on 2026-11-27 by the maintainer's ruling: the fault is P115's, so this row keeps the sighting and leans on P115's promise, test and proof."
   },
   {
    "id": "P141",
@@ -1739,10 +1778,50 @@
    "first_ship_in": "0.1.5",
    "ship_in": "0.1.5",
    "seen": "2026-11-26, at the tag v0.1.3 (P138's sighting): a fresh clone of the pushed tag failed one test of its own suite, the tag check. A tag's push starts no run in this repository, so the tag check ran nowhere on GitHub.",
-   "promise": "A release tag's push starts the whole suite on GitHub, seen red first on a throwaway repository, never on this repository's tags.",
+   "promise": "A release tag's push starts the whole suite on GitHub; that the tag before started none is read, and the first tag after the change is read by job.",
    "test": "",
    "proven": "",
-   "issue": "220"
+   "issue": 220,
+   "promise_changed": "Part (a) changed on 2026-11-27 by the maintainer's ruling: no throwaway repository; the tag before is read to have started no run, and the first tag after by its jobs."
+  },
+  {
+   "id": "P143",
+   "codon": "G6.2",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-26 in a person's own use of 0.1.3: a hand ask whose deadline had passed, set to can-wait and retitled, stayed first on the board, and no command took the deadline off (an empty value was refused).",
+   "promise": "`pitboard update ID --deadline none` takes a deadline off, recorded as an update event; an empty value stays refused and its refusal names none. A passed deadline keeps the ask first until the lane moves it or takes it off, and the skill's text for agents says so. A test makes the case that was seen, seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": ""
+  },
+  {
+   "id": "P144",
+   "codon": "G18.1",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.5",
+   "ship_in": "0.1.5",
+   "seen": "Seen 2026-11-27 in a made home, with a stand-in for Claude Code's own plugin command, once on the release's code and once on the build's: the account's settings file and a folder's .claude/settings.local.json, each a link to a file elsewhere, were both replaced by plain files at setup, and the way back did not make the links again.",
+   "promise": "Where Claude Code's settings file is a symbolic link, setup writes its change into the file the link leads to and the link stays a link; uninstall puts the bytes back the same way. The plan names that file before anything is written. The same for a folder's .claude/settings.local.json. Where the file the link leads to is not there, is not a plain file, is not the person's own or cannot be written, setup stops with nothing changed and names the link and the file. A test makes each a link to a file elsewhere and reads the link and both files after setup and after the way back; seen red first on the release's code. Not held: a second name of the same file, a hard link, is not seen as a link: the change lands under the settings file's name only; and what Claude Code's own plugin commands do to a linked settings file is theirs, not this row's.",
+   "test": "",
+   "proven": "",
+   "issue": "",
+   "stand_in": "Another account's file cannot be made in a test: that stop is held by a stand-in for the owner read.",
+   "proof_needed": "Before 0.1.5's tag, on a stock guest with real Claude Code: what its own plugin commands do to a linked settings file."
+  },
+  {
+   "id": "P145",
+   "codon": "G21.4",
+   "owner": "maintainer",
+   "first_ship_in": "0.1.6",
+   "ship_in": "0.1.6",
+   "seen": "Seen 2026-11-26 in a made home: a hook started from a version folder whose pitboard/ cannot be entered, or whose launch.py is gone, ended with exit 2 and Python's own line; a newest cli.py that cannot be opened gave a traceback to a typed command and a silent exit 0 to a hook. Seen 2026-11-27 with a PATH that holds no python3 (a made one): a typed command ended 127 with the shell's own line, \"exec: python: not found\". What Claude Code does with a hook's exit 2 (its blocking code) was read in its documentation, not seen in a session.",
+   "promise": "Pit Board's own start fails plainly: a hook's start never ends with Claude Code's blocking code, never in a traceback and never in silence, and a typed command on a machine with no python3 says in Pit Board's words what is missing. The start only: the shell launcher looks first. A refusal Pit Board means keeps its own form (P136's is the JSON form, exit 0). A test takes each part of the start away and reads the exit and the line, seen red first.",
+   "test": "",
+   "proven": "",
+   "issue": "",
+   "proof_needed": "Before 0.1.6's tag, on a stock guest: what Claude Code itself does with a hook's start that ends 2."
   }
  ],
  "declined": [

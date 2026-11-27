@@ -191,6 +191,9 @@ def whole_problems(w):
         if "promise_changed" in r and not re.search(r"\bPart \([a-z]\).* changed on 20[0-9]{2}-[0-9]{2}-[0-9]{2} by ",
                                                     str(r["promise_changed"] or "")):
             out.append(f"{r.get('id')}: promise_changed, when given, says which part changed, the day and by whose word")
+        i = r.get("issue", "")                                                  # a number, or no issue
+        if not (i == "" or (type(i) is int and i > 0)):
+            out.append(f"{r.get('id')}: issue is a number, or \"\" for no issue")
         for k in ("first_ship_in", "ship_in"):
             if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", str(r.get(k, ""))):
                 out.append(f"{r.get('id')}: {k} is not MAJOR.MINOR.PATCH")
@@ -273,6 +276,10 @@ def test_G21_14_every_row_is_whole_and_its_codon_is_in_the_plan():
     assert whole_problems(_planted(w, codon="G99.1")) == ["PX: codon G99.1 is not in the plan"]
     assert whole_problems(_planted(w, id=w["doc"]["rows"][0]["id"])) == ["two rows share an id"]
     assert whole_problems(_planted(w, kind="guard")) == []
+    for kind in (218, "", None):
+        assert whole_problems(_planted(w, issue=kind) if kind is not None else _planted(w)) == []
+    for bad in ("218", 0, -1, True, 2.5, None, [218]):
+        assert whole_problems(_planted(w, issue=bad)) == ["PX: issue is a number, or \"\" for no issue"], bad
     assert whole_problems(_planted(w, kind="lesson")) == ["PX: kind, when given, must be 'guard'"]
     assert whole_problems(_planted(w, proven_after_release="a count over two days")) == []
     assert whole_problems(_planted(w, proven_after_release=" ")) == ["PX: proven_after_release, when given, names the reason"]
