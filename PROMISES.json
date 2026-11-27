@@ -1599,7 +1599,7 @@
    "promise": "An answer or an ask that Pit Board could not write to the lane's log is never lost in silence. A typed answer that could not be recorded is said to the session in one line that names the ask and the file, so that the agent can tell the person; `add` names the file and the one next step, never \"unexpected error\"; and a view that shows asks from the state file while the log cannot be read says so in a line of its own (P66 holds the status line's part). A test takes the log away each way, reads each line, and is seen red first.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 224
   },
   {
    "id": "P127",
@@ -1611,7 +1611,7 @@
    "promise": "A lane's log that lost something is said, and a number is never given out twice. The board says in one line how many lines of the log are not events, and names the file; a log that holds fewer asks than the state file knew is said before the state file is made anew from it; and `add` never gives out a number that the log or the state file still shows as given. Pit Board changes and repairs nothing in the log. A test cuts the log at each line, plants each kind of bad line, reads the words and the next number, and is seen red first.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 225
   },
   {
    "id": "P128",
@@ -1647,7 +1647,7 @@
    "promise": "Setup never drops the person's own status line in silence. When it writes the wrapper anew and cannot take the person's command from the old one, it takes it from its own record; when it has neither, the plan and the apply say in one line that their own status line is not shown, and how to get it back. A test damages the wrapper each way with a person's command in it, reads the plan's line and the new wrapper, and is seen red first. Already in 0.1.5, by P128: where setup writes the wrapper anew and the old one neither holds a command nor says that there was none, the line for the command is written as not known, and uninstall then says that the person's own status line could not be put back, with each backup of the settings file by name. This row is the rest: the plan's line and the apply say it before the write.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 226
   },
   {
    "id": "P131",
@@ -1794,7 +1794,7 @@
    "promise": "`pitboard update ID --deadline none` takes a deadline off, recorded as an update event; an empty value stays refused and its refusal names none. A passed deadline keeps the ask first until the lane moves it or takes it off, and the skill's text for agents says so. A test makes the case that was seen, seen red first.",
    "test": "",
    "proven": "",
-   "issue": ""
+   "issue": 227
   },
   {
    "id": "P144",
@@ -1806,7 +1806,7 @@
    "promise": "Where Claude Code's settings file is a symbolic link, setup writes its change into the file the link leads to and the link stays a link; uninstall puts the bytes back the same way. The plan names that file before anything is written. The same for a folder's .claude/settings.local.json. Where the file the link leads to is not there, is not a plain file, is not the person's own or cannot be written, setup stops with nothing changed and names the link and the file. A test makes each a link to a file elsewhere and reads the link and both files after setup and after the way back; seen red first on the release's code. Not held: a second name of the same file, a hard link, is not seen as a link: the change lands under the settings file's name only; and what Claude Code's own plugin commands do to a linked settings file is theirs, not this row's.",
    "test": "",
    "proven": "",
-   "issue": "",
+   "issue": 228,
    "stand_in": "Another account's file cannot be made in a test: that stop is held by a stand-in for the owner read.",
    "proof_needed": "Before 0.1.5's tag, on a stock guest with real Claude Code: what its own plugin commands do to a linked settings file."
   },
@@ -1820,7 +1820,7 @@
    "promise": "Pit Board's own start fails plainly: a hook's start never ends with Claude Code's blocking code, never in a traceback and never in silence, and a typed command on a machine with no python3 says in Pit Board's words what is missing. The start only: the shell launcher looks first. A refusal Pit Board means keeps its own form (P136's is the JSON form, exit 0). A test takes each part of the start away and reads the exit and the line, seen red first.",
    "test": "",
    "proven": "",
-   "issue": "",
+   "issue": 229,
    "proof_needed": "Before 0.1.6's tag, on a stock guest: what Claude Code itself does with a hook's start that ends 2."
   }
  ],
